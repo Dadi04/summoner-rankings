@@ -1,5 +1,11 @@
-var builder = WebApplication.CreateBuilder(args);
+using backend.Services;
+using Microsoft.EntityFrameworkCore;
+using System.Net.Http;
+using System.Text.Json;
+using DotNetEnv;
 
+var builder = WebApplication.CreateBuilder(args);
+Env.Load();
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -11,6 +17,14 @@ builder.Services.AddCors(options => {
                         .AllowAnyMethod());
 });
 
+builder.Services.AddDbContext<ApplicationDbContext>(options => {
+    string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
+    options.UseSqlServer(connectionString);
+});
+
+// Register HttpClient for external API calls
+builder.Services.AddHttpClient();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -19,27 +33,60 @@ if (app.Environment.IsDevelopment()) {
 }
 
 app.UseHttpsRedirection();
+app.UseRouting();
 app.UseCors("AllowReactApp");
 
-var summaries = new[] {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+app.MapGet("/lol/profile/{region}/{SummonerName}-{SummonerTag}", async (string region, string summonerName, string SummonerTag, IHttpClientFactory httpClientFactory) => {
+    string apiKey = Environment.GetEnvironmentVariable("RIOT_API_KEY") ?? "";
+    
+    var regionMapping = new Dictionary<string, string> {
+        {"na1", "americas"},
+        {"euw1", "europe"},
+        {"eun1", "europe"},
+        {"kr", "asia"},
+        {"oc1", "sea"},
+        {"br1", "americas"},
+        {"la1", "americas"},
+        {"la2", "americas"},
+        {"jp1", "asia"},
+        {"ru", "asia"},
+        {"tr1", "asia"},
+        {"sg2", "asia"},
+        {"tw2", "asia"},
+        {"vn2", "asia"},
+        {"me1", "asia"},
+    };
 
-app.MapGet("/weatherforecast", () => {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    if (!regionMapping.TryGetValue(region, out var continent)) {
+        return Results.Problem("Invalid region specified.");
+    }
+
+    string url = $"https://{continent}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{summonerName}/{SummonerTag}?api_key={apiKey}";
+
+    var client = httpClientFactory.CreateClient();
+    var response = await client.GetAsync(url);
+
+    if (!response.IsSuccessStatusCode) {
+        return Results.Problem($"Error calling Riot API: {response.ReasonPhrase}");
+    }
+
+    var json = await response.Content.ReadAsStreamAsync();
+    var riotPlayer = JsonSerializer.Deserialize<RiotPlayerDto>(json, new JsonSerializerOptions {
+        PropertyNameCaseInsensitive = true
+    });
+
+    if (riotPlayer is null) {
+        return Results.NotFound("Player data not found");
+    }
+
+    return Results.Ok(riotPlayer);
+});
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary) {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+public class RiotPlayerDto {
+    public int Id {get; set;}
+    public string Puuid { get; set; } = string.Empty;
+    public string gameName { get; set; } = string.Empty;
+    public string tagLine {get; set;} = string.Empty;
 }

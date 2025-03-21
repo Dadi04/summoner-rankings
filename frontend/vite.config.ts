@@ -10,9 +10,8 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      '/weatherforecast': {
+      '/lol/profile': {
         target: 'http://localhost:5288',
-        changeOrigin: true,
       },
     },
   },

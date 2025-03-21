@@ -4,7 +4,7 @@ import logolight from "../assets/logo-light.png"
 
 const Footer: React.FC = () => {
     return (
-        <div className="w-full flex justify-evenly p-5 fixed bottom-0 bg-neutral-800 text-neutral-300">
+        <div className="w-full flex justify-evenly p-5  bg-neutral-800 text-neutral-300">
             <div>
                 <img src={logolight} alt="logo-light.png" className="h-20" />
             </div>
