@@ -36,50 +36,93 @@ app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors("AllowReactApp");
 
-app.MapGet("/lol/profile/{region}/{SummonerName}-{SummonerTag}", async (string region, string summonerName, string SummonerTag, IHttpClientFactory httpClientFactory) => {
-    string apiKey = Environment.GetEnvironmentVariable("RIOT_API_KEY") ?? "";
+string apiKey = Environment.GetEnvironmentVariable("RIOT_API_KEY") ?? "";
     
-    var regionMapping = new Dictionary<string, string> {
-        {"na1", "americas"},
-        {"euw1", "europe"},
-        {"eun1", "europe"},
-        {"kr", "asia"},
-        {"oc1", "sea"},
-        {"br1", "americas"},
-        {"la1", "americas"},
-        {"la2", "americas"},
-        {"jp1", "asia"},
-        {"ru", "asia"},
-        {"tr1", "asia"},
-        {"sg2", "asia"},
-        {"tw2", "asia"},
-        {"vn2", "asia"},
-        {"me1", "asia"},
-    };
+var regionMapping = new Dictionary<string, string> {
+    {"na1", "americas"},
+    {"euw1", "europe"},
+    {"eun1", "europe"},
+    {"kr", "asia"},
+    {"oc1", "sea"},
+    {"br1", "americas"},
+    {"la1", "americas"},
+    {"la2", "americas"},
+    {"jp1", "asia"},
+    {"ru", "asia"},
+    {"tr1", "asia"},
+    {"sg2", "asia"},
+    {"tw2", "asia"},
+    {"vn2", "asia"},
+    {"me1", "asia"},
+};
 
+app.MapGet("/lol/summoner/{region}/{SummonerName}-{SummonerTag}", async (string region, string summonerName, string SummonerTag, IHttpClientFactory httpClientFactory) => {
     if (!regionMapping.TryGetValue(region, out var continent)) {
         return Results.Problem("Invalid region specified.");
     }
 
-    string url = $"https://{continent}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{summonerName}/{SummonerTag}?api_key={apiKey}";
+    string accountUrl = $"https://{continent}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{summonerName}/{SummonerTag}?api_key={apiKey}";
 
     var client = httpClientFactory.CreateClient();
-    var response = await client.GetAsync(url);
+    var accountResponse = await client.GetAsync(accountUrl);
 
-    if (!response.IsSuccessStatusCode) {
-        return Results.Problem($"Error calling Riot API: {response.ReasonPhrase}");
+    if (!accountResponse.IsSuccessStatusCode) {
+        return Results.Problem($"Error calling Riot API: {accountResponse.ReasonPhrase}");
     }
 
-    var json = await response.Content.ReadAsStreamAsync();
-    var riotPlayer = JsonSerializer.Deserialize<RiotPlayerDto>(json, new JsonSerializerOptions {
+    var accountJson = await accountResponse.Content.ReadAsStreamAsync();
+    var riotAccount = JsonSerializer.Deserialize<RiotPlayerDto>(accountJson, new JsonSerializerOptions {
         PropertyNameCaseInsensitive = true
     });
 
-    if (riotPlayer is null) {
+    if (riotAccount is null) {
         return Results.NotFound("Player data not found");
     }
+    // djole : oZ5OlpgjpgT62U26fLl86VVRTewH_6MUyyoNAjYViWXhh8PJVoaf7FCqZn2_fDaA6CDb6QsSp3wTFw
+    string puuid = riotAccount.Puuid;
 
-    return Results.Ok(riotPlayer);
+    string summonerUrl = $"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={apiKey}";
+    string entriesUrl = $"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}?api_key={apiKey}";
+    // count
+    string topMasteriesUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}/top?count=3&api_key={apiKey}";
+    // matchesUrl ima startTIme (sec), endTime (sec), queue, type, start, count
+    string matchesUrl = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start=0&count=20&api_key={apiKey}";
+    string challengesUrl = $"https://{region}.api.riotgames.com/lol/challenges/v1/player-data/{puuid}?api_key={apiKey}";
+    string spectatorUrl = $"https://{region}.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={apiKey}"; // ukoliko nisi u gameu vraca 404
+    string clashUrl = $"https://{region}.api.riotgames.com/lol/clash/v1/players/by-puuid/{puuid}?api_key={apiKey}"; // ukoliko nisi u clashu vraca [] i vraca 200
+
+    var summonerTask = client.GetStringAsync(summonerUrl);
+    var entriesTask = client.GetStringAsync(entriesUrl);
+    var topMasteriesTask = client.GetStringAsync(topMasteriesUrl);
+    var matchesTask = client.GetStringAsync(matchesUrl);
+    var challengesTask = client.GetStringAsync(challengesUrl);
+    var clashTask = client.GetStringAsync(clashUrl);
+
+    await Task.WhenAll(summonerTask, entriesTask, topMasteriesTask, matchesTask, challengesTask, clashTask);
+
+    var spectatorResponse = await client.GetAsync(spectatorUrl);
+    object? spectatorData = null;
+    if (spectatorResponse.IsSuccessStatusCode) {
+        var spectatorJson = await spectatorResponse.Content.ReadAsStringAsync();
+        spectatorData = JsonSerializer.Deserialize<object>(spectatorJson);
+    } else if (spectatorResponse.StatusCode == System.Net.HttpStatusCode.NotFound) {
+        spectatorData = null;
+    } else {
+        Console.WriteLine($"Error calling spectator API: {spectatorResponse.StatusCode}");
+    }
+
+    var playerInfo = new {
+        Player = riotAccount,
+        Summoner = JsonSerializer.Deserialize<object>(await summonerTask),
+        Entries = JsonSerializer.Deserialize<object>(await entriesTask),
+        TopMasteries = JsonSerializer.Deserialize<object>(await topMasteriesTask),
+        Matches = JsonSerializer.Deserialize<object>(await matchesTask),
+        Challenges = JsonSerializer.Deserialize<object>(await challengesTask),
+        Spectator = spectatorData,
+        Clash = JsonSerializer.Deserialize<object>(await clashTask),
+    };
+
+    return Results.Ok(playerInfo);
 });
 
 app.Run();

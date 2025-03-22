@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import logodark from '../assets/logo-dark.png';
 import arrowdown from '../assets/arrow-down.png'
 import arrowup from '../assets/arrow-up.png'
@@ -32,6 +33,7 @@ const Home: React.FC = () => {
     const [selectedRegion, setSelectedRegion] = useState<RegionItem>(REGION_ITEMS[0]);
     const [summonerInput, setSummonerInput] = useState('');
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -55,24 +57,18 @@ const Home: React.FC = () => {
         e.preventDefault();
         const formattedSummonerName = summonerInput.replace('#', '-');
         const encodedSummoner = encodeURIComponent(formattedSummonerName);
-        const url = `/lol/profile/${selectedRegion.code}/${encodedSummoner}`;
+        const url = `/lol/summoner/${selectedRegion.code}/${encodedSummoner}`;
 
         try {
             const response = await fetch(url);
-            const contentType = response.headers.get("content-type");
             if (!response.ok) {
-                console.error("Error fetching player data:", response.statusText);
+                console.error("Error fetching summoner data:", response.statusText);
                 return;
             }
+            const data = await response.json();
+            console.log(data)
 
-            if (contentType && contentType.includes("application/json")) {
-                const data = await response.json();
-                console.log("Riot Player data:", data);
-            } 
-            else {
-                const text = await response.text();
-                console.error("Unexpected response type. Expected JSON but got:", text);
-            }
+            navigate(`/summoner/${encodedSummoner}`, {state: data});
         } catch (error) {
             console.error("Error calling backend API:", error);
         }
