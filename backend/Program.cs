@@ -120,6 +120,7 @@ app.MapGet("/lol/summoner/{region}/{SummonerName}-{SummonerTag}", async (string 
         Challenges = JsonSerializer.Deserialize<object>(await challengesTask),
         Spectator = spectatorData,
         Clash = JsonSerializer.Deserialize<object>(await clashTask),
+        Region = region,
     };
 
     return Results.Ok(playerInfo);

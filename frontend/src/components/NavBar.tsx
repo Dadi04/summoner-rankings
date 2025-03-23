@@ -20,7 +20,6 @@ const NavBar: React.FC = () => {
                         <li><Link to="/races" className="p-3 transition-color duration-300 hover:text-gray-400">Races</Link></li>
                         <li><Link to="/leaderboard" className="p-3 transition-color duration-300 hover:text-gray-400">Leaderboard</Link></li>
                         <li><Link to="/clash" className="p-3 transition-color duration-300 hover:text-gray-400">Clash</Link></li>
-                        <li><Link to="/streamers" className="p-3 transition-color duration-300 hover:text-gray-400">Streamers</Link></li>
                     </ul>
                     </div>
                     <div className="flex-1 flex justify-end">
