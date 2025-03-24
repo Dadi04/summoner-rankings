@@ -48,12 +48,12 @@ var regionMapping = new Dictionary<string, string> {
     {"la1", "americas"},
     {"la2", "americas"},
     {"jp1", "asia"},
-    {"ru", "asia"},
-    {"tr1", "asia"},
-    {"sg2", "asia"},
-    {"tw2", "asia"},
-    {"vn2", "asia"},
-    {"me1", "asia"},
+    {"ru", "europe"},
+    {"tr1", "europe"},
+    {"sg2", "sea"},
+    {"tw2", "sea"},
+    {"vn2", "sea"},
+    {"me1", "europe"},
 };
 
 app.MapGet("/lol/summoner/{region}/{SummonerName}-{SummonerTag}", async (string region, string summonerName, string SummonerTag, IHttpClientFactory httpClientFactory) => {
