@@ -32,7 +32,7 @@ const Summoner: React.FC = () => {
             <div className="w-full bg-neutral-300">
                 <div className="flex border-b-1 pt-5 pb-5 pl-5">
                     <div className="relative p-3">
-                        <img src={`https://static.bigbrain.gg/assets/lol/riot_static/15.6.1/img/profileicon/${data.summoner.profileIconId}.png`} alt={data.summoner.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
+                        <img src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/profileicon/${data.summoner.profileIconId}.png`} alt={data.summoner.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
                         <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{data.summoner.summonerLevel}</span>
                     </div>
                     <div className="pt-3 pb-3">
@@ -63,7 +63,7 @@ const Summoner: React.FC = () => {
                     </ul>
                 </div>
             </div>
-            <div className="container mt-2 bg-neutral-300 rounded p-5">
+            <div className="container mt-2 bg-neutral-300 rounded pt-3 pb-5 pr-5 pl-5">
                 {renderTabContent()}
             </div>
         </div>

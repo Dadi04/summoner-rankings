@@ -1,20 +1,14 @@
 import React, {useState, useEffect} from 'react';
 
 interface GameTimerProps {
-    initialTime: number;
+    gameLength: number;
+    gameStartTime: number;
     storageKey?: string;
 }
 
-const GameTimer: React.FC<GameTimerProps> = ({ initialTime, storageKey = 'gameStartTime' }) => {
-    let storedStartTime = localStorage.getItem(storageKey);
-    if (!storedStartTime) {
-        localStorage.setItem(storageKey, Date.now().toString());
-        storedStartTime = Date.now().toString();
-    }
-    
-    const startTime = parseInt(storedStartTime, 10);
+const GameTimer: React.FC<GameTimerProps> = ({ gameLength, gameStartTime }) => {
     const getElapsedTime = (): number => {
-        return Math.floor((Date.now() - startTime) / 1000) + initialTime;
+        return Math.floor((Date.now() - gameStartTime) / 1000);
     };
 
     const [time, setTime] = useState<number>(getElapsedTime());
@@ -24,7 +18,7 @@ const GameTimer: React.FC<GameTimerProps> = ({ initialTime, storageKey = 'gameSt
         }, 1000);
         
         return () => clearInterval(intervalId);
-    }, [startTime, initialTime]);
+    }, [gameLength]);
 
     const minutes = Math.floor(time / 60);
     const seconds = time % 60;
