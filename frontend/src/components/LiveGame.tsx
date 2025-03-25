@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from "react";
+import React, {useState, useEffect, } from "react";
 import queueJson from "../assets/json/queues.json";
 import championJson from "../assets/json/champion.json";
 import summonerSpellsJson from "../assets/json/summonerSpells.json";
@@ -22,6 +22,27 @@ interface Participant {
         perkStyle: number;
         perkSubStyle: number;
     };
+}
+
+interface Entry {
+    queueType: string;
+    tier: string;
+    rank: string;
+    leaguePoints: number;
+    wins: number;
+    losses: number;
+}
+
+interface LiveGameData {
+    summoner: {
+        puuid: string;
+        summonerLevel: number;
+    };
+    entries: Entry[];
+}
+
+interface MergedParticipant extends Participant {
+    liveData: LiveGameData;
 }
 
 const GameTimer: React.FC<{gameLength: number, gameStartTime: number}> = ({ gameLength, gameStartTime }) => {
@@ -113,42 +134,93 @@ const BannedChampionsList: React.FC<{bannedChampions: any[], isTeamIdSame: boole
     </div>
 );
 
-const ParticipantRow: React.FC<{participant: Participant, summonerLevel: number, isBeingWatched: boolean, gridCols: string;}> = ({participant, summonerLevel, isBeingWatched, gridCols}) => (
-    <div className={`grid ${gridCols} w-full items-center ${isBeingWatched ? "bg-neutral-200" : ""}`}>
-        <div className="flex items-center gap-2 pl-0.5">
-            <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} />
-            <div className="flex flex-col gap-0.5">
-                <SummonerSpellImage spellId={participant.spell1Id} />
-                <SummonerSpellImage spellId={participant.spell2Id} />
+const ParticipantRow: React.FC<{participant: Participant, liveData: LiveGameData, isBeingWatched: boolean, gridCols: string;}> = ({participant, liveData, isBeingWatched, gridCols}) => {
+    const rankedSoloDuoEntry = liveData.entries.find((entry: Entry) => entry.queueType === "RANKED_SOLO_5x5");
+
+    return (
+        <div className={`grid ${gridCols} w-full items-center ${isBeingWatched ? "bg-neutral-200" : ""}`}>
+            <div className="flex items-center gap-2 pl-0.5">
+                <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} />
+                <div className="flex flex-col gap-0.5">
+                    <SummonerSpellImage spellId={participant.spell1Id} />
+                    <SummonerSpellImage spellId={participant.spell2Id} />
+                </div>
+                <div className="flex flex-col gap-0.5">
+                    <RuneImage runeTypeId={participant.perks.perkStyle} runeId={participant.perks.perkIds[0]} />
+                    <RuneImage runeTypeId={participant.perks.perkSubStyle} />
+                </div>
+                <div>
+                    <p className={`font-normal text-lg ml-3 ${isBeingWatched ? "text-purple-700" : ""}`}>
+                        {participant.riotId}
+                    </p>
+                    <p className="font-normal text-sm ml-3 text-neutral-700">
+                        Level {liveData.summoner.summonerLevel}
+                    </p>
+                </div>
             </div>
-            <div className="flex flex-col gap-0.5">
-                <RuneImage runeTypeId={participant.perks.perkStyle} runeId={participant.perks.perkIds[0]} />
-                <RuneImage runeTypeId={participant.perks.perkSubStyle} />
-            </div>
-            <div>
-                <p className={`font-normal text-lg ml-3 ${isBeingWatched ? "text-purple-700" : ""}`}>
-                    {participant.riotId}
-                </p>
-                <p className="font-normal text-sm ml-3 text-neutral-700">
-                    Level {summonerLevel}
-                </p>
-            </div>
+            {rankedSoloDuoEntry ? (
+                <>
+                    <div className="flex items-center gap-2 justify-center">
+                        <img src={`https://static.bigbrain.gg/assets/lol/ranks/s13/mini/${rankedSoloDuoEntry.tier.toLowerCase()}.svg`} alt={rankedSoloDuoEntry.tier.toLowerCase()} className="h-7" />
+                        <div className="flex gap-0.5">
+                            <p className="capitalize">{rankedSoloDuoEntry.tier.toLowerCase()} {rankedSoloDuoEntry.rank}</p>
+                            <p>({rankedSoloDuoEntry.leaguePoints}LP)</p>
+                        </div>
+                    </div>
+                    <div className="text-center">
+                        <p>{Math.round(rankedSoloDuoEntry.wins / (rankedSoloDuoEntry.wins + rankedSoloDuoEntry.losses) * 100)}%</p>
+                        <p>{rankedSoloDuoEntry.wins} / {rankedSoloDuoEntry.losses}</p>
+                    </div>
+                </>
+            ) : (
+                <p>No Ranked Solo Duo entry found.</p>
+
+            )}
+            
+            <div className="text-center">20%</div>
+            <div className="text-center">20%</div>
+            {gridCols.includes("9%") && (
+                <>
+                    <div className="text-center">20%</div>
+                    <div className="text-center">20%</div>
+                </>
+            )}
         </div>
-        <div className="text-center">20%</div>
-        <div className="text-center">20%</div>
-        <div className="text-center">20%</div>
-        <div className="text-center">20%</div>
-        {gridCols.includes("10%") && (
-            <>
-                <div className="text-center">20%</div>
-                <div className="text-center">20%</div>
-            </>
-        )}
-  </div>
-)
+    );
+};
+
+const delay = (ms : number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function fetchWithRetry(url: string, options: RequestInit = {}, maxRetries: number = 5): Promise<Response> {
+    let attempt = 0;
+    while (true) {
+        attempt++;
+        const response = await fetch(url, options);
+        if (response.status !== 429) {
+            return response;
+        } if (attempt >= maxRetries) {
+            throw new Error(`Max retries reached for URL: ${url}`);
+        }
+        let retryAfterSeconds = 10;
+        const retryAfterHeader = response.headers.get('Retry-After');
+        if (retryAfterHeader && !isNaN(parseInt(retryAfterHeader))) {
+            retryAfterSeconds = parseInt(retryAfterHeader);
+        }
+        const waitTime = retryAfterSeconds * 1000 * attempt;
+        console.warn(`Received 429 for ${url}. Retry attempt ${attempt} in ${waitTime} ms.`);
+        await delay(waitTime);
+    }
+}
+
+const CACHE_EXPIRATION_MS = 5 * 60 * 1000;
+
+interface CachedData<T> {
+    timestamp: number;
+    data: T;
+}
 
 const LiveGame: React.FC<{data: any}> = ({data}) => {
-    const {spectator, player, summoner} = data;
+    const {spectator, player, region} = data;
     if (!spectator) {
         return (
             <div className="text-center pt-2 pb-2">
@@ -162,6 +234,67 @@ const LiveGame: React.FC<{data: any}> = ({data}) => {
         )
     }
 
+    const [liveGameData, setLiveGameData] = useState<LiveGameData[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+
+    const getCachedData = (key: string): LiveGameData | null => {
+        const cachedstr = localStorage.getItem(key);
+        if (cachedstr) {
+            try {
+                const cached: CachedData<LiveGameData> = JSON.parse(cachedstr);
+                if (Date.now() - cached.timestamp < CACHE_EXPIRATION_MS) {
+                    return cached.data;
+                } else {
+                    localStorage.removeItem(key);
+                }
+            } catch (error) {
+                console.error("Error parsing cached data:", error);
+            }
+        }
+        return null;
+    };
+
+    const setCachedData = (key: string, data: LiveGameData) => {
+        const cache: CachedData<LiveGameData> = {
+            timestamp: Date.now(),
+            data,
+        };
+        localStorage.setItem(key, JSON.stringify(cache));
+    };
+
+    useEffect(() => {
+        const fetchAllData = async () => {
+            try {
+                const fetchPromises = spectator.participants.map((participant: Participant) => {
+                    const storageKey = `liveGameData_${participant.puuid}`;
+                    const cachedData = getCachedData(storageKey);
+                    if (cachedData) {
+                        return Promise.resolve(cachedData);
+                    }
+                    return fetchWithRetry(`/api/lol/profile/${region}/by-puuid/${participant.puuid}/livegame`)
+                        .then((res) => {
+                            if (!res.ok) {
+                                throw new Error(`Failed to fetch for ${participant.puuid}`);
+                            }
+                            return res.json();
+                        })
+                        .then((data: LiveGameData) => {
+                            setCachedData(storageKey, data);
+                            return data;
+                        });
+                });
+
+                const results = await Promise.all(fetchPromises);
+                setLiveGameData(results);
+            } catch(error) {
+                console.error("Error fetching live game data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchAllData();
+    }, [region, spectator.participants]);
+
     const queueId = spectator.gameQueueConfigId;
     const queueData = getQueueData(queueId);
     const gamemode = queueData ? queueData.description : "Unknown game mode";
@@ -169,6 +302,18 @@ const LiveGame: React.FC<{data: any}> = ({data}) => {
     const isTeamIdSame = spectator.participants.every(
         (participant: Participant) => participant.teamId === spectator.participants[0].teamId
     );
+
+    const mergedParticipants = spectator.participants.map((participant: Participant) => {
+        const liveData = liveGameData.find(data => data.summoner.puuid === participant.puuid);
+        return {
+            ...participant,
+            liveData,
+        };
+    });
+
+    if (loading) {
+        return <div>Loading live game data...</div>;
+    }
 
     return (
         <>
@@ -217,12 +362,12 @@ const LiveGame: React.FC<{data: any}> = ({data}) => {
                         <h1 className="text-center">Matches</h1>
                     </div>
                     <div className="flex flex-col gap-4">
-                        {spectator.participants.map((p: Participant) => (
+                        {mergedParticipants.map((participant: MergedParticipant) => (
                             <ParticipantRow
-                                key={p.puuid}
-                                participant={p}
-                                summonerLevel={summoner.summonerLevel}
-                                isBeingWatched={player.puuid === p.puuid}
+                                key={participant.puuid}
+                                participant={participant}
+                                liveData={participant.liveData}
+                                isBeingWatched={player.puuid === participant.puuid}
                                 gridCols="grid-cols-[50%_12.5%_12.5%_12.5%_12.5%]"
                             />
                         ))}
@@ -230,7 +375,7 @@ const LiveGame: React.FC<{data: any}> = ({data}) => {
                 </>
             ) : (
                 <>
-                    <div className="grid grid-cols-[40%_10%_10%_10%_10%_10%_10%] w-full mb-2">
+                    <div className="grid grid-cols-[40%_15%_9%_9%_9%_9%_9%] w-full mb-2">
                         <div className="flex items-center">
                             <h1 className="font-bold text-blue-500 mr-2">Blue Team</h1>
                             <h1 className="text-blue-500 mr-1">Tier Average:</h1>
@@ -244,18 +389,18 @@ const LiveGame: React.FC<{data: any}> = ({data}) => {
                         <p className="text-center">Runes</p>
                     </div>
                     <div className="flex flex-col border-l-4 gap-1 border-blue-500">
-                        {spectator.participants.filter((p: Participant) => p.teamId === 100).map((p: Participant) => (
+                        {mergedParticipants.filter((participant: MergedParticipant) => participant.teamId === 100).map((participant: MergedParticipant) => (
                             <ParticipantRow
-                                key={p.puuid}
-                                participant={p}
-                                summonerLevel={summoner.summonerLevel}
-                                isBeingWatched={player.puuid === p.puuid}
-                                gridCols="grid-cols-[40%_10%_10%_10%_10%_10%_10%]"
+                                key={participant.puuid}
+                                participant={participant}
+                                liveData={participant.liveData}
+                                isBeingWatched={player.puuid === participant.puuid}
+                                gridCols="grid-cols-[40%_15%_9%_9%_9%_9%_9%]"
                             />
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-[40%_10%_10%_10%_10%_10%_10%] w-full mb-2 mt-5">
+                    <div className="grid grid-cols-[40%_15%_9%_9%_9%_9%_9%] w-full mb-2 mt-5">
                         <div className="flex items-center">
                             <h1 className="font-bold text-red-500 mr-2">Red Team</h1>
                             <h1 className="text-red-500 mr-1">Tier Average:</h1>
@@ -269,13 +414,13 @@ const LiveGame: React.FC<{data: any}> = ({data}) => {
                         <p className="text-center">Runes</p>
                     </div>
                     <div className="flex flex-col border-l-4 gap-1 border-red-500">
-                        {spectator.participants.filter((p: Participant) => p.teamId === 200).map((p: Participant) => (
+                        {mergedParticipants.filter((participant: MergedParticipant) => participant.teamId === 200).map((participant: MergedParticipant) => (
                             <ParticipantRow
-                                key={p.puuid}
-                                participant={p}
-                                summonerLevel={summoner.summonerLevel}
-                                isBeingWatched={player.puuid === p.puuid}
-                                gridCols="grid-cols-[40%_10%_10%_10%_10%_10%_10%]"
+                                key={participant.puuid}
+                                participant={participant}
+                                liveData={participant.liveData}
+                                isBeingWatched={player.puuid === participant.puuid}
+                                gridCols="grid-cols-[40%_15%_9%_9%_9%_9%_9%]"
                             />
                         ))}
                     </div>

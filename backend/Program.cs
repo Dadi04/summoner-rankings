@@ -126,6 +126,26 @@ app.MapGet("/api/lol/profile/{region}/{SummonerName}-{SummonerTag}", async (stri
     return Results.Ok(playerInfo);
 });
 
+app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/livegame", async (string region, string puuid, IHttpClientFactory httpClientFactory) => {
+    var client = httpClientFactory.CreateClient();
+
+    string summonerUrl = $"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={apiKey}";
+    string entriesUrl = $"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}?api_key={apiKey}";
+
+    var summonerTask = client.GetStringAsync(summonerUrl);
+    var entriesTask = client.GetStringAsync(entriesUrl);
+
+    await Task.WhenAll(summonerTask, entriesTask);
+
+    var liveGameInfo = new {
+        Summoner = JsonSerializer.Deserialize<object>(await summonerTask),
+        Entries = JsonSerializer.Deserialize<object>(await entriesTask),
+    };
+
+    return Results.Ok(liveGameInfo);
+});
+
+
 app.Run();
 
 public class RiotPlayerDto {

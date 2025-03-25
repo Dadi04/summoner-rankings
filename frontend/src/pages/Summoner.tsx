@@ -31,7 +31,7 @@ const Summoner: React.FC = () => {
     const [activeTab, setActiveTab] = useState("Summary");
 
     useEffect(() => {
-        async function fetchData() {
+        const fetchData = async () => {
             try {
                 const response = await fetch(`/api/lol/profile/${regionCode}/${summoner}`);
                 if (!response.ok) {
