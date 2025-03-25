@@ -18,6 +18,7 @@ interface ApiData {
     region: string;
 }
 
+// on refresh dont call api call again
 const Summoner: React.FC = () => {
     const {regionCode, encodedSummoner} = useParams<{regionCode: string; encodedSummoner: string }>(); 
     if (!encodedSummoner) {
