@@ -56,7 +56,7 @@ var regionMapping = new Dictionary<string, string> {
     {"me1", "europe"},
 };
 
-app.MapGet("/lol/summoner/{region}/{SummonerName}-{SummonerTag}", async (string region, string summonerName, string SummonerTag, IHttpClientFactory httpClientFactory) => {
+app.MapGet("/api/lol/profile/{region}/{SummonerName}-{SummonerTag}", async (string region, string summonerName, string SummonerTag, IHttpClientFactory httpClientFactory) => {
     if (!regionMapping.TryGetValue(region, out var continent)) {
         return Results.Problem("Invalid region specified.");
     }

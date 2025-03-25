@@ -10,7 +10,7 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      '/lol/summoner': {
+      '/api/lol/profile': {
         target: 'http://localhost:5288',
       },
     },

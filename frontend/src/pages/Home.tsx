@@ -57,21 +57,8 @@ const Home: React.FC = () => {
         e.preventDefault();
         const formattedSummonerName = summonerInput.replace('#', '-');
         const encodedSummoner = encodeURIComponent(formattedSummonerName);
-        const url = `/lol/summoner/${selectedRegion.code}/${encodedSummoner}`;
 
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                console.error("Error fetching summoner data:", response.statusText);
-                return;
-            }
-            const data = await response.json();
-            console.log(data)
-
-            navigate(`/summoner/${encodedSummoner}`, {state: data});
-        } catch (error) {
-            console.error("Error calling backend API:", error);
-        }
+        navigate(`/lol/profile/${selectedRegion.code}/${encodedSummoner}`, {state: {region: selectedRegion, summoner: encodedSummoner}});
     };
 
     return (

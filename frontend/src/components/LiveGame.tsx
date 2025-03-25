@@ -7,9 +7,6 @@ import GameTimer from "./GameTimer";
 import forbiddenlight from "../assets/forbidden-light.png";
 import noneicon from "../assets/none.jpg";
 
-// refactor scoreboard za live game arama
-// pozvati 10 api callova na spectator, entries i summoner preko puuid iz spectattor.participants
-
 interface Perks {
     perkIds: number[];
     perkStyle: number;

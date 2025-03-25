@@ -1,27 +1,66 @@
-import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import favorite from "../assets/favorite.svg";
 import Summary from '../components/Summary';
 import Champions from '../components/Champions';
 import Mastery from '../components/Mastery';
 import LiveGame from '../components/LiveGame';
 
-const Summoner: React.FC = () => {
-    const location = useLocation();
-    const data = location.state;
+interface ApiData {
+    summoner: {
+        profileIconId: string;
+        summonerLevel: number;
+    };
+    player: {
+        gameName: string;
+        tagLine: string;
+    };
+    region: string;
+}
 
+const Summoner: React.FC = () => {
+    const {regionCode, encodedSummoner} = useParams<{regionCode: string; encodedSummoner: string }>(); 
+    if (!encodedSummoner) {
+        return <div>Error: Summoner parameter is missing.</div>;
+    }
+    const summoner = decodeURIComponent(encodedSummoner);
+
+    const [apiData, setApiData] = useState<ApiData | null>(null);
+    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("Summary");
+
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                const response = await fetch(`/api/lol/profile/${regionCode}/${summoner}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                setApiData(data);
+            } catch (error) {
+                console.log('Error fetching API data:', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchData();
+    }, [regionCode, summoner]);
+
+    if (loading || !apiData) {
+        return <div>Loading...</div>
+    }
 
     const renderTabContent = () => {
         switch(activeTab) {
             case "Summary":
-                return <Summary data={data}/>;
+                return <Summary data={apiData}/>;
             case "Champions":
-                return <Champions data={data}/>;
+                return <Champions data={apiData}/>;
             case "Mastery":
-                return <Mastery data={data}/>;
+                return <Mastery data={apiData}/>;
             case "Live Game":
-                return <LiveGame data={data}/>;
+                return <LiveGame data={apiData}/>;
             default:
                 return null;
         }
@@ -32,20 +71,20 @@ const Summoner: React.FC = () => {
             <div className="w-full bg-neutral-300">
                 <div className="flex border-b-1 pt-5 pb-5 pl-5">
                     <div className="relative p-3">
-                        <img src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/profileicon/${data.summoner.profileIconId}.png`} alt={data.summoner.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
-                        <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{data.summoner.summonerLevel}</span>
+                        <img src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/profileicon/${apiData.summoner.profileIconId}.png`} alt={apiData.summoner.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
+                        <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{apiData.summoner.summonerLevel}</span>
                     </div>
                     <div className="pt-3 pb-3">
                         <div className="flex">
-                            <h1 className="text-white font-bold text-3xl mr-2">{data.player.gameName}</h1>
-                            <h1 className="text-neutral-400 text-3xl mr-2">#{data.player.tagLine}</h1>
+                            <h1 className="text-white font-bold text-3xl mr-2">{apiData.player.gameName}</h1>
+                            <h1 className="text-neutral-400 text-3xl mr-2">#{apiData.player.tagLine}</h1>
                             <button type="button" className="bg-neutral-400 pl-1.5 pr-1.5 rounded-lg">
                                 <img src={favorite} alt="favorite.svg" className="h-6 border-1 border-neutral-300 rounded" />
                             </button>
                         </div>
                         <div className="flex text-sm text-neutral-700">
                             <div className="pt-2 pb-2 pl-1">
-                                <p className="uppercase border-r-1 pr-2">{data.region}</p>
+                                <p className="uppercase border-r-1 pr-2">{apiData.region}</p>
                             </div>
                             <p className="p-2">Ladder Rank num </p>
                         </div>

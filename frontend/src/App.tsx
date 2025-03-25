@@ -17,7 +17,7 @@ const App: React.FC = () => {
         <div className="flex-grow overflow-auto overflow-y-scroll">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/summoner/:encodedSummoner" element={<Summoner />} />
+            <Route path="/lol/profile/:regionCode/:encodedSummoner" element={<Summoner />} />
             <Route path="/races" element={<Races />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/clash" element={<Clash />} />
