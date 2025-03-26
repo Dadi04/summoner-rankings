@@ -69,7 +69,7 @@ const Summoner: React.FC = () => {
 
     return (
         <div className="container m-auto">
-            <div className="w-full bg-neutral-300">
+            <div className="w-full bg-neutral-800 mt-1">
                 <div className="flex border-b-1 pt-5 pb-5 pl-5">
                     <div className="relative p-3">
                         <img src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/profileicon/${apiData.summoner.profileIconId}.png`} alt={apiData.summoner.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
@@ -79,31 +79,31 @@ const Summoner: React.FC = () => {
                         <div className="flex">
                             <h1 className="text-white font-bold text-3xl mr-2">{apiData.player.gameName}</h1>
                             <h1 className="text-neutral-400 text-3xl mr-2">#{apiData.player.tagLine}</h1>
-                            <button type="button" className="bg-neutral-400 pl-1.5 pr-1.5 rounded-lg">
-                                <img src={favorite} alt="favorite.svg" className="h-6 border-1 border-neutral-300 rounded" />
+                            <button type="button" className="bg-neutral-200 pl-1.5 pr-1.5 rounded-lg">
+                                <img src={favorite} alt="favorite" className="h-6 border-2 border-neutral-700 rounded" />
                             </button>
                         </div>
-                        <div className="flex text-sm text-neutral-700">
+                        <div className="flex text-sm text-neutral-100">
                             <div className="pt-2 pb-2 pl-1">
                                 <p className="uppercase border-r-1 pr-2">{apiData.region}</p>
                             </div>
                             <p className="p-2">Ladder Rank num </p>
                         </div>
                         <div>
-                            <button type="button" className="focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900">Update</button>
+                            <button type="button" className="focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-semibold rounded-lg text-md px-8 py-2.5 mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900">Update</button>
                         </div>
                     </div>  
                 </div>
                 <div className="p-2">
                     <ul className="flex gap-10">
-                        <li onClick={() => setActiveTab("Summary")} className={`cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition duration-150 ease-in hover:bg-neutral-400 ${activeTab === "Summary" ? "bg-neutral-200 border" : ""}`}>Summary</li>
-                        <li onClick={() => setActiveTab("Champions")} className={`cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition duration-150 ease-in hover:bg-neutral-400 ${activeTab === "Champions" ? "bg-neutral-200 border" : ""}`}>Champions</li>
-                        <li onClick={() => setActiveTab("Mastery")} className={`cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition duration-150 ease-in hover:bg-neutral-400 ${activeTab === "Mastery" ? "bg-neutral-200 border" : ""}`}>Mastery</li>
-                        <li onClick={() => setActiveTab("Live Game")} className={`cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition duration-150 ease-in hover:bg-neutral-400 ${activeTab === "Live Game" ? "bg-neutral-200 border" : ""}`}>Live Game</li>
+                        <li onClick={() => setActiveTab("Summary")} className={`cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 ${activeTab === "Summary" ? "bg-neutral-700 border text-purple-400 hover:text-neutral-100" : ""}`}>Summary</li>
+                        <li onClick={() => setActiveTab("Champions")} className={`cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 ${activeTab === "Champions" ? "bg-neutral-700 border text-purple-400 hover:text-neutral-100" : ""}`}>Champions</li>
+                        <li onClick={() => setActiveTab("Mastery")} className={`cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 ${activeTab === "Mastery" ? "bg-neutral-700 border text-purple-400 hover:text-neutral-100" : ""}`}>Mastery</li>
+                        <li onClick={() => setActiveTab("Live Game")} className={`cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 ${activeTab === "Live Game" ? "bg-neutral-700 border text-purple-400 hover:text-neutral-100" : ""}`}>Live Game</li>
                     </ul>
                 </div>
             </div>
-            <div className="container mt-2 bg-neutral-300 rounded pt-3 pb-5 pr-5 pl-5">
+            <div className="container mt-2 mb-2 bg-neutral-800 rounded pt-3 pb-5 pr-5 pl-5">
                 {renderTabContent()}
             </div>
         </div>

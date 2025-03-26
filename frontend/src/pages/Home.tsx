@@ -64,7 +64,7 @@ const Home: React.FC = () => {
     return (
         <div className="flex justify-center flex-col items-center mt-20">
             <div className="container m-auto w-90">
-                <img src={logodark} alt="logo-dark.png" />
+                <img src={logodark} alt="logo-dark" />
             </div>
             <div className="container m-auto w-220 mt-5 p-5 bg-neutral-200 rounded-4xl">
                 <form onSubmit={handleSubmit} className="flex items-center justify-between">
@@ -73,7 +73,7 @@ const Home: React.FC = () => {
                         <div ref={dropdownRef} className=" w-60">
                             <div onClick={() => setShowRegion((prev) => !prev)} className="flex justify-between cursor-pointer">
                                 <span>{selectedRegion.name}</span>
-                                <img src={showRegion ? arrowup : arrowdown} alt={showRegion ? "arrow-up.png" : "arrow-down.png"} className="h-5" />
+                                <img src={showRegion ? arrowup : arrowdown} alt={showRegion ? "arrow-up" : "arrow-down"} className="h-5" />
                             </div>
                             {showRegion && (
                                 <div className="absolute top-full left-0 w-full mt-1 bg-neutral-700 shadow-md z-50">

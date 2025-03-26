@@ -1,0 +1,79 @@
+{
+    "slots": [
+      {
+        "shards": [
+          {
+            "id": 5008,
+            "key": "StatModsAdaptiveForceIcon",
+            "icon": "perk-images/StatMods/StatModsAdaptiveForceIcon.png",
+            "name": "Adaptive Force",
+            "shortDesc": "+9 Adaptive Force"
+          },
+          {
+            "id": 5005,
+            "key": "StatModsAttackSpeedIcon",
+            "icon": "perk-images/StatMods/StatModsAttackSpeedIcon.png",
+            "name": "Attack Speed",
+            "shortDesc": "+10% Attack Speed"
+          },
+          {
+            "id": 5007,
+            "key": "StatModsCDRScalingIcon",
+            "icon": "perk-images/StatMods/StatModsCDRScalingIcon.png",
+            "name": "Ability Haste",
+            "shortDesc": "+8 Ability Haste"
+          }
+        ]
+      },
+      {
+        "shards": [
+          {
+            "id": 5008,
+            "key": "StatModsAdaptiveForceIcon",
+            "icon": "perk-images/StatMods/StatModsAdaptiveForceIcon.png",
+            "name": "Adaptive Force",
+            "shortDesc": "+9 Adaptive Force"
+          },
+          {
+            "id": 5010,
+            "key": "StatModsMovementSpeedIcon",
+            "icon": "perk-images/StatMods/StatModsMovementSpeedIcon.png",
+            "name": "Move Speed",
+            "shortDesc": "+2% Move Speed"
+          },
+          {
+            "id": 5001,
+            "key": "StatModsHealthPlusIcon",
+            "icon": "perk-images/StatMods/StatModsHealthPlusIcon.png",
+            "name": "Health Scaling",
+            "shortDesc": "+10-180 Health (based on level)"
+          }
+        ]
+      },
+      {
+        "shards": [
+          {
+            "id": 5011,
+            "key": "StatModsHealthScalingIcon",
+            "icon": "perk-images/StatMods/StatModsHealthScalingIcon.png",
+            "name": "Health",
+            "shortDesc": "+65 Health"
+          },
+          {
+            "id": 5013,
+            "key": "StatModsTenacityIcon",
+            "icon": "perk-images/StatMods/StatModsTenacityIcon.png",
+            "name": "Tenacity and Slow Resist",
+            "shortDesc": "+10% Tenacity and Slow Resist"
+          },
+          {
+            "id": 5001,
+            "key": "StatModsHealthPlusIcon",
+            "icon": "perk-images/StatMods/StatModsHealthPlusIcon.png",
+            "name": "Health Scaling",
+            "shortDesc": "+10-180 Health (based on level)"
+          }
+        ]
+      }
+    ]
+  }

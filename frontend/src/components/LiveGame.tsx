@@ -3,8 +3,24 @@ import queueJson from "../assets/json/queues.json";
 import championJson from "../assets/json/champion.json";
 import summonerSpellsJson from "../assets/json/summonerSpells.json";
 import runesJson from "../assets/json/runes.json";
+import statModsJson from "../assets/json/statMods.json";
+import arrowdown from '../assets/arrow-down.png'
 import forbiddenlight from "../assets/forbidden-light.png";
 import noneicon from "../assets/none.jpg";
+
+interface Shard {
+    id: number;
+    key: string;
+    icon: string;
+    name: string;
+    shortDesc: string;
+}
+
+interface Perk {
+    perkIds: number[];
+    perkStyle: number;
+    perkSubStyle: number;
+}
 
 interface Participant {
     puuid: string;
@@ -17,11 +33,7 @@ interface Participant {
     bot: boolean;
     summonerId: string;
     gameCustomizationObjects: any[];
-    perks: {
-        perkIds: number[];
-        perkStyle: number;
-        perkSubStyle: number;
-    };
+    perks: Perk;
 }
 
 interface Entry {
@@ -86,6 +98,17 @@ const ChampionImage: React.FC<{championId: number; teamId: number; isTeamIdSame:
     );
 };
 
+const BannedChampionsList: React.FC<{bannedChampions: any[]; isTeamIdSame: boolean; teamFilter?: number;}> = ({bannedChampions, isTeamIdSame, teamFilter}) => (
+    <div className="flex gap-1.5">
+        {bannedChampions.filter((bc) => (teamFilter ? bc.teamId === teamFilter : true)).map((bc) => (
+            <div key={bc.championId} className="relative pb-2">
+                <ChampionImage championId={bc.championId} teamId={bc.teamId} isTeamIdSame={isTeamIdSame} />
+                <img src={forbiddenlight} alt="forbidden" className="absolute h-5 bottom-0 left-1/2 transform -translate-x-1/2" />
+            </div>
+        ))}
+    </div>
+);
+
 const SummonerSpellImage: React.FC<{spellId: number}> = ({spellId}) => {
     const spellData = Object.values(summonerSpellsJson.data).find(
         (spell) => spell.key === spellId.toString()
@@ -99,46 +122,110 @@ const SummonerSpellImage: React.FC<{spellId: number}> = ({spellId}) => {
     );
 };
 
-const RuneImage: React.FC<{runeTypeId: number; runeId?: number}> = ({runeTypeId, runeId}) => {
+const IconImage: React.FC<{icon: string; alt: string; className?: string}> = ({icon, alt, className = ""}) => (
+    <img src={`https://ddragon.leagueoflegends.com/cdn/img/${icon}`} alt={alt} className={className} />
+)
+
+export const RuneImage: React.FC<{runeTypeId: number; runeId?: number}> = ({runeTypeId, runeId}) => {
     const runeTypeData = runesJson.find((runeType) => runeType.id === runeTypeId);
     if (!runeTypeData) return <span>Rune Type Not Found</span>;
 
     if (!runeId) return (
-        <img 
-            src={`https://ddragon.leagueoflegends.com/cdn/img/${runeTypeData.icon}`}
-            alt={runeTypeData.key}
-            className="h-6"
-        />
+        <IconImage icon={runeTypeData.icon} alt={runeTypeData.key} className="h-6" />
     );
 
     const runes = runeTypeData.slots.flatMap((slot) => slot.runes);
     const runeData = runes.find((rune) => rune.id === runeId);
     if (!runeData) return <span>Rune Not Found</span>;
     return (
-        <img 
-            src={`https://ddragon.leagueoflegends.com/cdn/img/${runeData.icon}`} 
-            alt={runeData.key} 
-            className="h-6"
-        />
+        <IconImage icon={runeData.icon} alt={runeData.key} className="h-6" />
     );
 };
 
-const BannedChampionsList: React.FC<{bannedChampions: any[], isTeamIdSame: boolean, teamFilter?: number;}> = ({bannedChampions, isTeamIdSame, teamFilter}) => (
-    <div className="flex gap-1.5">
-        {bannedChampions.filter((bc) => (teamFilter ? bc.teamId === teamFilter : true)).map((bc) => (
-            <div key={bc.championId} className="relative pb-2">
-                <ChampionImage championId={bc.championId} teamId={bc.teamId} isTeamIdSame={isTeamIdSame} />
-                <img src={forbiddenlight} alt="forbidden.png" className="absolute h-5 bottom-0 left-1/2 transform -translate-x-1/2" />
-            </div>
+export const ShardSlot: React.FC<{slot: {shards: Shard[]}; selectedId?: number }> = ({slot, selectedId}) => (
+    <div className="w-[60%] flex justify-evenly">
+        {slot.shards.map((shard, index) => (
+            <IconImage
+                key={index}
+                icon={shard.icon}
+                alt={shard.name}
+                className={`h-9 ${selectedId === shard.id ? "border-2 rounded-full border-purple-700" : "filter grayscale brightness-50"}`}
+            />
         ))}
     </div>
-);
+)
+
+export const RuneSlot: React.FC<{runes: { id: number; icon: string; name: string }[]; perkIds: number[]; height: string;}> = ({runes, perkIds, height}) => (
+    <div className="w-[80%] flex justify-evenly">
+        {runes.map((rune) => (
+            <IconImage
+                key={rune.id}
+                icon={rune.icon}
+                alt={rune.name}
+                className={`${height} ${perkIds.includes(rune.id) ? "border-2 rounded-full border-purple-700" : "filter grayscale brightness-50"}`}
+            />
+        ))}
+    </div>
+)
+
+const RunesList: React.FC<{runes: Perk}> = ({runes}) => {
+    const runePrimaryTypeData = runesJson.find((runeType) => runeType.id === runes.perkStyle);
+    if (!runePrimaryTypeData) return <span>Primary Rune Type Does Not Exist</span>
+    const [slotPrimary0, slotPrimary1, slotPrimary2, slotPrimary3] = runePrimaryTypeData.slots;
+
+    const runeSecondaryTypeData = runesJson.find((runeType) => runeType.id === runes.perkSubStyle);
+    if (!runeSecondaryTypeData) return <span>Secondary Rune Type Does Not Exist</span>
+    const [, slotSecondary1, slotSecondary2, slotSecondary3] = runeSecondaryTypeData.slots;
+
+    const [statMods0, statMods1, statMods2] = statModsJson.slots;
+
+    const selectedShard0 = statMods0.shards.find((shard) => runes.perkIds.includes(shard.id))?.id;
+    const selectedShard1 = statMods1.shards.find((shard) => runes.perkIds.includes(shard.id))?.id;
+    const selectedShard2 = statMods2.shards.find((shard) => runes.perkIds.includes(shard.id))?.id;
+
+    return (
+        <div className="flex justify-evenly">
+            <div className="w-[25%]">
+                <div className="flex items-center justify-center gap-4 bg-neutral-800 p-2 rounded">
+                    <IconImage icon={runePrimaryTypeData.icon} alt={runePrimaryTypeData.key} className="h-10" />
+                    <p className="font-bold text-lg text-neutral-100">{runePrimaryTypeData.name}</p>
+                </div>
+                <div className="flex flex-col gap-5 items-center mt-4">
+                    <RuneSlot runes={slotPrimary0.runes} perkIds={runes.perkIds} height="h-17" />
+                    <hr className="w-full text-neutral-300" />
+                    <RuneSlot runes={slotPrimary1.runes} perkIds={runes.perkIds} height="h-12" />
+                    <RuneSlot runes={slotPrimary2.runes} perkIds={runes.perkIds} height="h-12" />
+                    <RuneSlot runes={slotPrimary3.runes} perkIds={runes.perkIds} height="h-12" />
+                </div>
+            </div>
+
+            <div className="w-[25%]">
+                <div className="flex items-center justify-center gap-4 bg-neutral-800 p-2 rounded">
+                    <IconImage icon={runeSecondaryTypeData.icon} alt={runeSecondaryTypeData.key} className="h-10" />
+                    <p className="font-bold text-lg text-neutral-100">{runeSecondaryTypeData.name}</p>
+                </div>
+                <div className="flex flex-col gap-2 items-center mt-4 mb-4">
+                    <RuneSlot runes={slotSecondary1.runes} perkIds={runes.perkIds} height="h-12" />
+                    <RuneSlot runes={slotSecondary2.runes} perkIds={runes.perkIds} height="h-12" />
+                    <RuneSlot runes={slotSecondary3.runes} perkIds={runes.perkIds} height="h-12" />
+                </div>
+                <hr className="text-neutral-300" />
+                <div className="flex flex-col items-center mt-3 gap-1">
+                    <ShardSlot slot={statMods0} selectedId={selectedShard0} />
+                    <ShardSlot slot={statMods1} selectedId={selectedShard1} />
+                    <ShardSlot slot={statMods2} selectedId={selectedShard2} />
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const ParticipantRow: React.FC<{participant: Participant, liveData: LiveGameData, isBeingWatched: boolean, gridCols: string;}> = ({participant, liveData, isBeingWatched, gridCols}) => {
     const rankedSoloDuoEntry = liveData.entries.find((entry: Entry) => entry.queueType === "RANKED_SOLO_5x5");
+    const [showRunesDiv, setShowRunesDiv] = useState(false);
 
     return (
-        <div className={`grid ${gridCols} w-full items-center ${isBeingWatched ? "bg-neutral-200" : ""}`}>
+        <div className={`grid ${gridCols} w-full items-center relative  ${isBeingWatched ? "bg-neutral-700" : ""}`}>
             <div className="flex items-center gap-2 pl-0.5">
                 <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} />
                 <div className="flex flex-col gap-0.5">
@@ -150,10 +237,10 @@ const ParticipantRow: React.FC<{participant: Participant, liveData: LiveGameData
                     <RuneImage runeTypeId={participant.perks.perkSubStyle} />
                 </div>
                 <div>
-                    <p className={`font-normal text-lg ml-3 ${isBeingWatched ? "text-purple-700" : ""}`}>
+                    <p className={`font-normal text-lg ml-3 ${isBeingWatched ? "text-purple-400" : ""}`}>
                         {participant.riotId}
                     </p>
-                    <p className="font-normal text-sm ml-3 text-neutral-700">
+                    <p className="font-normal text-sm ml-3 text-neutral-400">
                         Level {liveData.summoner.summonerLevel}
                     </p>
                 </div>
@@ -161,6 +248,7 @@ const ParticipantRow: React.FC<{participant: Participant, liveData: LiveGameData
             {rankedSoloDuoEntry ? (
                 <>
                     <div className="flex items-center gap-2 justify-center">
+                        {/* copyright issues */}
                         <img src={`https://static.bigbrain.gg/assets/lol/ranks/s13/mini/${rankedSoloDuoEntry.tier.toLowerCase()}.svg`} alt={rankedSoloDuoEntry.tier.toLowerCase()} className="h-7" />
                         <div className="flex gap-0.5">
                             <p className="capitalize">{rankedSoloDuoEntry.tier.toLowerCase()} {rankedSoloDuoEntry.rank}</p>
@@ -174,7 +262,6 @@ const ParticipantRow: React.FC<{participant: Participant, liveData: LiveGameData
                 </>
             ) : (
                 <p>No Ranked Solo Duo entry found.</p>
-
             )}
             
             <div className="text-center">20%</div>
@@ -182,7 +269,20 @@ const ParticipantRow: React.FC<{participant: Participant, liveData: LiveGameData
             {gridCols.includes("9%") && (
                 <>
                     <div className="text-center">20%</div>
-                    <div className="text-center">20%</div>
+                    <div onClick={() => setShowRunesDiv(prev => !prev)} className="cursor-pointer font-semibold text-neutral-800 bg-neutral-300 brightness-75 text-center flex justify-center items-center p-2 mr-2">
+                        <p>Runes</p>
+                        <img src={arrowdown} alt="arrow-down" className={`h-4 ml-2 transform transition-transform ${showRunesDiv ? "rotate-180" : ""}`} />
+                    </div>
+                    <div className={`col-span-full  transition-all duration-300 overflow-hidden ${showRunesDiv ? "max-h-[800px]" : "max-h-0"}`}>
+                        <div className="bg-neutral-900 p-4">
+                        <h1 className="text-neutral-100 font-bold p-2 border-l-4 border-l-purple-600">Player Tags</h1>
+                        </div>
+                        <hr className="text-neutral-100" />
+                        <div className="bg-neutral-900 p-4">
+                            <h1 className="text-neutral-100 font-bold p-2 border-l-4 border-l-purple-600">Runes</h1>
+                            <RunesList runes={participant.perks} />
+                        </div>
+                    </div>
                 </>
             )}
         </div>
@@ -317,12 +417,12 @@ const LiveGame: React.FC<{data: any}> = ({data}) => {
 
     return (
         <>
-            <div className="flex mb-4 justify-between items-center">
+            <div className="flex mb-4 justify-between items-center text-neutral-100">
                 <div className="flex">
                     <h1 className="mr-2">
                         {gamemode}
                     </h1>
-                    <h1 className="mr-2 bg-purple-600 pl-2 pr-2 text-neutral-100 rounded font-bold text-sm">
+                    <h1 className="mr-2 bg-purple-600 pl-2 pr-2 rounded font-bold text-sm">
                         Live
                     </h1>
                     <h1 className="mr-2 border-r-1 border-l-1 pl-2 pr-2 border-neutral-600">
@@ -375,7 +475,7 @@ const LiveGame: React.FC<{data: any}> = ({data}) => {
                 </>
             ) : (
                 <>
-                    <div className="grid grid-cols-[40%_15%_9%_9%_9%_9%_9%] w-full mb-2">
+                    <div className="grid grid-cols-[40%_15%_9%_9%_9%_9%_9%] w-full mb-2 text-neutral-50">
                         <div className="flex items-center">
                             <h1 className="font-bold text-blue-500 mr-2">Blue Team</h1>
                             <h1 className="text-blue-500 mr-1">Tier Average:</h1>
@@ -385,10 +485,10 @@ const LiveGame: React.FC<{data: any}> = ({data}) => {
                         <p className="text-center">S15 WR</p>
                         <p className="text-center">Champion WR</p>
                         <p className="text-center">Champion Info</p>
-                        <p className="text-center">S14-3</p>
-                        <p className="text-center">Runes</p>
+                        <p className="text-center">S14-3 Rank</p>
+                        <p className="text-center"></p>
                     </div>
-                    <div className="flex flex-col border-l-4 gap-1 border-blue-500">
+                    <div className="flex flex-col border-l-4 gap-1 border-blue-500 text-neutral-200">
                         {mergedParticipants.filter((participant: MergedParticipant) => participant.teamId === 100).map((participant: MergedParticipant) => (
                             <ParticipantRow
                                 key={participant.puuid}
@@ -400,7 +500,7 @@ const LiveGame: React.FC<{data: any}> = ({data}) => {
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-[40%_15%_9%_9%_9%_9%_9%] w-full mb-2 mt-5">
+                    <div className="grid grid-cols-[40%_15%_9%_9%_9%_9%_9%] w-full mb-2 mt-5 text-neutral-50">
                         <div className="flex items-center">
                             <h1 className="font-bold text-red-500 mr-2">Red Team</h1>
                             <h1 className="text-red-500 mr-1">Tier Average:</h1>
@@ -411,9 +511,9 @@ const LiveGame: React.FC<{data: any}> = ({data}) => {
                         <p className="text-center">Champion WR</p>
                         <p className="text-center">Champion Info</p>
                         <p className="text-center">S14-3</p>
-                        <p className="text-center">Runes</p>
+                        <p className="text-center"></p>
                     </div>
-                    <div className="flex flex-col border-l-4 gap-1 border-red-500">
+                    <div className="flex flex-col border-l-4 gap-1 border-red-500 text-neutral-200">
                         {mergedParticipants.filter((participant: MergedParticipant) => participant.teamId === 200).map((participant: MergedParticipant) => (
                             <ParticipantRow
                                 key={participant.puuid}
