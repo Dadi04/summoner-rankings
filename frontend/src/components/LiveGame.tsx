@@ -222,10 +222,26 @@ const RunesList: React.FC<{runes: Perk}> = ({runes}) => {
 
 const ParticipantRow: React.FC<{participant: Participant, liveData: LiveGameData, isBeingWatched: boolean, gridCols: string;}> = ({participant, liveData, isBeingWatched, gridCols}) => {
     const rankedSoloDuoEntry = liveData.entries.find((entry: Entry) => entry.queueType === "RANKED_SOLO_5x5");
+    if (!rankedSoloDuoEntry) return <span>Ranked Solo Duo Information Not Found.</span>
     const [showRunesDiv, setShowRunesDiv] = useState(false);
+    const winratePercentage = Math.round(rankedSoloDuoEntry.wins / (rankedSoloDuoEntry.wins + rankedSoloDuoEntry.losses) * 100);
+
+    function getWinrateColor(winrate: number) {
+        if (winrate < 50) return "text-red-500";
+        if (winrate < 60) return "text-green-500";
+        if (winrate < 70) return "text-blue-500";
+        return "text-orange-500"
+    }
+
+    function getWinrateBackgroundColor(winrate: number) {
+        if (winrate < 50) return "bg-red-500";
+        if (winrate < 60) return "bg-green-500";
+        if (winrate < 70) return "bg-blue-500";
+        return "bg-orange-500"
+    }
 
     return (
-        <div className={`grid ${gridCols} w-full items-center relative  ${isBeingWatched ? "bg-neutral-700" : ""}`}>
+        <div className={`grid ${gridCols} w-full items-center relative  ${isBeingWatched ? "bg-[#303030]" : ""}`}>
             <div className="flex items-center gap-2 pl-0.5">
                 <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} />
                 <div className="flex flex-col gap-0.5">
@@ -255,9 +271,14 @@ const ParticipantRow: React.FC<{participant: Participant, liveData: LiveGameData
                             <p>({rankedSoloDuoEntry.leaguePoints}LP)</p>
                         </div>
                     </div>
-                    <div className="text-center">
-                        <p>{Math.round(rankedSoloDuoEntry.wins / (rankedSoloDuoEntry.wins + rankedSoloDuoEntry.losses) * 100)}%</p>
-                        <p>{rankedSoloDuoEntry.wins} / {rankedSoloDuoEntry.losses}</p>
+                    <div className="flex flex-col gap-0.5">
+                        <div className="flex justify-evenly">
+                            <p className={getWinrateColor(winratePercentage)}>{winratePercentage}%</p>
+                            <p>{rankedSoloDuoEntry.wins} / {rankedSoloDuoEntry.losses}</p>
+                        </div>
+                        <div className="w-full h-2 bg-neutral-700">
+                            <div className={`h-full ${getWinrateBackgroundColor(winratePercentage)}`} style={{width: `${winratePercentage}%` }}></div>
+                        </div>
                     </div>
                 </>
             ) : (
@@ -288,6 +309,30 @@ const ParticipantRow: React.FC<{participant: Participant, liveData: LiveGameData
         </div>
     );
 };
+
+const RefreshButton: React.FC<{region: string, player: any}> = ({region, player}) => {
+    const [cooldown, setCooldown] = useState(false);
+
+    const handleClick = () => {
+        if (cooldown) return;
+        setCooldown(true);
+
+        fetchWithRetry(`/api/lol/profile/${region}/by-puuid/${player.puuid}/livegame`);
+
+        setTimeout(() => {setCooldown(false);}, 300000);
+    };
+
+    return (
+        <button 
+            onClick={handleClick} 
+            disabled={cooldown} 
+            className={`focus:outline-none text-white font-medium rounded-lg text-sm px-5 py-2.5 
+                ${cooldown ? "bg-gray-500 cursor-not-allowed" : "bg-purple-700 hover:bg-purple-800"} 
+                focus:ring-4 focus:ring-purple-300 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900`}>
+            {cooldown ? "Wait 5 min..." : "Refresh"}
+        </button>
+    );
+}; 
 
 const delay = (ms : number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -324,10 +369,10 @@ const LiveGame: React.FC<{data: any}> = ({data}) => {
     if (!spectator) {
         return (
             <div className="text-center pt-2 pb-2">
-                <h2 className="text-2xl font-semibold text-neutral-800">
+                <h2 className="text-2xl font-semibold text-neutral-50">
                     "{player.gameName}#{player.tagLine}" is not in an active game.
                 </h2>
-                <p className="text-lg text-neutral-700">
+                <p className="text-lg text-neutral-200">
                     Please try again later if the summoner is currently in game.
                 </p>
             </div>
@@ -411,7 +456,7 @@ const LiveGame: React.FC<{data: any}> = ({data}) => {
         };
     });
 
-    if (loading) {
+    if (loading || !liveGameData) {
         return <div>Loading live game data...</div>;
     }
 
@@ -432,9 +477,7 @@ const LiveGame: React.FC<{data: any}> = ({data}) => {
                         <GameTimer gameLength={spectator.gameLength} gameStartTime={spectator.gameStartTime} />
                     </h1>
                 </div>
-                <button className="focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900">
-                    Refresh
-                </button>
+                <RefreshButton region={region} player={player} />
             </div>
 
             {isTeamIdSame ? (
@@ -475,11 +518,9 @@ const LiveGame: React.FC<{data: any}> = ({data}) => {
                 </>
             ) : (
                 <>
-                    <div className="grid grid-cols-[40%_15%_9%_9%_9%_9%_9%] w-full mb-2 text-neutral-50">
+                    <div className="grid grid-cols-[35%_20%_9%_9%_9%_9%_9%] w-full mb-2 text-neutral-50">
                         <div className="flex items-center">
                             <h1 className="font-bold text-blue-500 mr-2">Blue Team</h1>
-                            <h1 className="text-blue-500 mr-1">Tier Average:</h1>
-                            <h1 className="font-bold text-blue-500">avg</h1>
                         </div>
                         <p className="text-center">S15 Rank</p>
                         <p className="text-center">S15 WR</p>
@@ -495,16 +536,14 @@ const LiveGame: React.FC<{data: any}> = ({data}) => {
                                 participant={participant}
                                 liveData={participant.liveData}
                                 isBeingWatched={player.puuid === participant.puuid}
-                                gridCols="grid-cols-[40%_15%_9%_9%_9%_9%_9%]"
+                                gridCols="grid-cols-[35%_20%_9%_9%_9%_9%_9%]"
                             />
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-[40%_15%_9%_9%_9%_9%_9%] w-full mb-2 mt-5 text-neutral-50">
+                    <div className="grid grid-cols-[35%_20%_9%_9%_9%_9%_9%] w-full mb-2 mt-5 text-neutral-50">
                         <div className="flex items-center">
                             <h1 className="font-bold text-red-500 mr-2">Red Team</h1>
-                            <h1 className="text-red-500 mr-1">Tier Average:</h1>
-                            <h1 className="font-bold text-red-500">avg</h1>
                         </div>
                         <p className="text-center">S15 Rank</p>
                         <p className="text-center">S15 WR</p>
@@ -520,7 +559,7 @@ const LiveGame: React.FC<{data: any}> = ({data}) => {
                                 participant={participant}
                                 liveData={participant.liveData}
                                 isBeingWatched={player.puuid === participant.puuid}
-                                gridCols="grid-cols-[40%_15%_9%_9%_9%_9%_9%]"
+                                gridCols="grid-cols-[35%_20%_9%_9%_9%_9%_9%]"
                             />
                         ))}
                     </div>
