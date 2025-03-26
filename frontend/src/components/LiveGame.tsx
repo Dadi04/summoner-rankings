@@ -312,14 +312,51 @@ const ParticipantRow: React.FC<{participant: Participant, liveData: LiveGameData
 
 const RefreshButton: React.FC<{region: string, player: any}> = ({region, player}) => {
     const [cooldown, setCooldown] = useState(false);
+    const [remainingTime, setRemainingTime] = useState(0);
 
-    const handleClick = () => {
+    useEffect(() => {
+        const savedTime = localStorage.getItem("cooldownExpires");
+        if (savedTime) {
+            const expiresAt = parseInt(savedTime, 10);
+            const now = Date.now();
+            if (expiresAt > now) {
+                setCooldown(true);
+                setRemainingTime(Math.ceil((expiresAt - now) / 60000));
+            } else {
+                localStorage.removeItem("cooldownExpires");
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        if (cooldown && remainingTime > 0) {
+            const interval = setInterval(() => {
+                setRemainingTime((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(interval);
+                        setCooldown(false);
+                        localStorage.removeItem("cooldownExpires");
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 60000);
+
+            return () => clearInterval(interval);
+        }
+    }, [cooldown, remainingTime])
+
+    const handleClick = async () => {
         if (cooldown) return;
         setCooldown(true);
+        setRemainingTime(5);
 
-        fetchWithRetry(`/api/lol/profile/${region}/by-puuid/${player.puuid}/livegame`);
+        const expiresAt = Date.now() + 300000;
+        localStorage.setItem("cooldownExpires", expiresAt.toString());
 
-        setTimeout(() => {setCooldown(false);}, 300000);
+        await fetchWithRetry(`/api/lol/profile/${region}/by-puuid/${player.puuid}/livegame`);
+
+        window.location.reload();
     };
 
     return (
@@ -327,9 +364,8 @@ const RefreshButton: React.FC<{region: string, player: any}> = ({region, player}
             onClick={handleClick} 
             disabled={cooldown} 
             className={`focus:outline-none text-white font-medium rounded-lg text-sm px-5 py-2.5 
-                ${cooldown ? "bg-gray-500 cursor-not-allowed" : "bg-purple-700 hover:bg-purple-800"} 
-                focus:ring-4 focus:ring-purple-300 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900`}>
-            {cooldown ? "Wait 5 min..." : "Refresh"}
+                ${cooldown ? "bg-gray-500 cursor-not-allowed brightness-70" : "bg-purple-700 hover:bg-purple-800"} focus:ring-4 focus:ring-purple-300`}>
+            {cooldown ? `Wait ${remainingTime} min...` : "Refresh"}
         </button>
     );
 }; 
