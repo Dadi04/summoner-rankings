@@ -1,10 +1,6 @@
-// TODO 24.3.
-// DONE Change it so that the API is called only when the summoner page is opened, not when the form is submitted. 
-// DONE Refactor the scoreboard for live game solo/duo, flex, and ARAM.
-// Make 10 API calls to spectator, entries, and summoner using the puuid from spectator.participants.
+// Change so that the each tab on summoner page has its own link instead of just loading the component
 // On refresh and update button, call the API again, on refesh broswer don't.
 // Fix the favorite icon.
-// DONE Rename the variables findBannedChampions and sameTeam.
 
 // order scoreboard by rolu -> ?
 // DONE level -> summoner
@@ -13,4 +9,4 @@
 // s15 champion wr and played games -> take all of the games of that played of the start of the season -> filter the games by that champion
 // s15 champion kda -> same shit as above
 // s14 s3 rank ?
-// runes -> spectator.participants.perks
+// DONE runes -> spectator.participants.perks
