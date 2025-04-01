@@ -8,6 +8,7 @@ export default defineConfig({
     tailwindcss(),
     react()
   ],
+  assetsInclude: ['**/*.lottie'],
   server: {
     proxy: {
       '/api/lol/profile': {

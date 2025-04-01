@@ -65,12 +65,38 @@ app.MapGet("/api/lol/profile/{region}/{SummonerName}-{SummonerTag}", async (stri
     if (!regionMapping.TryGetValue(region, out var continent)) {
         return Results.Problem("Invalid region specified.");
     }
+    
+    var client = httpClientFactory.CreateClient();
+    
+    var retryPolicyResponse = Policy
+        .Handle<HttpRequestException>()
+        .OrResult<HttpResponseMessage>(r => r.StatusCode == (HttpStatusCode)429)
+        .WaitAndRetryAsync(
+            retryCount: 3,
+            sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)), // 2, 4, 8 sec...
+            onRetry: (outcome, timespan, retryAttempt, context) => {
+                Console.WriteLine($"[Response] Received {outcome.Result?.StatusCode}. Retrying after {timespan.TotalSeconds} seconds (attempt {retryAttempt}).");
+            });
+
+    var retryPolicyString = Policy
+        .Handle<HttpRequestException>()
+        .WaitAndRetryAsync(
+            retryCount: 3,
+            sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)), // 2, 4, 8 sec...
+            onRetry: (exception, timespan, retryAttempt, context) => {
+                Console.WriteLine($"[String] Exception: {exception.Message}. Retrying after {timespan.TotalSeconds} seconds (attempt {retryAttempt}).");
+            });
+
+    async Task<HttpResponseMessage> GetAsyncWithRetry(string url) {
+        return await retryPolicyResponse.ExecuteAsync(() => client.GetAsync(url));
+    }
+
+    async Task<string> GetStringAsyncWithRetry(string url) {
+        return await retryPolicyString.ExecuteAsync(() => client.GetStringAsync(url));
+    }
 
     string accountUrl = $"https://{continent}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{summonerName}/{SummonerTag}?api_key={apiKey}";
-
-    var client = httpClientFactory.CreateClient();
-    var accountResponse = await client.GetAsync(accountUrl);
-
+    var accountResponse = await GetAsyncWithRetry(accountUrl);
     if (!accountResponse.IsSuccessStatusCode) {
         return Results.Problem($"Error calling Riot API: {accountResponse.ReasonPhrase}");
     }
@@ -79,7 +105,6 @@ app.MapGet("/api/lol/profile/{region}/{SummonerName}-{SummonerTag}", async (stri
     var riotAccount = JsonSerializer.Deserialize<RiotPlayerDto>(accountJson, new JsonSerializerOptions {
         PropertyNameCaseInsensitive = true
     });
-
     if (riotAccount is null) {
         return Results.NotFound("Player data not found");
     }
@@ -87,7 +112,7 @@ app.MapGet("/api/lol/profile/{region}/{SummonerName}-{SummonerTag}", async (stri
     string puuid = riotAccount.puuid;
 
     string entriesUrl = $"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}?api_key={apiKey}";
-    var entriesResponse = await client.GetAsync(entriesUrl);
+    var entriesResponse = await GetAsyncWithRetry(entriesUrl);
     var entriesJson = await entriesResponse.Content.ReadAsStreamAsync();
     var entries = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(entriesJson, new JsonSerializerOptions {
         PropertyNameCaseInsensitive = true
@@ -105,7 +130,7 @@ app.MapGet("/api/lol/profile/{region}/{SummonerName}-{SummonerTag}", async (stri
     var rankedMatchesTasks = Enumerable.Range(0, loopTimes).Select(i => {
         int startAt = i * 100;
         string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime=1736452800&queue=420&start={startAt}&count=100&api_key={apiKey}";
-        return client.GetStringAsync(url);
+        return GetStringAsyncWithRetry(url);
     }).ToList();
 
     var batchResults = await Task.WhenAll(rankedMatchesTasks);
@@ -116,21 +141,13 @@ app.MapGet("/api/lol/profile/{region}/{SummonerName}-{SummonerTag}", async (stri
         }
     }
 
-    var retryPolicy = Policy
-        .Handle<HttpRequestException>()
-        .OrResult<HttpResponseMessage>(r => r.StatusCode == (HttpStatusCode)429)
-        .WaitAndRetryAsync(
-            retryCount: 3,
-            sleepDurationProvider: attempt => TimeSpan.FromMilliseconds(500)
-        );
-
     int maxConcurrentRequests = 3;
     var semaphore = new SemaphoreSlim(maxConcurrentRequests);
     var rankedMatchDetailsTasks = allMatches.Select(async matchId => {
         await semaphore.WaitAsync();
         try {
             string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/{matchId}?api_key={apiKey}";
-            HttpResponseMessage response = await retryPolicy.ExecuteAsync(() => client.GetAsync(url));
+            HttpResponseMessage response = await retryPolicyResponse.ExecuteAsync(() => client.GetAsync(url));
             string content = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<LeagueRankedSoloMatchDto>(
                 content, new JsonSerializerOptions {PropertyNameCaseInsensitive = true});
@@ -181,14 +198,14 @@ app.MapGet("/api/lol/profile/{region}/{SummonerName}-{SummonerTag}", async (stri
     string spectatorUrl = $"https://{region}.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={apiKey}"; // ukoliko nisi u gameu vraca 404
     string clashUrl = $"https://{region}.api.riotgames.com/lol/clash/v1/players/by-puuid/{puuid}?api_key={apiKey}"; // ukoliko nisi u clashu vraca [] i vraca 200
 
-    var summonerTask = client.GetStringAsync(summonerUrl);
-    var topMasteriesTask = client.GetStringAsync(topMasteriesUrl);
-    var challengesTask = client.GetStringAsync(challengesUrl);
-    var clashTask = client.GetStringAsync(clashUrl);
+    var summonerTask = GetStringAsyncWithRetry(summonerUrl);
+    var topMasteriesTask = GetStringAsyncWithRetry(topMasteriesUrl);
+    var challengesTask = GetStringAsyncWithRetry(challengesUrl);
+    var clashTask = GetStringAsyncWithRetry(clashUrl);
 
     await Task.WhenAll(summonerTask, topMasteriesTask, challengesTask, clashTask);
 
-    var spectatorResponse = await client.GetAsync(spectatorUrl);
+    var spectatorResponse = await GetAsyncWithRetry(spectatorUrl);
     object? spectatorData = null;
     if (spectatorResponse.IsSuccessStatusCode) {
         var spectatorJson = await spectatorResponse.Content.ReadAsStringAsync();
@@ -211,26 +228,56 @@ app.MapGet("/api/lol/profile/{region}/{SummonerName}-{SummonerTag}", async (stri
         Clash = JsonSerializer.Deserialize<object>(await clashTask),
         Region = region,
         ChampionStats = championStatsMap.Values,
-        PrefferedRole = preferredRoleMap.Values,
+        PreferredRole = preferredRoleMap.Values,
     };
 
     return Results.Ok(playerInfo);
 });
 
+app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/spectator", async (string region, string puuid, IHttpClientFactory httpClientFactory) => {
+    var client = httpClientFactory.CreateClient();
+    string spectatorUrl = $"https://{region}.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={apiKey}";
+    var spectatorResponse = await client.GetAsync(spectatorUrl);
+    object? spectatorData = null;
+    if (spectatorResponse.IsSuccessStatusCode) {
+        var spectatorJson = await spectatorResponse.Content.ReadAsStringAsync();
+        spectatorData = JsonSerializer.Deserialize<object>(spectatorJson);
+    } else if (spectatorResponse.StatusCode == System.Net.HttpStatusCode.NotFound) {
+        spectatorData = null;
+    } else {
+        Console.WriteLine($"Error calling spectator API: {spectatorResponse.StatusCode}");
+    }
+
+    var spectatorInfo = new {
+        Spectator = spectatorData, 
+    };
+
+    return Results.Ok(spectatorInfo);
+});
+
 app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/livegame", async (string region, string puuid, IHttpClientFactory httpClientFactory) => {
+    if (!regionMapping.TryGetValue(region, out var continent)) {
+        return Results.Problem("Invalid region specified.");
+    }
+
     var client = httpClientFactory.CreateClient();
 
     string summonerUrl = $"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={apiKey}";
     string entriesUrl = $"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}?api_key={apiKey}";
 
     var summonerTask = client.GetStringAsync(summonerUrl);
-    var entriesTask = client.GetStringAsync(entriesUrl);
+    
+    await Task.WhenAll(summonerTask);
 
-    await Task.WhenAll(summonerTask, entriesTask);
+    var entriesResponse = await client.GetAsync(entriesUrl);
+    var entriesJson = await entriesResponse.Content.ReadAsStreamAsync();
+    var entries = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(entriesJson, new JsonSerializerOptions {
+        PropertyNameCaseInsensitive = true
+    });
 
     var liveGameInfo = new {
         Summoner = JsonSerializer.Deserialize<object>(await summonerTask),
-        Entries = JsonSerializer.Deserialize<object>(await entriesTask),
+        Entries = entries,
     };
 
     return Results.Ok(liveGameInfo);
@@ -285,12 +332,12 @@ public class ParticipantDto {
 }
 
 public class ChampionStats {
+    public string ChampionName { get; set; } = string.Empty;
     public int Games { get; set; }
     public int Wins { get; set; }
     public int TotalKills { get; set; }
     public int TotalDeaths { get; set; }
     public int TotalAssists { get; set; }
-    public string ChampionName { get; set; } = string.Empty;
     public double WinRate => Games > 0 ? (double)Wins / Games * 100 : 0;
     public double AverageKDA => TotalDeaths > 0 ? (double)(TotalKills + TotalAssists) / TotalDeaths : (TotalKills + TotalAssists);
 }

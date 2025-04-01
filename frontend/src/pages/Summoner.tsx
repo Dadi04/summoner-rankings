@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import favorite from "../assets/favorite.svg";
-import Summary from '../components/Summary';
-import Champions from '../components/Champions';
-import Mastery from '../components/Mastery';
-import LiveGame from '../components/LiveGame';
+import loadingAnimation from "../assets/animations/loading.lottie";
 
 interface ApiData {
     summoner: {
@@ -14,6 +12,7 @@ interface ApiData {
     player: {
         gameName: string;
         tagLine: string;
+        puuid: string;
     };
     region: string;
 }
@@ -28,44 +27,37 @@ const Summoner: React.FC = () => {
 
     const [apiData, setApiData] = useState<ApiData | null>(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState("Summary");
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await fetch(`/api/lol/profile/${regionCode}/${summoner}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+        const storageKey = `apiData-${regionCode}-${encodedSummoner}`;
+        const storedData = localStorage.getItem(storageKey);
+
+        if (storedData) {
+            setApiData(JSON.parse(storedData));
+            setLoading(false);
+        } else {
+            const fetchData = async () => {
+                try {
+                    const response = await fetch(`/api/lol/profile/${regionCode}/${summoner}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    setApiData(data);
+                    localStorage.setItem(storageKey, JSON.stringify(data));
+                } catch (error) {
+                    console.log('Error fetching API data:', error);
+                } finally {
+                    setLoading(false);
                 }
-                const data = await response.json();
-                setApiData(data);
-            } catch (error) {
-                console.log('Error fetching API data:', error);
-            } finally {
-                setLoading(false);
             }
+            fetchData();
         }
-        fetchData();
     }, [regionCode, summoner]);
 
     if (loading || !apiData) {
-        return <div>Loading...</div>
+        return <div className="w-full flex justify-center mt-[125px]"><DotLottieReact src={loadingAnimation} className="w-[600px] bg-transparent" loop autoplay /></div>
     }
-
-    const renderTabContent = () => {
-        switch(activeTab) {
-            case "Summary":
-                return <Summary data={apiData}/>;
-            case "Champions":
-                return <Champions data={apiData}/>;
-            case "Mastery":
-                return <Mastery data={apiData}/>;
-            case "Live Game":
-                return <LiveGame data={apiData}/>;
-            default:
-                return null;
-        }
-    };
 
     return (
         <div className="container m-auto">
@@ -95,16 +87,17 @@ const Summoner: React.FC = () => {
                     </div>  
                 </div>
                 <div className="p-2">
-                    <ul className="flex gap-10">
-                        <li onClick={() => setActiveTab("Summary")} className={`cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 ${activeTab === "Summary" ? "bg-neutral-700 border text-purple-400 hover:text-neutral-100" : ""}`}>Summary</li>
-                        <li onClick={() => setActiveTab("Champions")} className={`cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 ${activeTab === "Champions" ? "bg-neutral-700 border text-purple-400 hover:text-neutral-100" : ""}`}>Champions</li>
-                        <li onClick={() => setActiveTab("Mastery")} className={`cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 ${activeTab === "Mastery" ? "bg-neutral-700 border text-purple-400 hover:text-neutral-100" : ""}`}>Mastery</li>
-                        <li onClick={() => setActiveTab("Live Game")} className={`cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 ${activeTab === "Live Game" ? "bg-neutral-700 border text-purple-400 hover:text-neutral-100" : ""}`}>Live Game</li>
+                    <ul className="flex gap-10 p-2">
+                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}`} state={{apiData: apiData}} className="cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 bg-neutral-700 border text-purple-400 hover:text-neutral-100">Summary</Link></li>
+                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/champions`} state={{apiData: apiData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Champions</Link></li>
+                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/mastery`} state={{apiData: apiData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Mastery</Link></li>
+                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: apiData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Live Game</Link></li>
                     </ul>
                 </div>
             </div>
-            <div className="container mt-2 mb-2 bg-neutral-800 rounded pt-3 pb-5 pr-5 pl-5">
-                {renderTabContent()}
+            <div className="mt-2 text-neutral-50 bg-neutral-800">
+                <h1 className="text-center">Summary</h1>
+                <pre>{JSON.stringify(apiData, null, 2)}</pre>
             </div>
         </div>
     );

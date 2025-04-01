@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@lottiefiles/dotlottie-react": "^0.13.2",
     "@tailwindcss/vite": "^4.0.14",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
