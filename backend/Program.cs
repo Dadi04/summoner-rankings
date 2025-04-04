@@ -8,6 +8,7 @@ using Azure;
 using Polly;
 using Polly.RateLimit;
 using Microsoft.AspNetCore.Identity;
+using backend.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 Env.Load();
@@ -61,11 +62,18 @@ var regionMapping = new Dictionary<string, string> {
     {"me1", "europe"},
 };
 
-app.MapGet("/api/lol/profile/{region}/{SummonerName}-{SummonerTag}", async (string region, string summonerName, string SummonerTag, IHttpClientFactory httpClientFactory) => {
+app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (string region, string summonerName, string summonerTag, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext) => {
     if (!regionMapping.TryGetValue(region, out var continent)) {
         return Results.Problem("Invalid region specified.");
     }
-    
+
+    var existingPlayer = await dbContext.Players.FirstOrDefaultAsync(p => p.SummonerName == summonerName
+                                                                    && p.SummonerTag == summonerTag
+                                                                    && p.Region == region);
+    if (existingPlayer != null) {
+        return Results.Ok(existingPlayer); 
+    }
+
     var client = httpClientFactory.CreateClient();
     
     var retryPolicyResponse = Policy
@@ -95,7 +103,7 @@ app.MapGet("/api/lol/profile/{region}/{SummonerName}-{SummonerTag}", async (stri
         return await retryPolicyString.ExecuteAsync(() => client.GetStringAsync(url));
     }
 
-    string accountUrl = $"https://{continent}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{summonerName}/{SummonerTag}?api_key={apiKey}";
+    string accountUrl = $"https://{continent}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{summonerName}/{summonerTag}?api_key={apiKey}";
     var accountResponse = await GetAsyncWithRetry(accountUrl);
     if (!accountResponse.IsSuccessStatusCode) {
         return Results.Problem($"Error calling Riot API: {accountResponse.ReasonPhrase}");
@@ -182,7 +190,7 @@ app.MapGet("/api/lol/profile/{region}/{SummonerName}-{SummonerTag}", async (stri
         stats.TotalDeaths += participant.deaths;
         stats.TotalAssists += participant.assists;
 
-        string role = participant.individualPosition.ToUpper();
+        string role = participant.teamPosition.ToUpper();
         if (preferredRoleMap.TryGetValue(role, out PrefferedRole? preferredRole)) {
             preferredRole.Games++;
             if (participant.win) preferredRole.Wins++;
@@ -216,22 +224,26 @@ app.MapGet("/api/lol/profile/{region}/{SummonerName}-{SummonerTag}", async (stri
         Console.WriteLine($"Error calling spectator API: {spectatorResponse.StatusCode}");
     }
 
-    var playerInfo = new {
-        Player = riotAccount,
-        Summoner = JsonSerializer.Deserialize<object>(await summonerTask),
-        Entries = entries,
-        TopMasteries = JsonSerializer.Deserialize<object>(await topMasteriesTask),
-        Matches = allMatches,
-        RankedMatches = rankedMatchInfoList,
-        Challenges = JsonSerializer.Deserialize<object>(await challengesTask),
-        Spectator = spectatorData,
-        Clash = JsonSerializer.Deserialize<object>(await clashTask),
+    var player  = new Player {
+        SummonerName = summonerName,
+        SummonerTag = summonerTag,
         Region = region,
-        ChampionStats = championStatsMap.Values,
-        PreferredRole = preferredRoleMap.Values,
+        Puuid = puuid,
+        SummonerData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await summonerTask)),
+        EntriesData = JsonSerializer.Serialize(entries),
+        TopMasteriesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await topMasteriesTask)),
+        MatchesData = JsonSerializer.Serialize(allMatches),
+        RankedMatchesData = JsonSerializer.Serialize(rankedMatchInfoList),
+        ChallengesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await challengesTask)),
+        SpectatorData = JsonSerializer.Serialize(spectatorData),
+        ClashData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await clashTask)),
+        ChampionStatsData = JsonSerializer.Serialize(championStatsMap.Values),
+        PreferredRoleData = JsonSerializer.Serialize(preferredRoleMap.Values),
     };
+    dbContext.Players.Add(player);
+    await dbContext.SaveChangesAsync();
 
-    return Results.Ok(playerInfo);
+    return Results.Ok(player);
 });
 
 app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/spectator", async (string region, string puuid, IHttpClientFactory httpClientFactory) => {
@@ -255,32 +267,17 @@ app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/spectator", async (string
     return Results.Ok(spectatorInfo);
 });
 
-app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/livegame", async (string region, string puuid, IHttpClientFactory httpClientFactory) => {
+app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/livegame", async (string region, string puuid, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext) => {
     if (!regionMapping.TryGetValue(region, out var continent)) {
         return Results.Problem("Invalid region specified.");
     }
 
-    var client = httpClientFactory.CreateClient();
+    var player = await dbContext.Players.FirstOrDefaultAsync(p => p.Puuid == puuid);
+    if (player == null) {
+        return Results.NotFound("Player not found.");
+    }
 
-    string summonerUrl = $"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={apiKey}";
-    string entriesUrl = $"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}?api_key={apiKey}";
-
-    var summonerTask = client.GetStringAsync(summonerUrl);
-    
-    await Task.WhenAll(summonerTask);
-
-    var entriesResponse = await client.GetAsync(entriesUrl);
-    var entriesJson = await entriesResponse.Content.ReadAsStreamAsync();
-    var entries = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(entriesJson, new JsonSerializerOptions {
-        PropertyNameCaseInsensitive = true
-    });
-
-    var liveGameInfo = new {
-        Summoner = JsonSerializer.Deserialize<object>(await summonerTask),
-        Entries = entries,
-    };
-
-    return Results.Ok(liveGameInfo);
+    return Results.Ok(player);
 });
 
 

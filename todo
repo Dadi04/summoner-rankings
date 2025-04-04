@@ -1,12 +1,4 @@
-// Change so that the each tab on summoner page has its own link instead of just loading the component
 // On refresh and update button, call the API again, on refesh broswer don't.
 // Fix the favorite icon.
 
 // order scoreboard by rolu -> ?
-// DONE level -> summoner
-// DONE s15 rank -> entries
-// DONE s15 wr -> entires (wins / (wins + loses))
-// s15 champion wr and played games -> take all of the games of that played of the start of the season -> filter the games by that champion
-// s15 champion kda -> same shit as above
-// s14 s3 rank ?
-// DONE runes -> spectator.participants.perks

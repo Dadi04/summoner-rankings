@@ -10,18 +10,29 @@ const Mastery: React.FC = () => {
         return <div>Error: Summoner parameter is missing.</div>;
     }
 
+    const summonerData = JSON.parse(apiData.summonerData);
+    const entriesData = JSON.parse(apiData.entriesData);
+    const topMasteriesData = JSON.parse(apiData.topMasteriesData);
+    const matchesData = JSON.parse(apiData.matchesData);
+    const rankedMatchesData = JSON.parse(apiData.rankedMatchesData);
+    const challengesData = JSON.parse(apiData.challengesData);
+    const spectatorData = JSON.parse(apiData.spectatorData);
+    const clashData = JSON.parse(apiData.clashData);
+    const championStatsData = JSON.parse(apiData.championStatsData);
+    const preferredRoleData = JSON.parse(apiData.preferredRoleData);
+
     return (
         <div className="container m-auto">
             <div className="w-full bg-neutral-800 mt-1">
                 <div className="flex border-b-1 pt-5 pb-5 pl-5">
                     <div className="relative p-3">
-                        <img src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/profileicon/${apiData.summoner.profileIconId}.png`} alt={apiData.summoner.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
-                        <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{apiData.summoner.summonerLevel}</span>
+                        <img src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/profileicon/${summonerData.profileIconId}.png`} alt={summonerData.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
+                        <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{summonerData.summonerLevel}</span>
                     </div>
                     <div className="pt-3 pb-3">
                         <div className="flex">
-                            <h1 className="text-white font-bold text-3xl mr-2">{apiData.player.gameName}</h1>
-                            <h1 className="text-neutral-400 text-3xl mr-2">#{apiData.player.tagLine}</h1>
+                            <h1 className="text-white font-bold text-3xl mr-2">{apiData.summonerName}</h1>
+                            <h1 className="text-neutral-400 text-3xl mr-2">#{apiData.summonerTag}</h1>
                             <button type="button" className="bg-neutral-200 pl-1.5 pr-1.5 rounded-lg">
                                 <img src={favorite} alt="favorite" className="h-6 border-2 border-neutral-700 rounded" />
                             </button>
@@ -48,7 +59,16 @@ const Mastery: React.FC = () => {
             </div>
             <div className="mt-2 text-neutral-50 bg-neutral-800">
                 <h1 className="text-center">Mastery</h1>
-                <pre>{JSON.stringify(apiData, null, 2)}</pre>
+                <pre>{JSON.stringify(summonerData, null, 2)}</pre>
+                <pre>{JSON.stringify(entriesData, null, 2)}</pre>
+                <pre>{JSON.stringify(championStatsData, null, 2)}</pre>
+                <pre>{JSON.stringify(preferredRoleData, null, 2)}</pre>
+                <pre>{JSON.stringify(topMasteriesData, null, 2)}</pre>
+                <pre>{JSON.stringify(matchesData, null, 2)}</pre>
+                <pre>{JSON.stringify(rankedMatchesData, null, 2)}</pre>
+                <pre>{JSON.stringify(spectatorData, null, 2)}</pre>
+                <pre>{JSON.stringify(clashData, null, 2)}</pre>
+                <pre>{JSON.stringify(challengesData, null, 2)}</pre>
             </div>
         </div>
     );

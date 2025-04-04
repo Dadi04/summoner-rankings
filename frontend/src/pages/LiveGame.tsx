@@ -46,25 +46,51 @@ interface Participant {
     perks: Perk;
 }
 
+interface Summoner {
+    accountId: string;
+    profileIconId: number;
+    revisionDate: number;
+    id: string;
+    puuid: string;
+    summonerLevel: number;
+}
+
 interface Entry {
     queueType: string;
     tier: string;
     rank: string;
-    leaguePoints: number;
+    LeaguePoints: number;
     wins: number;
     losses: number;
 }
 
-interface LiveGameData {
-    summoner: {
-        puuid: string;
-        summonerLevel: number;
-    };
-    entries: Entry[];
+interface Player {
+    summonerName: string;
+    summonerTag: string;
+    region: string;
+    puuid: string;
+    playerData: any;
+    summonerData: Summoner;
+    entriesData: Entry[];
+    topMasteriesData: any;
+    matchesData: any;
+    rankedMatchesData: any;
+    challengesData: any;
+    spectatorData: any;
+    clashData: any;
+    championStatsData: ChampionStats[];
+    preferredRoleData: any;
 }
 
-interface MergedParticipant extends Participant {
-    liveData?: LiveGameData;
+interface ChampionStats {
+    ChampionName: string;
+    Games: number;
+    Wins: number;
+    TotalKills: number;
+    TotalDeaths: number;
+    TotalAssists: number;
+    WinRate: number;
+    AverageKDA: number;
 }
 
 const GameTimer: React.FC<{gameLength: number, gameStartTime: number}> = ({ gameLength, gameStartTime }) => {
@@ -230,21 +256,42 @@ const RunesList: React.FC<{runes: Perk}> = ({runes}) => {
     );
 };
 
-const ParticipantRow: React.FC<{participant: Participant, liveData: LiveGameData, isBeingWatched: boolean, gridCols: string;}> = ({participant, liveData, isBeingWatched, gridCols}) => {
-    if (!liveData || !Array.isArray(liveData.entries)) {
-        return <span className="p-1">Live game data is currently unavailable.</span>
-    }
+const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolean; liveGameData: Player | null; region: string; gridCols: string;}> = ({participant, isBeingWatched, liveGameData, region, gridCols}) => {
+    const entries = typeof liveGameData?.entriesData === "string" ? JSON.parse(liveGameData.entriesData) : liveGameData?.entriesData || [];
+    const summoner = typeof liveGameData?.summonerData === "string" ? JSON.parse(liveGameData.summonerData) : liveGameData?.summonerData || [];
+    const championStats = typeof liveGameData?.championStatsData === "string" ? JSON.parse(liveGameData.championStatsData) : liveGameData?.championStatsData || [];
+    // const preferredRole = typeof liveGameData?.preferredRoleData === "string" ? JSON.parse(liveGameData.preferredRoleData) : liveGameData?.preferredRoleData || [];
+    const rankedSoloDuoEntry = entries.find((entry: Entry) => entry.queueType === "RANKED_SOLO_5x5");
 
-    const rankedSoloDuoEntry = liveData.entries.find((entry: Entry) => entry.queueType === "RANKED_SOLO_5x5");
-    if (!rankedSoloDuoEntry) {
-        return <span>Ranked Solo Duo Information Not Found.</span>
-
-    }
-
+    const [champStats, setChampStats] = useState<ChampionStats | null>(null);
     const [showRunesDiv, setShowRunesDiv] = useState(false);
-    const winratePercentage = Math.round(rankedSoloDuoEntry.wins / (rankedSoloDuoEntry.wins + rankedSoloDuoEntry.losses) * 100);
+    let winratePercentage = 0;
+    if (rankedSoloDuoEntry) {
+        winratePercentage = Math.round(rankedSoloDuoEntry.wins / (rankedSoloDuoEntry.wins + rankedSoloDuoEntry.losses) * 100);
+    }
+    useEffect(() => {
+        fetch("https://ddragon.leagueoflegends.com/cdn/15.7.1/data/en_US/champion.json")
+            .then(response => response.json())
+            .then(data => {
+                const champions = data.data
+                const championIdtoName: {[key: number]: string} = {};
+                
+                Object.values(champions).forEach((champ:any) => {
+                    championIdtoName[champ.key] = champ.id;
+                })
+
+                const championName = championIdtoName[participant.championId];
+                const stats = championStats.find((cs: ChampionStats) => cs.ChampionName === championName);
+                setChampStats(stats);
+            
+            })
+            .catch(error => console.error("Error fetching champion data: ", error));
+    }, [participant.championId]);
+    
+    // const role = preferredRole
 
     function getWinrateColor(winrate: number) {
+        if (winrate == -1) return "";
         if (winrate < 50) return "text-red-500";
         if (winrate < 60) return "text-green-500";
         if (winrate < 70) return "text-blue-500";
@@ -256,6 +303,15 @@ const ParticipantRow: React.FC<{participant: Participant, liveData: LiveGameData
         if (winrate < 60) return "bg-green-500";
         if (winrate < 70) return "bg-blue-500";
         return "bg-orange-500"
+    }
+
+    function getKDAColor(kda: number) {
+        if (kda == -1) return "";
+        if (kda < 1.00) return "text-red-500";
+        if (kda < 3.00) return "";
+        if (kda < 4.00) return "text-green-500";
+        if (kda < 5.00) return "text-blue-500";
+        return "text-orange-500"
     }
 
     return (
@@ -271,11 +327,13 @@ const ParticipantRow: React.FC<{participant: Participant, liveData: LiveGameData
                     <RuneImage runeTypeId={participant.perks.perkSubStyle} />
                 </div>
                 <div>
-                    <p className={`font-normal text-lg ml-3 ${isBeingWatched ? "text-purple-400" : ""}`}>
-                        {participant.riotId}
-                    </p>
+                    <Link to={`/lol/profile/${region}/${participant.riotId.replace(/#/g, '-')}`} className="cursor-pointer hover:underline">
+                        <p className={`font-normal text-lg ml-3 ${isBeingWatched ? "text-purple-400" : ""}`}>
+                            {participant.riotId}
+                        </p>
+                    </Link>
                     <p className="font-normal text-sm ml-3 text-neutral-400">
-                        Level {liveData.summoner.summonerLevel}
+                        {summoner.summonerLevel ? `Level ${summoner.summonerLevel}` : 'Level N/A'}
                     </p>
                 </div>
             </div>
@@ -286,7 +344,7 @@ const ParticipantRow: React.FC<{participant: Participant, liveData: LiveGameData
                         <img src={`https://static.bigbrain.gg/assets/lol/ranks/s13/mini/${rankedSoloDuoEntry.tier.toLowerCase()}.svg`} alt={rankedSoloDuoEntry.tier.toLowerCase()} className="h-7" />
                         <div className="flex gap-0.5">
                             <p className="capitalize">{rankedSoloDuoEntry.tier.toLowerCase()} {rankedSoloDuoEntry.rank}</p>
-                            <p>({rankedSoloDuoEntry.leaguePoints}LP)</p>
+                            <p>({rankedSoloDuoEntry.LeaguePoints}LP)</p>
                         </div>
                     </div>
                     <div className="flex flex-col gap-0.5">
@@ -300,14 +358,28 @@ const ParticipantRow: React.FC<{participant: Participant, liveData: LiveGameData
                     </div>
                 </>
             ) : (
-                <p>No Ranked Solo Duo entry found.</p>
+                <>
+                    <p className="text-center">Rank not found</p>
+                    <p className="text-center">Winrate not found</p>
+                </>
             )}
             
-            <div className="text-center">20%</div>
-            <div className="text-center">20%</div>
+            <div className="text-center">
+                <p className={getWinrateColor(champStats ? Math.round(champStats.WinRate) : -1)}>
+                    {champStats ? `${Math.round(champStats.WinRate)}%` : "-"}
+                </p>
+                <p>{champStats ? `(${champStats.Games} Played)` : ""}</p>
+            </div>
+            <div className="text-center">
+                <p className={getKDAColor(champStats ? Math.round(champStats.AverageKDA*100)/100 : -1)}>
+                    {champStats ? `${Math.round(champStats.AverageKDA*100)/100}:1` : "-"}
+                </p>
+                <p>
+                    {champStats ? `(${Math.round(champStats.TotalKills/champStats.Games*10)/10} / ${Math.round(champStats.TotalDeaths/champStats.Games*10)/10} / ${Math.round(champStats.TotalAssists/champStats.Games*10)/10})` : ""}
+                </p>
+            </div>
             {gridCols.includes("9%") && (
                 <>
-                    <div className="text-center">20%</div>
                     <div onClick={() => setShowRunesDiv(prev => !prev)} className="cursor-pointer font-semibold text-neutral-800 bg-neutral-300 brightness-75 text-center flex justify-center items-center p-2 mr-2">
                         <p>Runes</p>
                         <img src={arrowdown} alt="arrow-down" className={`h-4 ml-2 transform transition-transform ${showRunesDiv ? "rotate-180" : ""}`} />
@@ -328,13 +400,7 @@ const ParticipantRow: React.FC<{participant: Participant, liveData: LiveGameData
     );
 };
 
-interface RefreshButtonProps {
-    region: string;
-    player: any;
-    setSpectatorData: React.Dispatch<React.SetStateAction<any>>;
-}
-
-const RefreshButton: React.FC<RefreshButtonProps> = ({region, player, setSpectatorData}) => {
+const RefreshButton: React.FC<{region: string; puuid: string; setSpectatorData: React.Dispatch<React.SetStateAction<any>>;}> = ({region, puuid, setSpectatorData}) => {
     const [cooldown, setCooldown] = useState(false);
     const [remainingTime, setRemainingTime] = useState(0);
 
@@ -377,9 +443,9 @@ const RefreshButton: React.FC<RefreshButtonProps> = ({region, player, setSpectat
 
         const expiresAt = Date.now() + 300000;
         localStorage.setItem("cooldownExpires", expiresAt.toString());
-
+        console.log(region, puuid);
         try {
-            const response = await fetchWithRetry(`/api/lol/profile/${region}/by-puuid/${player.puuid}/spectator`); 
+            const response = await fetch(`/api/lol/profile/${region}/by-puuid/${puuid}/spectator`); 
             if (!response.ok) {
                 console.error("API Error:", response.statusText);
             } else {
@@ -402,29 +468,6 @@ const RefreshButton: React.FC<RefreshButtonProps> = ({region, player, setSpectat
     );
 }; 
 
-const delay = (ms : number) => new Promise(resolve => setTimeout(resolve, ms));
-
-async function fetchWithRetry(url: string, options: RequestInit = {}, maxRetries: number = 5): Promise<Response> {
-    let attempt = 0;
-    while (true) {
-        attempt++;
-        const response = await fetch(url, options);
-        if (response.status !== 429) {
-            return response;
-        } if (attempt >= maxRetries) {
-            throw new Error(`Max retries reached for URL: ${url}`);
-        }
-        let retryAfterSeconds = 10;
-        const retryAfterHeader = response.headers.get('Retry-After');
-        if (retryAfterHeader && !isNaN(parseInt(retryAfterHeader))) {
-            retryAfterSeconds = parseInt(retryAfterHeader);
-        }
-        const waitTime = retryAfterSeconds * 1000 * attempt;
-        console.warn(`Received 429 for ${url}. Retry attempt ${attempt} in ${waitTime} ms.`);
-        await delay(waitTime);
-    }
-}
-
 const LiveGame: React.FC = () => {
     const location = useLocation();
     const data = location.state?.apiData;
@@ -432,33 +475,47 @@ const LiveGame: React.FC = () => {
     if (!encodedSummoner) {
         return <div>Error: Summoner parameter is missing.</div>;
     }
+    if (!regionCode) {
+        return <div>Error: RegionCode parameter is missing.</div>;
+    }
+    
+    // const playerData = JSON.parse(data.summonerData)
+    const summonerData = JSON.parse(data.summonerData);
+    // const entriesData = JSON.parse(data.entriesData);
+    // const topMasteriesData = JSON.parse(data.topMasteriesData);
+    // const matchesData = JSON.parse(data.matchesData);
+    // const rankedMatchesData = JSON.parse(data.rankedMatchesData);
+    // const challengesData = JSON.parse(data.challengesData);
+    const spectatorData = JSON.parse(data.spectatorData);
+    // const clashData = JSON.parse(data.clashData);
+    // const championStatsData = JSON.parse(data.championStatsData);
+    // const preferredRoleData = JSON.parse(data.preferredRoleData);
 
-    const {spectator, player, region} = data;
-    const [spectatorData, setSpectatorData] = useState(spectator);
-    if (!spectatorData) {
+    const [newSpectatorData, setSpectatorData] = useState(spectatorData);
+    if (!newSpectatorData) {
         return (
             <>
                 <div className="m-auto container mt-2 text-center bg-neutral-800">
                     <div className="flex border-b-1 pt-5 pb-5 pl-5">
                         <div className="relative p-3">
-                            <img src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/profileicon/${data.summoner.profileIconId}.png`} alt={data.summoner.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
-                            <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{data.summoner.summonerLevel}</span>
+                            <img src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/profileicon/${summonerData.profileIconId}.png`} alt={summonerData.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
+                            <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{summonerData.summonerLevel}</span>
                         </div>
                         <div className="pt-3 pb-3">
                             <div className="flex">
-                                <h1 className="text-white font-bold text-3xl mr-2">{data.player.gameName}</h1>
-                                <h1 className="text-neutral-400 text-3xl mr-2">#{data.player.tagLine}</h1>
+                                <h1 className="text-white font-bold text-3xl mr-2">{data.summonerName}</h1>
+                                <h1 className="text-neutral-400 text-3xl mr-2">#{data.summonerTag}</h1>
                                 <button type="button" className="bg-neutral-200 pl-1.5 pr-1.5 rounded-lg">
                                     <img src={favorite} alt="favorite" className="h-6 border-2 border-neutral-700 rounded" />
                                 </button>
                             </div>
                             <div className="flex text-sm text-neutral-100">
                                 <div className="pt-2 pb-2 pl-1">
-                                    <p className="uppercase border-r-1 pr-2">{data.region}</p>
+                                    <p className="uppercase border-r-1 pr-2">{regionCode}</p>
                                 </div>
                                 <p className="p-2">Ladder Rank num </p>
                             </div>
-                            <div>
+                            <div className="w-fit">
                                 <button type="button" className="focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-semibold rounded-lg text-md px-8 py-2.5 mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900">Update</button>
                             </div>
                         </div>  
@@ -475,7 +532,7 @@ const LiveGame: React.FC = () => {
                 
                 <div className="m-auto container mt-2 text-center p-4 bg-neutral-800">
                     <h2 className="text-2xl font-semibold text-neutral-50">
-                        "{player.gameName}#{player.tagLine}" is not in an active game.
+                        "{data.summonerName}#{data.summonerTag}" is not in an active game.
                     </h2>
                     <p className="text-lg text-neutral-200">
                         Please try again later if the summoner is currently in game.
@@ -485,54 +542,111 @@ const LiveGame: React.FC = () => {
         )
     }
 
-    const [liveGameData, setLiveGameData] = useState<LiveGameData[]>([]);
+    const [liveGameData, setLiveGameData] = useState<Player[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
-        const storageKey = `liveGameData-${region}-${encodedSummoner}`;
+        const storageKey = `liveGameData-${regionCode}-${encodedSummoner}`;
         const storedData = localStorage.getItem(storageKey);
 
         if (storedData) {
             setLiveGameData(JSON.parse(storedData));
-        } else {
-            const fetchData = async () => {
-                try {
-                    const fetchPromises = spectatorData.participants.map(async (participant: Participant) => {
-                        const response = await fetchWithRetry(`/api/lol/profile/${region}/by-puuid/${participant.puuid}/livegame`);
+            setLoading(false);
+            return;
+        } 
+
+        const fetchData = async () => {
+            try {
+                const fetchPromises = newSpectatorData.participants.map(async (participant: Participant) => {
+                    try {
+
+                        const response = await fetch(`/api/lol/profile/${regionCode}/by-puuid/${participant.puuid}/livegame`);
                         if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status} for ${participant.puuid}`);
+                            if (response.status === 404) {
+                                console.warn(`Player with puuid ${participant.puuid} not found. Skipping.`);
+                                return null;
+                            } else {
+                                throw new Error(`HTTP error! status: ${response.status} for ${participant.puuid}`);
+                            }
                         }
                         return response.json();
-                    });
+                    } catch (error) {
+                        console.error(`Error fetching data for puuid ${participant.puuid}:`, error);
+                        return null;
+                    }
+                });
 
-                    const data = await Promise.all(fetchPromises);
-                    setLiveGameData(data);
-                    localStorage.setItem(storageKey, JSON.stringify(data));
-                } catch (error) {
-                    console.error("Error fetching live game data:", error);
-                } finally {
-                    setLoading(false);
-                }
-            };
-            fetchData();
-        }
-    }, [region, encodedSummoner, spectatorData.participants]);
+                const data = await Promise.all(fetchPromises);
+                const parsedData = data.map(item => {
+                    if (item === null) return null;
+                    
+                    return {
+                        ...item,
+                        challengesData:
+                            typeof item.challengesData === "string" && item.challengesData.trim()
+                            ? JSON.parse(item.challengesData)
+                            : item.challengesData,
+                        championStatsData:
+                            typeof item.championStatsData === "string" && item.championStatsData.trim()
+                            ? JSON.parse(item.championStatsData)
+                            : item.championStatsData,
+                        clashData:
+                            typeof item.clashData === "string" && item.clashData.trim()
+                            ? JSON.parse(item.clashData)
+                            : item.clashData,
+                        entriesData:
+                            typeof item.entriesData === "string" && item.entriesData.trim()
+                            ? JSON.parse(item.entriesData)
+                            : item.entriesData,
+                        matchesData:
+                            typeof item.matchesData === "string" && item.matchesData.trim()
+                            ? JSON.parse(item.matchesData)
+                            : item.matchesData,
+                        playerData:
+                            typeof item.playerData === "string" && item.playerData.trim()
+                            ? JSON.parse(item.playerData)
+                            : item.playerData,
+                        preferredRoleData:
+                            typeof item.preferredRoleData === "string" && item.preferredRoleData.trim()
+                            ? JSON.parse(item.preferredRoleData)
+                            : item.preferredRoleData,
+                        rankedMatchesData:
+                            typeof item.rankedMatchesData === "string" && item.rankedMatchesData.trim()
+                            ? JSON.parse(item.rankedMatchesData)
+                            : item.rankedMatchesData,
+                        spectatorData:
+                            typeof item.spectatorData === "string" && item.spectatorData.trim()
+                            ? JSON.parse(item.spectatorData)
+                            : item.spectatorData,
+                        summonerData:
+                            typeof item.summonerData === "string" && item.summonerData.trim()
+                            ? JSON.parse(item.summonerData)
+                            : item.summonerData,
+                        topMasteriesData:
+                            typeof item.topMasteriesData === "string" && item.topMasteriesData.trim()
+                            ? JSON.parse(item.topMasteriesData)
+                            : item.topMasteriesData,
+                    };
+                });
+                setLiveGameData(parsedData);
+                localStorage.setItem(storageKey, JSON.stringify(data));
+            } catch (error) {
+                console.error("Error fetching live game data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, [regionCode, encodedSummoner, newSpectatorData.participants]);
 
-    const queueId = spectatorData.gameQueueConfigId;
+    console.log(liveGameData);
+    const queueId = newSpectatorData.gameQueueConfigId;
     const queueData = getQueueData(queueId);
     const gamemode = queueData ? queueData.description : "Unknown game mode";
     const map = queueData ? queueData.map : "Unknown map";
-    const isTeamIdSame = spectatorData.participants.every(
-        (participant: Participant) => participant.teamId === spectatorData.participants[0].teamId
+    const isTeamIdSame = newSpectatorData.participants.every(
+        (participant: Participant) => participant.teamId === newSpectatorData.participants[0].teamId
     );
-
-    const mergedParticipants = spectatorData.participants.map((participant: Participant) => {
-        const liveData = liveGameData.find(data => data.summoner.puuid === participant.puuid);
-        return {
-            ...participant,
-            liveData,
-        };
-    });
 
     if (loading || !liveGameData) {
         return (
@@ -540,13 +654,13 @@ const LiveGame: React.FC = () => {
                 <div className="w-full bg-neutral-800 mt-1">
                     <div className="flex border-b-1 pt-5 pb-5 pl-5">
                         <div className="relative p-3">
-                            <img src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/profileicon/${data.summoner.profileIconId}.png`} alt={data.summoner.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
-                            <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{data.summoner.summonerLevel}</span>
+                            <img src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/profileicon/${summonerData.profileIconId}.png`} alt={summonerData.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
+                            <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{summonerData.summonerLevel}</span>
                         </div>
                         <div className="pt-3 pb-3">
                             <div className="flex">
-                                <h1 className="text-white font-bold text-3xl mr-2">{data.player.gameName}</h1>
-                                <h1 className="text-neutral-400 text-3xl mr-2">#{data.player.tagLine}</h1>
+                                <h1 className="text-white font-bold text-3xl mr-2">{data.summonerName}</h1>
+                                <h1 className="text-neutral-400 text-3xl mr-2">#{data.summonerTag}</h1>
                                 <button type="button" className="bg-neutral-200 pl-1.5 pr-1.5 rounded-lg">
                                     <img src={favorite} alt="favorite" className="h-6 border-2 border-neutral-700 rounded" />
                                 </button>
@@ -583,13 +697,13 @@ const LiveGame: React.FC = () => {
             <div className="w-full bg-neutral-800 mt-1">
                 <div className="flex border-b-1 pt-5 pb-5 pl-5">
                     <div className="relative p-3">
-                        <img src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/profileicon/${data.summoner.profileIconId}.png`} alt={data.summoner.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
-                        <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{data.summoner.summonerLevel}</span>
+                        <img src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/profileicon/${summonerData.profileIconId}.png`} alt={summonerData.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
+                        <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{summonerData.summonerLevel}</span>
                     </div>
                     <div className="pt-3 pb-3">
                         <div className="flex">
-                            <h1 className="text-white font-bold text-3xl mr-2">{data.player.gameName}</h1>
-                            <h1 className="text-neutral-400 text-3xl mr-2">#{data.player.tagLine}</h1>
+                            <h1 className="text-white font-bold text-3xl mr-2">{data.summonerName}</h1>
+                            <h1 className="text-neutral-400 text-3xl mr-2">#{data.summonerTag}</h1>
                             <button type="button" className="bg-neutral-200 pl-1.5 pr-1.5 rounded-lg">
                                 <img src={favorite} alt="favorite" className="h-6 border-2 border-neutral-700 rounded" />
                             </button>
@@ -626,24 +740,24 @@ const LiveGame: React.FC = () => {
                         {map}
                     </h1>
                     <h1 className="mr-2">
-                        <GameTimer gameLength={spectatorData.gameLength} gameStartTime={spectatorData.gameStartTime} />
+                        <GameTimer gameLength={newSpectatorData.gameLength} gameStartTime={newSpectatorData.gameStartTime} />
                     </h1>
                 </div>
-                <RefreshButton region={region} player={player} setSpectatorData={setSpectatorData} />
+                <RefreshButton region={data.region} puuid={data.puuid} setSpectatorData={setSpectatorData} />
             </div>
 
             {isTeamIdSame ? (
                 <div className="bg-neutral-800">
                     <div className="flex items-center justify-between mb-2">
                         <h1 className="text-xl font-semibold">Bans</h1>
-                        <BannedChampionsList bannedChampions={spectatorData.bannedChampions} isTeamIdSame={isTeamIdSame} />
+                        <BannedChampionsList bannedChampions={newSpectatorData.bannedChampions} isTeamIdSame={isTeamIdSame} />
                     </div>
                     <hr className="text-neutral-400" />
                 </div>
             ) : (
                 <div className="flex w-full justify-between bg-neutral-800 p-2">
-                    <BannedChampionsList bannedChampions={spectatorData.bannedChampions} isTeamIdSame={isTeamIdSame} teamFilter={100} />
-                    <BannedChampionsList bannedChampions={spectatorData.bannedChampions} isTeamIdSame={isTeamIdSame} teamFilter={200} />
+                    <BannedChampionsList bannedChampions={newSpectatorData.bannedChampions} isTeamIdSame={isTeamIdSame} teamFilter={100} />
+                    <BannedChampionsList bannedChampions={newSpectatorData.bannedChampions} isTeamIdSame={isTeamIdSame} teamFilter={200} />
                 </div>
             )}
 
@@ -657,12 +771,13 @@ const LiveGame: React.FC = () => {
                         <h1 className="text-center">Matches</h1>
                     </div>
                     <div className="flex flex-col gap-4">
-                        {mergedParticipants.map((participant: MergedParticipant) => (
+                        {newSpectatorData.participants.map((participant: Participant) => (
                             <ParticipantRow
                                 key={participant.puuid}
                                 participant={participant}
-                                liveData={participant.liveData!}
-                                isBeingWatched={player.puuid === participant.puuid}
+                                isBeingWatched={data.Puuid === participant.puuid}
+                                liveGameData={liveGameData.find(player => player?.puuid === participant.puuid) || null}
+                                region={regionCode}
                                 gridCols="grid-cols-[50%_12.5%_12.5%_12.5%_12.5%]"
                             />
                         ))}
@@ -670,7 +785,7 @@ const LiveGame: React.FC = () => {
                 </div>
             ) : (
                 <div className="bg-neutral-800 mb-2 p-2">
-                    <div className="grid grid-cols-[35%_20%_9%_9%_9%_9%_9%] w-full mb-2 text-neutral-50">
+                    <div className="grid grid-cols-[35%_20%_12%_12%_12%_9%] w-full mb-2 text-neutral-50">
                         <div className="flex items-center">
                             <h1 className="font-bold text-blue-500 mr-2">Blue Team</h1>
                         </div>
@@ -678,22 +793,22 @@ const LiveGame: React.FC = () => {
                         <p className="text-center">S15 WR</p>
                         <p className="text-center">Champion WR</p>
                         <p className="text-center">Champion Info</p>
-                        <p className="text-center">S14-3 Rank</p>
                         <p className="text-center"></p>
                     </div>
                     <div className="flex flex-col border-l-4 gap-1 border-blue-500 text-neutral-200">
-                        {mergedParticipants.filter((participant: MergedParticipant) => participant.teamId === 100).map((participant: MergedParticipant) => (
+                        {newSpectatorData.participants.filter((participant: Participant) => participant.teamId === 100).map((participant: Participant) => (
                             <ParticipantRow
                                 key={participant.puuid}
                                 participant={participant}
-                                liveData={participant.liveData!}
-                                isBeingWatched={player.puuid === participant.puuid}
-                                gridCols="grid-cols-[35%_20%_9%_9%_9%_9%_9%]"
+                                isBeingWatched={data.Puuid === participant.puuid}
+                                liveGameData={liveGameData.find(player => player?.puuid === participant.puuid) || null}
+                                region={regionCode}
+                                gridCols="grid-cols-[35%_20%_12%_12%_12%_9%]"
                             />
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-[35%_20%_9%_9%_9%_9%_9%] w-full mb-2 mt-5 text-neutral-50">
+                    <div className="grid grid-cols-[35%_20%_12%_12%_12%_9%] w-full mb-2 mt-5 text-neutral-50">
                         <div className="flex items-center">
                             <h1 className="font-bold text-red-500 mr-2">Red Team</h1>
                         </div>
@@ -701,17 +816,17 @@ const LiveGame: React.FC = () => {
                         <p className="text-center">S15 WR</p>
                         <p className="text-center">Champion WR</p>
                         <p className="text-center">Champion Info</p>
-                        <p className="text-center">S14-3 Rank</p>
                         <p className="text-center"></p>
                     </div>
                     <div className="flex flex-col border-l-4 gap-1 border-red-500 text-neutral-200">
-                        {mergedParticipants.filter((participant: MergedParticipant) => participant.teamId === 200).map((participant: MergedParticipant) => (
+                        {newSpectatorData.participants.filter((participant: Participant) => participant.teamId === 200).map((participant: Participant) => (
                             <ParticipantRow
                                 key={participant.puuid}
                                 participant={participant}
-                                liveData={participant.liveData!}
-                                isBeingWatched={player.puuid === participant.puuid}
-                                gridCols="grid-cols-[35%_20%_9%_9%_9%_9%_9%]"
+                                isBeingWatched={data.Puuid === participant.puuid}
+                                liveGameData={liveGameData.find(player => player?.puuid === participant.puuid) || null}
+                                region={regionCode}
+                                gridCols="grid-cols-[35%_20%_12%_12%_12%_9%]"
                             />
                         ))}
                     </div>

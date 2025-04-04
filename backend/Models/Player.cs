@@ -9,11 +9,18 @@ namespace backend.Models {
         public string SummonerName {get; set;} = string.Empty;
         public string SummonerTag {get; set;} = string.Empty;
         public string Region {get; set;} = string.Empty;
-        public int ProfileIconId { get; set; }
-        public string Rank {get; set;} = string.Empty;
-        public int LeaguePoints {get; set;}
-        public int Level {get; set;}
-
+        public string Puuid {get; set;} = string.Empty;
+        public string PlayerData {get; set;} = string.Empty;
+        public string SummonerData { get; set; } = string.Empty;
+        public string EntriesData { get; set; } = string.Empty;
+        public string TopMasteriesData { get; set; } = string.Empty;
+        public string MatchesData { get; set; } = string.Empty;
+        public string RankedMatchesData { get; set; } = string.Empty;
+        public string ChallengesData { get; set; } = string.Empty;
+        public string SpectatorData { get; set; } = string.Empty;
+        public string ClashData { get; set; } = string.Empty;
+        public string ChampionStatsData { get; set; } = string.Empty;
+        public string PreferredRoleData { get; set; } = string.Empty;
         public ICollection<Race> Races { get; set; } = new List<Race>();
     }
 }
