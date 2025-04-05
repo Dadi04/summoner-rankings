@@ -199,20 +199,8 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
             preferredRole.TotalAssists += participant.assists;
         }
     }
-    
-    string summonerUrl = $"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={apiKey}";
-    string topMasteriesUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}/top?count=3&api_key={apiKey}";
-    string challengesUrl = $"https://{region}.api.riotgames.com/lol/challenges/v1/player-data/{puuid}?api_key={apiKey}";
-    string spectatorUrl = $"https://{region}.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={apiKey}"; // ukoliko nisi u gameu vraca 404
-    string clashUrl = $"https://{region}.api.riotgames.com/lol/clash/v1/players/by-puuid/{puuid}?api_key={apiKey}"; // ukoliko nisi u clashu vraca [] i vraca 200
 
-    var summonerTask = GetStringAsyncWithRetry(summonerUrl);
-    var topMasteriesTask = GetStringAsyncWithRetry(topMasteriesUrl);
-    var challengesTask = GetStringAsyncWithRetry(challengesUrl);
-    var clashTask = GetStringAsyncWithRetry(clashUrl);
-
-    await Task.WhenAll(summonerTask, topMasteriesTask, challengesTask, clashTask);
-
+    string spectatorUrl = $"https://{region}.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={apiKey}";
     var spectatorResponse = await GetAsyncWithRetry(spectatorUrl);
     object? spectatorData = null;
     if (spectatorResponse.IsSuccessStatusCode) {
@@ -223,6 +211,164 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
     } else {
         Console.WriteLine($"Error calling spectator API: {spectatorResponse.StatusCode}");
     }
+
+    var championRoleMapping = await BuildChampionRoleMappingAsync(client);
+
+    if (spectatorData is JsonElement spectatorElement && spectatorElement.TryGetProperty("participants", out JsonElement participantsElement)) {
+        var participantsWithRole = new List<ParticipantRoleDto>();
+        foreach (var participant in participantsElement.EnumerateArray()) {
+            int champId = participant.GetProperty("championId").GetInt32();
+            string predictedRole = championRoleMapping.ContainsKey(champId) ? championRoleMapping[champId] : "MID";
+
+            int spell1Id = participant.GetProperty("spell1Id").GetInt32();
+            int spell2Id = participant.GetProperty("spell2Id").GetInt32();
+            if (spell1Id == 11 || spell2Id == 11) {
+                predictedRole = "JUNGLE";
+            }
+
+            var participantWithRole = new ParticipantRoleDto {
+                puuid = participant.GetProperty("puuid").GetString() ?? string.Empty,
+                teamId = participant.GetProperty("teamId").GetInt32(),
+                spell1Id = participant.GetProperty("spell1Id").GetInt32(),
+                spell2Id = participant.GetProperty("spell2Id").GetInt32(),
+                championId = champId,
+                profileIconId = participant.GetProperty("profileIconId").GetInt32(),
+                riotId = participant.GetProperty("riotId").GetString() ?? string.Empty,
+                bot = participant.GetProperty("bot").GetBoolean(),
+                summonerId = participant.GetProperty("summonerId").GetString() ?? string.Empty,
+                perks = participant.GetProperty("perks"),
+                predictedRole = predictedRole
+            };
+            participantsWithRole.Add(participantWithRole);
+        }
+
+        var requiredRoles = new HashSet<string> { "TOP", "JUNGLE", "MID", "BOTTOM", "UTILITY" };
+        var teams = participantsWithRole.GroupBy(p => p.teamId);
+        foreach (var teamGroup in teams) {
+            var assignedRoles = new HashSet<string>(teamGroup.Select(p => p.predictedRole), StringComparer.OrdinalIgnoreCase);
+            var missingRoles = requiredRoles.Except(assignedRoles, StringComparer.OrdinalIgnoreCase).ToList();
+            var duplicateRoles = teamGroup.GroupBy(p => p.predictedRole, StringComparer.OrdinalIgnoreCase)
+                                        .Where(g => g.Count() > 1)
+                                        .Select(g => g.Key)
+                                        .ToList();
+
+            var ambiguousMapping = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase) {
+                { "Brand",      new[] { "UTILITY", "MID", "BOTTOM" } },
+                { "Lux",        new[] { "MID", "UTILITY" } },
+                { "Maokai",     new[] { "TOP", "UTILITY" } },
+                { "Mel",        new[] { "MID", "BOTTOM", "UTILITY" } },
+                { "Neeko",      new[] { "UTILITY", "MID" } },
+                { "Pantheon",   new[] { "UTILITY", "TOP", "MID" } },
+                { "Poppy",      new[] { "UTILITY", "TOP" } },
+                { "Senna",      new[] { "UTILITY", "BOTTOM" } },
+                { "Seraphine",  new[] { "UTILITY", "BOTTOM", "MID" } },
+                { "Swain",      new[] { "UTILITY", "MID", "BOTTOM", "TOP" } },
+                { "TahmKench",  new[] { "UTILITY", "TOP" } },
+                { "Velkoz",     new[] { "UTILITY", "MID" } },
+                { "Nidalee",    new[] { "UTILITY", "TOP" } },
+                { "Xerath",     new[] { "UTILITY", "MID" } },
+                { "Corki",      new[] { "BOTTOM", "MID" } },
+                { "Lucian",     new[] { "BOTTOM", "MID" } },
+                { "Smolder",    new[] { "BOTTOM", "MID", "TOP" } },
+                { "Tristana",   new[] { "BOTTOM", "MID" } },
+                { "Vayne",      new[] { "BOTTOM", "TOP" } },
+                { "Ziggs",      new[] { "BOTTOM", "MID" } },
+                { "Akali",      new[] { "MID", "TOP" } },
+                { "Aurora",     new[] { "MID", "TOP" } },
+                { "Cassiopeia", new[] { "MID", "TOP" } },
+                { "Chogath",    new[] { "TOP", "MID" } },
+                { "Galio",      new[] { "MID", "UTILITY", "TOP" } },
+                { "Hwei",       new[] { "MID", "BOTTOM", "UTILITY" } },
+                { "Irelia",     new[] { "TOP", "MID" } },
+                { "Ryze",       new[] { "MID", "TOP" } },
+                { "Sylas",      new[] { "MID", "TOP" } },
+                { "Veigar",     new[] { "MID", "BOTTOM", "UTILITY" } },
+                { "Viktor",     new[] { "MID", "BOTTOM" } },
+                { "Vladimir",   new[] { "MID", "TOP" } },
+                { "Yasuo",      new[] { "MID", "TOP", "BOTTOM" } },
+                { "Yone",       new[] { "MID", "TOP" } },
+                { "Zoe",        new[] { "MID", "UTILITY" } },
+                { "Camille",    new[] { "TOP", "UTILITY" } },
+                { "Heimer",     new[] { "TOP", "MID", "BOTTOM", "UTILITY" } },
+                { "Jayce",      new[] { "TOP", "MID" } }
+            };
+
+            foreach (var duplicateRole in duplicateRoles) {
+                var playersWithDuplicateRole = teamGroup.Where(p => p.predictedRole.Equals(duplicateRole, StringComparison.OrdinalIgnoreCase)).ToList();
+                foreach (var playerToReassign in playersWithDuplicateRole.Skip(1)) {
+                    if (ambiguousMapping.TryGetValue(playerToReassign.championName, out string[]? possibleRoles)) {
+                        var alternativeRole = possibleRoles.FirstOrDefault(r => 
+                            missingRoles.Contains(r, StringComparer.OrdinalIgnoreCase) || 
+                            !duplicateRoles.Contains(r, StringComparer.OrdinalIgnoreCase));
+                            
+                        if (alternativeRole != null) {
+                            playerToReassign.predictedRole = alternativeRole;
+                            if (missingRoles.Contains(alternativeRole, StringComparer.OrdinalIgnoreCase)) {
+                                missingRoles.Remove(alternativeRole);
+                            }
+                        }
+                    }
+                }
+            }
+
+            assignedRoles = new HashSet<string>(teamGroup.Select(p => p.predictedRole), StringComparer.OrdinalIgnoreCase);
+            missingRoles = requiredRoles.Except(assignedRoles, StringComparer.OrdinalIgnoreCase).ToList();
+
+            foreach (var missingRole in missingRoles) {
+                var candidate = teamGroup.FirstOrDefault(p => {
+                    if (ambiguousMapping.TryGetValue(p.championName, out string[]? possibleRoles)) {
+                        var currentRoleDuplicates = teamGroup.Count(t => 
+                            t.predictedRole.Equals(p.predictedRole, StringComparison.OrdinalIgnoreCase));
+                        return possibleRoles.Contains(missingRole, StringComparer.OrdinalIgnoreCase) 
+                            && currentRoleDuplicates > 1;
+                    }
+                    return false;
+                });
+                if (candidate != null) {
+                    candidate.predictedRole = missingRole;
+                }
+            }
+        }
+
+        // Sort participants by team and role
+        var roleOrder = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) {
+            { "TOP", 1 },
+            { "JUNGLE", 2 },
+            { "MID", 3 },
+            { "BOTTOM", 4 },
+            { "UTILITY", 5 }
+        };
+
+        var sortedParticipants = participantsWithRole
+            .OrderBy(p => p.teamId)
+            .ThenBy(p => roleOrder.GetValueOrDefault(p.predictedRole, 999))
+            .ToList();
+
+        spectatorData = JsonSerializer.Serialize(new { 
+            gameId = spectatorElement.GetProperty("gameId").GetInt64(),
+            gameType = spectatorElement.GetProperty("gameType").GetString(),
+            gameStartTime = spectatorElement.GetProperty("gameStartTime").GetInt64(),
+            mapId = spectatorElement.GetProperty("mapId").GetInt64(),
+            gameLength = spectatorElement.GetProperty("gameLength").GetInt64(),
+            platformId = spectatorElement.GetProperty("platformId").GetString(),
+            gameMode = spectatorElement.GetProperty("gameMode").GetString(),
+            bannedChampions = spectatorElement.GetProperty("bannedChampions"),
+            gameQueueConfigId = spectatorElement.GetProperty("gameQueueConfigId").GetInt64(),
+            participants = sortedParticipants, 
+        });
+    }
+
+    string summonerUrl = $"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={apiKey}";
+    string topMasteriesUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}/top?count=3&api_key={apiKey}";
+    string challengesUrl = $"https://{region}.api.riotgames.com/lol/challenges/v1/player-data/{puuid}?api_key={apiKey}";
+    string clashUrl = $"https://{region}.api.riotgames.com/lol/clash/v1/players/by-puuid/{puuid}?api_key={apiKey}"; // ukoliko nisi u clashu vraca [] i vraca 200
+
+    var summonerTask = GetStringAsyncWithRetry(summonerUrl);
+    var topMasteriesTask = GetStringAsyncWithRetry(topMasteriesUrl);
+    var challengesTask = GetStringAsyncWithRetry(challengesUrl);
+    var clashTask = GetStringAsyncWithRetry(clashUrl);
+
+    await Task.WhenAll(summonerTask, topMasteriesTask, challengesTask, clashTask);
 
     var player  = new Player {
         SummonerName = summonerName,
@@ -235,7 +381,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         MatchesData = JsonSerializer.Serialize(allMatches),
         RankedMatchesData = JsonSerializer.Serialize(rankedMatchInfoList),
         ChallengesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await challengesTask)),
-        SpectatorData = JsonSerializer.Serialize(spectatorData),
+        SpectatorData = spectatorData is string s ? s : JsonSerializer.Serialize(spectatorData),
         ClashData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await clashTask)),
         ChampionStatsData = JsonSerializer.Serialize(championStatsMap.Values),
         PreferredRoleData = JsonSerializer.Serialize(preferredRoleMap.Values),
@@ -280,8 +426,245 @@ app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/livegame", async (string 
     return Results.Ok(player);
 });
 
+async Task<Dictionary<int, string>> BuildChampionRoleMappingAsync(HttpClient client) {
+    string championDataUrl = "https://ddragon.leagueoflegends.com/cdn/15.7.1/data/en_US/champion.json";
+    string championJson = await client.GetStringAsync(championDataUrl);
+    using JsonDocument doc = JsonDocument.Parse(championJson);
+    var root = doc.RootElement;
+    var championData = root.GetProperty("data");
+
+    var manualMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+        { "Aatrox", "TOP" },
+        { "Ambessa", "TOP" },
+        { "Darius", "TOP" },
+        { "DrMundo", "TOP" },
+        { "Fiora", "TOP" },
+        { "Gangplank", "TOP" },
+        { "Garen", "TOP" },
+        { "Gnar", "TOP" },
+        { "Gragas", "TOP" },
+        { "Graves", "TOP" },
+        { "Gwen", "TOP" },
+        { "Illaoi", "TOP" },
+        { "Jax", "TOP" },
+        { "Kayle", "TOP" },
+        { "Kayn", "TOP" },
+        { "Kennen", "TOP" },
+        { "Kled", "TOP" },
+        { "KSante", "TOP" },
+        { "Lillia", "TOP" },
+        { "Mordekaiser", "TOP" },
+        { "Nasus", "TOP" },
+        { "Olaf", "TOP" },
+        { "Ornn", "TOP" },
+        { "Quinn", "TOP" },
+        { "Rammus", "TOP" },
+        { "Renekton", "TOP" },
+        { "Rengar", "TOP" },
+        { "Riven", "TOP" },
+        { "Rumble", "TOP" },
+        { "Sejuani", "TOP" },
+        { "Sett", "TOP" },
+        { "Shen", "TOP" },
+        { "Shyvana", "TOP" },
+        { "Singed", "TOP" },
+        { "Sion", "TOP" },
+        { "Skarner", "TOP" },
+        { "Teemo", "TOP" },
+        { "Trundle", "TOP" },
+        { "Tryndamere", "TOP" },
+        { "Udyr", "TOP" },
+        { "Urgot", "TOP" },
+        { "Vi", "TOP" },
+        { "Volibear", "TOP" },
+        { "Warwick", "TOP" },
+        { "Wukong", "TOP" },
+        { "XinZhao", "TOP" },
+        { "Yorick", "TOP" },
+        { "Zac", "TOP" },
+
+        { "Ahri", "MID" },
+        { "Akshan", "MID" },
+        { "Anivia", "MID" },
+        { "Annie", "MID" },
+        { "Aurelion Sol", "MID" },
+        { "Azir", "MID" },
+        { "Diana", "MID" },
+        { "Ekko", "MID" },
+        { "Fizz", "MID" },
+        { "Kassadin", "MID" },
+        { "Katarina", "MID" },
+        { "LeBlanc", "MID" },
+        { "Lissandra", "MID" },
+        { "Malzahar", "MID" },
+        { "Naafiri", "MID" },
+        { "Nocturne", "MID" },
+        { "Nunu", "MID" },
+        { "Orianna", "MID" },
+        { "Qiyana", "MID" },
+        { "Syndra", "MID" },
+        { "Taliyah", "MID" },
+        { "Talon", "MID" },
+        { "TwistedFate", "MID" },
+        { "Vex", "MID" },
+        { "Viktor", "MID" },
+        { "Zed", "MID" },
+        { "Zoe", "MID" },
+
+        { "Aphelios", "BOTTOM" },
+        { "Ashe", "BOTTOM" },
+        { "Caitlyn", "BOTTOM" },
+        { "Draven", "BOTTOM" },
+        { "Ezreal", "BOTTOM" },
+        { "Jhin", "BOTTOM" },
+        { "Jinx", "BOTTOM" },
+        { "KaiSa", "BOTTOM" },
+        { "Kalista", "BOTTOM" },
+        { "Karthus", "BOTTOM" },
+        { "KogMaw", "BOTTOM" },
+        { "MissFortune", "BOTTOM" },
+        { "Nilah", "BOTTOM" },
+        { "Samira", "BOTTOM" },
+        { "Sivir", "BOTTOM" },
+        { "Twitch", "BOTTOM" },
+        { "Varus", "BOTTOM" },
+        { "Xayah", "BOTTOM" },
+        { "Zeri", "BOTTOM" },
+
+        { "Alistar", "UTILITY" },
+        { "Amumu", "UTILITY" },
+        { "Bard", "UTILITY" },
+        { "Blitzcrank", "UTILITY" },
+        { "Braum", "UTILITY" },
+        { "Elise", "UTILITY" },
+        { "Fiddlesticks", "UTILITY" },
+        { "Janna", "UTILITY" },
+        { "Karma", "UTILITY" },
+        { "Leona", "UTILITY" },
+        { "Lulu", "UTILITY" },
+        { "Milio", "UTILITY" },
+        { "Morgana", "UTILITY" },
+        { "Nami", "UTILITY" },
+        { "Nautilus", "UTILITY" },
+        { "Pyke", "UTILITY" },
+        { "Rakan", "UTILITY" },
+        { "Rell", "UTILITY" },
+        { "Renata", "UTILITY" },
+        { "Shaco", "UTILITY" },
+        { "Sona", "UTILITY" },
+        { "Soraka", "UTILITY" },
+        { "Taric", "UTILITY" },
+        { "Thresh", "UTILITY" },
+        { "Yuumi", "UTILITY" },
+        { "Zilean", "UTILITY" },
+        { "Zyra", "UTILITY" },
+    };
+
+    var ambiguousMapping = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase) {
+        { "Brand",      new[] { "UTILITY", "MID", "BOTTOM" } },
+        { "Lux",        new[] { "MID", "UTILITY" } },
+        { "Maokai",     new[] { "TOP", "UTILITY" } },
+        { "Mel",        new[] { "MID", "BOTTOM", "UTILITY" } },
+        { "Neeko",      new[] { "UTILITY", "MID" } },
+        { "Pantheon",   new[] { "UTILITY", "TOP", "MID" } },
+        { "Poppy",      new[] { "UTILITY", "TOP" } },
+        { "Senna",      new[] { "UTILITY", "BOTTOM" } },
+        { "Seraphine",  new[] { "UTILITY", "BOTTOM", "MID" } },
+        { "Swain",      new[] { "UTILITY", "MID", "BOTTOM", "TOP" } },
+        { "TahmKench",  new[] { "UTILITY", "TOP" } },
+        { "Velkoz",     new[] { "UTILITY", "MID" } },
+        { "Nidalee",    new[] { "UTILITY", "TOP" } },
+        { "Xerath",     new[] { "UTILITY", "MID" } },
+        { "Corki",      new[] { "BOTTOM", "MID" } },
+        { "Lucian",     new[] { "BOTTOM", "MID" } },
+        { "Smolder",    new[] { "BOTTOM", "MID", "TOP" } },
+        { "Tristana",   new[] { "BOTTOM", "MID" } },
+        { "Vayne",      new[] { "BOTTOM", "TOP" } },
+        { "Ziggs",      new[] { "BOTTOM", "MID" } },
+        { "Akali",      new[] { "MID", "TOP" } },
+        { "Aurora",     new[] { "MID", "TOP" } },
+        { "Cassiopeia", new[] { "MID", "TOP" } },
+        { "Chogath",    new[] { "TOP", "MID" } },
+        { "Galio",      new[] { "MID", "UTILITY", "TOP" } },
+        { "Hwei",       new[] { "MID", "BOTTOM", "UTILITY" } },
+        { "Irelia",     new[] { "TOP", "MID" } },
+        { "Ryze",       new[] { "MID", "TOP" } },
+        { "Sylas",      new[] { "MID", "TOP" } },
+        { "Veigar",     new[] { "MID", "BOTTOM", "UTILITY" } },
+        { "Viktor",     new[] { "MID", "BOTTOM" } },
+        { "Vladimir",   new[] { "MID", "TOP" } },
+        { "Yasuo",      new[] { "MID", "TOP", "BOTTOM" } },
+        { "Yone",       new[] { "MID", "TOP" } },
+        { "Zoe",        new[] { "MID", "UTILITY" } },
+        { "Camille",    new[] { "TOP", "UTILITY" } },
+        { "Heimer",     new[] { "TOP", "MID", "BOTTOM", "UTILITY" } },
+        { "Jayce",      new[] { "TOP", "MID" } }
+    };
+
+    var tagRoleMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+        { "Marksman", "BOTTOM" },
+        { "Support", "UTILITY" },
+        { "Mage", "MID" },
+        { "Assassin", "MID" },
+        { "Fighter", "TOP" },
+        { "Tank", "TOP" }
+    };
+    
+    var championRoleMapping = new Dictionary<int, string>();
+
+    foreach (var champProperty in championData.EnumerateObject()) {
+        var champ = champProperty.Value;
+        string champName = champ.GetProperty("id").GetString() ?? "";
+        string keyString = champ.GetProperty("key").GetString() ?? "";
+
+        if (!int.TryParse(keyString, out int champId)) {
+            continue;
+        }
+
+        if (manualMapping.TryGetValue(champName, out string? role)) {
+            championRoleMapping[champId] = role;
+        } else if (ambiguousMapping.TryGetValue(champName, out string[]? possibleRoles)) {
+            var championTags = champ.GetProperty("tags").EnumerateArray().Select(t => t.GetString()).Where(s => !string.IsNullOrEmpty(s)).Select(s => s!).ToList();
+            var potentialRoles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            
+            foreach (var tag in championTags) {
+                if (tagRoleMapping.TryGetValue(tag, out var tagBasedRole)) {
+                    potentialRoles.Add(tagBasedRole);
+                }
+            }
+
+            var selectedRole = possibleRoles.FirstOrDefault(r => potentialRoles.Contains(r)) ?? possibleRoles.First();
+            championRoleMapping[champId] = selectedRole;
+        } else {
+            var tags = champ.GetProperty("tags").EnumerateArray().Select(t => t.GetString()).ToList();
+            if (tags.Contains("Marksman")) championRoleMapping[champId] = "BOTTOM";
+            else if (tags.Contains("Support")) championRoleMapping[champId] = "SUPPORT";
+            else if (tags.Contains("Mage") || tags.Contains("Assassin")) championRoleMapping[champId] = "MID";
+            else if (tags.Contains("Fighter") || tags.Contains("Tank")) championRoleMapping[champId] = "TOP";
+            else championRoleMapping[champId] = "MID";
+        }
+    }
+
+    return championRoleMapping;
+}
+
 
 app.Run();
+
+public class ParticipantRoleDto {
+    public string puuid { get; set; } = string.Empty;
+    public int teamId { get; set; }
+    public int spell1Id { get; set; }
+    public int spell2Id { get; set; }
+    public int championId { get; set; }
+    public string championName { get; set; } = string.Empty;
+    public int profileIconId { get; set; }
+    public string riotId { get; set; } = string.Empty;
+    public bool bot { get; set; }
+    public string summonerId { get; set; } = string.Empty;
+    public JsonElement perks { get; set; }
+    public string predictedRole { get; set; } = string.Empty;
+}
 
 public class RiotPlayerDto {
     public string puuid { get; set; } = string.Empty;

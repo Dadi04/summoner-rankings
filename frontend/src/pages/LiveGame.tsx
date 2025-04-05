@@ -630,6 +630,10 @@ const LiveGame: React.FC = () => {
                 });
                 setLiveGameData(parsedData);
                 localStorage.setItem(storageKey, JSON.stringify(data));
+                setTimeout(() => {
+                    localStorage.removeItem(storageKey);
+                    console.log(`${storageKey} has been remove from localStorage.`);
+                }, 600000)
             } catch (error) {
                 console.error("Error fetching live game data:", error);
             } finally {

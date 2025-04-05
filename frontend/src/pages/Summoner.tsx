@@ -50,6 +50,10 @@ const Summoner: React.FC = () => {
                     const data = await response.json();
                     setApiData(data);
                     localStorage.setItem(storageKey, JSON.stringify(data));
+                    setTimeout(() => {
+                        localStorage.removeItem(storageKey);
+                        console.log(`${storageKey} has been remove from localStorage.`);
+                    }, 600000)
                 } catch (error) {
                     console.log('Error fetching API data:', error);
                 } finally {
