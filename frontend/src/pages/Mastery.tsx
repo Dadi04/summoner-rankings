@@ -1,25 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useParams, Link } from 'react-router-dom';
+import UpdateButton from "../components/UpdateButton";
 import favorite from "../assets/favorite.svg";
 
 const Mastery: React.FC = () => {
     const location = useLocation();
     const apiData = location.state?.apiData;
     const {regionCode, encodedSummoner} = useParams<{regionCode: string; encodedSummoner: string }>(); 
+    
+    const [newData, setNewData] = useState(apiData);
+
     if (!encodedSummoner) {
         return <div>Error: Summoner parameter is missing.</div>;
     }
-
-    const summonerData = JSON.parse(apiData.summonerData);
-    const entriesData = JSON.parse(apiData.entriesData);
-    const topMasteriesData = JSON.parse(apiData.topMasteriesData);
-    const matchesData = JSON.parse(apiData.matchesData);
-    const rankedMatchesData = JSON.parse(apiData.rankedMatchesData);
-    const challengesData = JSON.parse(apiData.challengesData);
-    const spectatorData = JSON.parse(apiData.spectatorData);
-    const clashData = JSON.parse(apiData.clashData);
-    const championStatsData = JSON.parse(apiData.championStatsData);
-    const preferredRoleData = JSON.parse(apiData.preferredRoleData);
+    if (!regionCode) {
+        return <div>Error: RegionCode parameter is missing.</div>;
+    }
+    
+    const summonerData = JSON.parse(newData.summonerData);
+    const entriesData = JSON.parse(newData.entriesData);
+    const topMasteriesData = JSON.parse(newData.topMasteriesData);
+    const matchesData = JSON.parse(newData.matchesData);
+    const rankedMatchesData = JSON.parse(newData.rankedMatchesData);
+    const challengesData = JSON.parse(newData.challengesData);
+    const spectatorData = JSON.parse(newData.spectatorData);
+    const clashData = JSON.parse(newData.clashData);
+    const championStatsData = JSON.parse(newData.championStatsData);
+    const preferredRoleData = JSON.parse(newData.preferredRoleData);
 
     return (
         <div className="container m-auto">
@@ -31,29 +38,29 @@ const Mastery: React.FC = () => {
                     </div>
                     <div className="pt-3 pb-3">
                         <div className="flex">
-                            <h1 className="text-white font-bold text-3xl mr-2">{apiData.summonerName}</h1>
-                            <h1 className="text-neutral-400 text-3xl mr-2">#{apiData.summonerTag}</h1>
+                            <h1 className="text-white font-bold text-3xl mr-2">{newData.summonerName}</h1>
+                            <h1 className="text-neutral-400 text-3xl mr-2">#{newData.summonerTag}</h1>
                             <button type="button" className="bg-neutral-200 pl-1.5 pr-1.5 rounded-lg">
                                 <img src={favorite} alt="favorite" className="h-6 border-2 border-neutral-700 rounded" />
                             </button>
                         </div>
                         <div className="flex text-sm text-neutral-100">
                             <div className="pt-2 pb-2 pl-1">
-                                <p className="uppercase border-r-1 pr-2">{apiData.region}</p>
+                                <p className="uppercase border-r-1 pr-2">{newData.region}</p>
                             </div>
                             <p className="p-2">Ladder Rank num </p>
                         </div>
                         <div>
-                            <button type="button" className="focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-semibold rounded-lg text-md px-8 py-2.5 mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900">Update</button>
+                            <UpdateButton updateSpectatorData={false} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
                         </div>
                     </div>  
                 </div>
                 <div className="p-2">
                     <ul className="flex gap-10 p-2">
-                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}`} state={{apiData: apiData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Summary</Link></li>
-                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/champions`} state={{apiData: apiData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Champions</Link></li>
-                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/mastery`} state={{apiData: apiData}} className="cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 bg-neutral-700 border text-purple-400 hover:text-neutral-100">Mastery</Link></li>
-                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: apiData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Live Game</Link></li>
+                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Summary</Link></li>
+                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/champions`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Champions</Link></li>
+                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/mastery`} state={{apiData: newData}} className="cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 bg-neutral-700 border text-purple-400 hover:text-neutral-100">Mastery</Link></li>
+                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Live Game</Link></li>
                     </ul>
                 </div>
             </div>

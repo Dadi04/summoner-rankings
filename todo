@@ -1,4 +1,0 @@
-// IMPLEMENT: on refresh and update button click, call the API again, on refesh broswer don't.
-// IMPLEMENT: add update button logic
-// FIX: the favorite icon
-// BUG: kada se refreshuje live game nadje se novi ali kada se refreshuje vrati se na staro

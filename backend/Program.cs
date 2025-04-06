@@ -171,7 +171,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
     var preferredRoleMap = new Dictionary<string, PrefferedRole>(StringComparer.OrdinalIgnoreCase){
         { "TOP", new PrefferedRole() },
         { "JUNGLE", new PrefferedRole() },
-        { "MIDDLE", new PrefferedRole() },
+        { "MID", new PrefferedRole() },
         { "BOTTOM", new PrefferedRole() },
         { "UTILITY", new PrefferedRole() },
     };
@@ -181,7 +181,10 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
 
         int champId = participant.championId;
         if (!championStatsMap.TryGetValue(champId, out ChampionStats? stats)) {
-            stats = new ChampionStats {ChampionName = participant.championName};
+            stats = new ChampionStats {
+                ChampionId = champId,
+                ChampionName = participant.championName
+            };
             championStatsMap[champId] = stats;
         }
         stats.Games++;
@@ -254,12 +257,13 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
 
             var ambiguousMapping = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase) {
                 { "Brand",      new[] { "UTILITY", "MID", "BOTTOM" } },
-                { "Lux",        new[] { "MID", "UTILITY" } },
+                { "Lux",        new[] { "UTILITY", "MID" } },
                 { "Maokai",     new[] { "TOP", "UTILITY" } },
                 { "Mel",        new[] { "MID", "BOTTOM", "UTILITY" } },
                 { "Neeko",      new[] { "UTILITY", "MID" } },
                 { "Pantheon",   new[] { "UTILITY", "TOP", "MID" } },
                 { "Poppy",      new[] { "UTILITY", "TOP" } },
+                { "Morgana",    new[] { "UTILITY", "MID" } },
                 { "Senna",      new[] { "UTILITY", "BOTTOM" } },
                 { "Seraphine",  new[] { "UTILITY", "BOTTOM", "MID" } },
                 { "Swain",      new[] { "UTILITY", "MID", "BOTTOM", "TOP" } },
@@ -385,11 +389,385 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         ClashData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await clashTask)),
         ChampionStatsData = JsonSerializer.Serialize(championStatsMap.Values),
         PreferredRoleData = JsonSerializer.Serialize(preferredRoleMap.Values),
+        AddedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
     };
     dbContext.Players.Add(player);
     await dbContext.SaveChangesAsync();
 
     return Results.Ok(player);
+});
+
+app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", async (string region, string summonerName, string summonerTag, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext) => {
+    if (!regionMapping.TryGetValue(region, out var continent)) {
+        return Results.Problem("Invalid region specified.");
+    }
+
+    var existingPlayer = await dbContext.Players.FirstOrDefaultAsync(p => p.SummonerName == summonerName
+                                                                    && p.SummonerTag == summonerTag
+                                                                    && p.Region == region);
+    if (existingPlayer == null) {
+        return Results.NotFound(existingPlayer); 
+    }
+
+    var client = httpClientFactory.CreateClient();
+    
+    var retryPolicyResponse = Policy
+        .Handle<HttpRequestException>()
+        .OrResult<HttpResponseMessage>(r => r.StatusCode == (HttpStatusCode)429)
+        .WaitAndRetryAsync(
+            retryCount: 3,
+            sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)), // 2, 4, 8 sec...
+            onRetry: (outcome, timespan, retryAttempt, context) => {
+                Console.WriteLine($"[Response] Received {outcome.Result?.StatusCode}. Retrying after {timespan.TotalSeconds} seconds (attempt {retryAttempt}).");
+            });
+
+    var retryPolicyString = Policy
+        .Handle<HttpRequestException>()
+        .WaitAndRetryAsync(
+            retryCount: 3,
+            sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)), // 2, 4, 8 sec...
+            onRetry: (exception, timespan, retryAttempt, context) => {
+                Console.WriteLine($"[String] Exception: {exception.Message}. Retrying after {timespan.TotalSeconds} seconds (attempt {retryAttempt}).");
+            });
+
+    async Task<HttpResponseMessage> GetAsyncWithRetry(string url) {
+        return await retryPolicyResponse.ExecuteAsync(() => client.GetAsync(url));
+    }
+
+    async Task<string> GetStringAsyncWithRetry(string url) {
+        return await retryPolicyString.ExecuteAsync(() => client.GetStringAsync(url));
+    }
+
+    string accountUrl = $"https://{continent}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{summonerName}/{summonerTag}?api_key={apiKey}";
+    var accountResponse = await GetAsyncWithRetry(accountUrl);
+    if (!accountResponse.IsSuccessStatusCode) {
+        return Results.Problem($"Error calling Riot API: {accountResponse.ReasonPhrase}");
+    }
+
+    var accountJson = await accountResponse.Content.ReadAsStreamAsync();
+    var riotAccount = JsonSerializer.Deserialize<RiotPlayerDto>(accountJson, new JsonSerializerOptions {
+        PropertyNameCaseInsensitive = true
+    });
+    if (riotAccount is null) {
+        return Results.NotFound("Player data not found");
+    }
+
+    string puuid = riotAccount.puuid;
+
+    string entriesUrl = $"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}?api_key={apiKey}";
+    var entriesResponse = await GetAsyncWithRetry(entriesUrl);
+    var entriesJson = await entriesResponse.Content.ReadAsStreamAsync();
+    var entries = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(entriesJson, new JsonSerializerOptions {
+        PropertyNameCaseInsensitive = true
+    });
+
+    List<string> existingMatches = new();
+    if (!string.IsNullOrEmpty(existingPlayer.MatchesData)) {
+        existingMatches = JsonSerializer.Deserialize<List<string>>(existingPlayer.MatchesData) ?? new List<string>();
+    }
+
+    var newMatches = new List<string>();
+    var rankedSoloEntry = entries?.FirstOrDefault(entry => entry.queueType.Equals("RANKED_SOLO_5x5"));
+    if (rankedSoloEntry == null) return null;
+
+    int wins = rankedSoloEntry.wins;
+    int losses = rankedSoloEntry.losses;
+    int totalMatches = wins+losses;
+
+    int loopTimes = (int)Math.Ceiling((double)totalMatches/100);
+    var rankedMatchesTasks = Enumerable.Range(0, loopTimes).Select(i => {
+        long startTime = existingPlayer.AddedAt > 0 ? existingPlayer.AddedAt : 1736452800;
+        int startAt = i * 100;
+        string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={startTime}&queue=420&start={startAt}&count=100&api_key={apiKey}";
+        return GetStringAsyncWithRetry(url);
+    }).ToList();
+
+    var batchResults = await Task.WhenAll(rankedMatchesTasks);
+    foreach (var result in batchResults) {
+        var rankedMatchArray = JsonSerializer.Deserialize<string[]>(result);
+        if (rankedMatchArray != null) {
+            newMatches.AddRange(rankedMatchArray);
+        }
+    }
+
+    var combinedMatches = existingMatches.Union(newMatches).ToList();
+
+    var matchesToProcess = newMatches.Except(existingMatches).ToList();
+
+    int maxConcurrentRequests = 3;
+    var semaphore = new SemaphoreSlim(maxConcurrentRequests);
+    var rankedMatchDetailsTasks = matchesToProcess.Select(async matchId => {
+        await semaphore.WaitAsync();
+        try {
+            string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/{matchId}?api_key={apiKey}";
+            HttpResponseMessage response = await retryPolicyResponse.ExecuteAsync(() => client.GetAsync(url));
+            string content = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<LeagueRankedSoloMatchDto>(
+                content, new JsonSerializerOptions {PropertyNameCaseInsensitive = true});
+        } finally {
+            semaphore.Release();
+        }
+    }).ToList();
+
+    var championStatsMap = new Dictionary<int, ChampionStats>();
+    if (!string.IsNullOrEmpty(existingPlayer.ChampionStatsData)) {
+        var existingChampionStats = JsonSerializer.Deserialize<List<ChampionStats>>(existingPlayer.ChampionStatsData);
+        if (existingChampionStats != null) {
+            championStatsMap = existingChampionStats.ToDictionary(cs => cs.ChampionId, cs => cs);
+        }
+    }
+
+    // ne radi merge
+    var requiredRolesAll = new[] { "TOP", "JUNGLE", "MID", "BOTTOM", "UTILITY" };
+    Dictionary<string, PrefferedRole> preferredRoleMap;
+    if (!string.IsNullOrEmpty(existingPlayer.PreferredRoleData)) {
+        try {
+            var rolesList = JsonSerializer.Deserialize<List<PrefferedRole>>(existingPlayer.PreferredRoleData)
+                            ?? new List<PrefferedRole>();
+            preferredRoleMap = new Dictionary<string, PrefferedRole>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < requiredRolesAll.Length; i++)
+            {
+                if (i < rolesList.Count)
+                    preferredRoleMap[requiredRolesAll[i]] = rolesList[i];
+                else
+                    preferredRoleMap[requiredRolesAll[i]] = new PrefferedRole();
+            }
+        }
+        catch {
+            preferredRoleMap = requiredRolesAll.ToDictionary(role => role, role => new PrefferedRole(), StringComparer.OrdinalIgnoreCase);
+        }
+    }
+    else {
+        preferredRoleMap = requiredRolesAll.ToDictionary(role => role, role => new PrefferedRole(), StringComparer.OrdinalIgnoreCase);
+    }
+
+
+    var existingRankedMatches = new List<LeagueRankedSoloMatchDto>();
+    if (!string.IsNullOrEmpty(existingPlayer.RankedMatchesData)) {
+        existingRankedMatches = JsonSerializer.Deserialize<List<LeagueRankedSoloMatchDto>>(existingPlayer.RankedMatchesData)
+                                ?? new List<LeagueRankedSoloMatchDto>();
+    }
+
+    var newRankedMatchDetails = (await Task.WhenAll(rankedMatchDetailsTasks)).Where(info => info != null).ToList();
+    foreach (var match in newRankedMatchDetails) {
+        if (match != null && !existingRankedMatches.Any(x => x.metadata.matchId == match.metadata.matchId)) {
+            existingRankedMatches.Add(match);
+        }
+
+        var participant = match?.info.participants.FirstOrDefault(p => p.puuid == puuid);
+        if (participant == null || participant.gameEndedInEarlySurrender) continue;
+
+        int champId = participant.championId;
+        if (!championStatsMap.TryGetValue(champId, out ChampionStats? stats)) {
+            stats = new ChampionStats {
+                ChampionId = champId,
+                ChampionName = participant.championName
+            };
+            championStatsMap[champId] = stats;
+        }
+        stats.Games++;
+        if (participant.win) stats.Wins++;
+        stats.TotalKills += participant.kills;
+        stats.TotalDeaths += participant.deaths;
+        stats.TotalAssists += participant.assists;
+
+        string role = participant.teamPosition.ToUpper();
+        if (preferredRoleMap.TryGetValue(role, out PrefferedRole? preferredRole)) {
+            preferredRole.Games++;
+            if (participant.win) preferredRole.Wins++;
+            preferredRole.TotalKills += participant.kills;
+            preferredRole.TotalDeaths += participant.deaths;
+            preferredRole.TotalAssists += participant.assists;
+        }
+    }
+
+    string spectatorUrl = $"https://{region}.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={apiKey}";
+    var spectatorResponse = await GetAsyncWithRetry(spectatorUrl);
+    object? spectatorData = null;
+    if (spectatorResponse.IsSuccessStatusCode) {
+        var spectatorJson = await spectatorResponse.Content.ReadAsStringAsync();
+        spectatorData = JsonSerializer.Deserialize<object>(spectatorJson);
+    } else if (spectatorResponse.StatusCode == System.Net.HttpStatusCode.NotFound) {
+        spectatorData = null;
+    } else {
+        Console.WriteLine($"Error calling spectator API: {spectatorResponse.StatusCode}");
+    }
+
+    var championRoleMapping = await BuildChampionRoleMappingAsync(client);
+
+    if (spectatorData is JsonElement spectatorElement && spectatorElement.TryGetProperty("participants", out JsonElement participantsElement)) {
+        var participantsWithRole = new List<ParticipantRoleDto>();
+        foreach (var participant in participantsElement.EnumerateArray()) {
+            int champId = participant.GetProperty("championId").GetInt32();
+            string predictedRole = championRoleMapping.ContainsKey(champId) ? championRoleMapping[champId] : "MID";
+
+            int spell1Id = participant.GetProperty("spell1Id").GetInt32();
+            int spell2Id = participant.GetProperty("spell2Id").GetInt32();
+            if (spell1Id == 11 || spell2Id == 11) {
+                predictedRole = "JUNGLE";
+            }
+
+            var participantWithRole = new ParticipantRoleDto {
+                puuid = participant.GetProperty("puuid").GetString() ?? string.Empty,
+                teamId = participant.GetProperty("teamId").GetInt32(),
+                spell1Id = participant.GetProperty("spell1Id").GetInt32(),
+                spell2Id = participant.GetProperty("spell2Id").GetInt32(),
+                championId = champId,
+                profileIconId = participant.GetProperty("profileIconId").GetInt32(),
+                riotId = participant.GetProperty("riotId").GetString() ?? string.Empty,
+                bot = participant.GetProperty("bot").GetBoolean(),
+                summonerId = participant.GetProperty("summonerId").GetString() ?? string.Empty,
+                perks = participant.GetProperty("perks"),
+                predictedRole = predictedRole
+            };
+            participantsWithRole.Add(participantWithRole);
+        }
+
+        var requiredRoles = new HashSet<string> { "TOP", "JUNGLE", "MID", "BOTTOM", "UTILITY" };
+        var teams = participantsWithRole.GroupBy(p => p.teamId);
+        foreach (var teamGroup in teams) {
+            var assignedRoles = new HashSet<string>(teamGroup.Select(p => p.predictedRole), StringComparer.OrdinalIgnoreCase);
+            var missingRoles = requiredRoles.Except(assignedRoles, StringComparer.OrdinalIgnoreCase).ToList();
+            var duplicateRoles = teamGroup.GroupBy(p => p.predictedRole, StringComparer.OrdinalIgnoreCase)
+                                        .Where(g => g.Count() > 1)
+                                        .Select(g => g.Key)
+                                        .ToList();
+
+            var ambiguousMapping = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase) {
+                { "Brand",      new[] { "UTILITY", "MID", "BOTTOM" } },
+                { "Lux",        new[] { "UTILITY", "MID" } },
+                { "Maokai",     new[] { "TOP", "UTILITY" } },
+                { "Mel",        new[] { "MID", "BOTTOM", "UTILITY" } },
+                { "Neeko",      new[] { "UTILITY", "MID" } },
+                { "Pantheon",   new[] { "UTILITY", "TOP", "MID" } },
+                { "Poppy",      new[] { "UTILITY", "TOP" } },
+                { "Morgana",    new[] { "UTILITY", "MID" } },
+                { "Senna",      new[] { "UTILITY", "BOTTOM" } },
+                { "Seraphine",  new[] { "UTILITY", "BOTTOM", "MID" } },
+                { "Swain",      new[] { "UTILITY", "MID", "BOTTOM", "TOP" } },
+                { "TahmKench",  new[] { "UTILITY", "TOP" } },
+                { "Velkoz",     new[] { "UTILITY", "MID" } },
+                { "Nidalee",    new[] { "UTILITY", "TOP" } },
+                { "Xerath",     new[] { "UTILITY", "MID" } },
+                { "Corki",      new[] { "BOTTOM", "MID" } },
+                { "Lucian",     new[] { "BOTTOM", "MID" } },
+                { "Smolder",    new[] { "BOTTOM", "MID", "TOP" } },
+                { "Tristana",   new[] { "BOTTOM", "MID" } },
+                { "Vayne",      new[] { "BOTTOM", "TOP" } },
+                { "Ziggs",      new[] { "BOTTOM", "MID" } },
+                { "Akali",      new[] { "MID", "TOP" } },
+                { "Aurora",     new[] { "MID", "TOP" } },
+                { "Cassiopeia", new[] { "MID", "TOP" } },
+                { "Chogath",    new[] { "TOP", "MID" } },
+                { "Galio",      new[] { "MID", "UTILITY", "TOP" } },
+                { "Hwei",       new[] { "MID", "BOTTOM", "UTILITY" } },
+                { "Irelia",     new[] { "TOP", "MID" } },
+                { "Ryze",       new[] { "MID", "TOP" } },
+                { "Sylas",      new[] { "MID", "TOP" } },
+                { "Veigar",     new[] { "MID", "BOTTOM", "UTILITY" } },
+                { "Viktor",     new[] { "MID", "BOTTOM" } },
+                { "Vladimir",   new[] { "MID", "TOP" } },
+                { "Yasuo",      new[] { "MID", "TOP", "BOTTOM" } },
+                { "Yone",       new[] { "MID", "TOP" } },
+                { "Zoe",        new[] { "MID", "UTILITY" } },
+                { "Camille",    new[] { "TOP", "UTILITY" } },
+                { "Heimer",     new[] { "TOP", "MID", "BOTTOM", "UTILITY" } },
+                { "Jayce",      new[] { "TOP", "MID" } }
+            };
+
+            foreach (var duplicateRole in duplicateRoles) {
+                var playersWithDuplicateRole = teamGroup.Where(p => p.predictedRole.Equals(duplicateRole, StringComparison.OrdinalIgnoreCase)).ToList();
+                foreach (var playerToReassign in playersWithDuplicateRole.Skip(1)) {
+                    if (ambiguousMapping.TryGetValue(playerToReassign.championName, out string[]? possibleRoles)) {
+                        var alternativeRole = possibleRoles.FirstOrDefault(r => 
+                            missingRoles.Contains(r, StringComparer.OrdinalIgnoreCase) || 
+                            !duplicateRoles.Contains(r, StringComparer.OrdinalIgnoreCase));
+                            
+                        if (alternativeRole != null) {
+                            playerToReassign.predictedRole = alternativeRole;
+                            if (missingRoles.Contains(alternativeRole, StringComparer.OrdinalIgnoreCase)) {
+                                missingRoles.Remove(alternativeRole);
+                            }
+                        }
+                    }
+                }
+            }
+
+            assignedRoles = new HashSet<string>(teamGroup.Select(p => p.predictedRole), StringComparer.OrdinalIgnoreCase);
+            missingRoles = requiredRoles.Except(assignedRoles, StringComparer.OrdinalIgnoreCase).ToList();
+
+            foreach (var missingRole in missingRoles) {
+                var candidate = teamGroup.FirstOrDefault(p => {
+                    if (ambiguousMapping.TryGetValue(p.championName, out string[]? possibleRoles)) {
+                        var currentRoleDuplicates = teamGroup.Count(t => 
+                            t.predictedRole.Equals(p.predictedRole, StringComparison.OrdinalIgnoreCase));
+                        return possibleRoles.Contains(missingRole, StringComparer.OrdinalIgnoreCase) 
+                            && currentRoleDuplicates > 1;
+                    }
+                    return false;
+                });
+                if (candidate != null) {
+                    candidate.predictedRole = missingRole;
+                }
+            }
+        }
+
+        // Sort participants by team and role
+        var roleOrder = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) {
+            { "TOP", 1 },
+            { "JUNGLE", 2 },
+            { "MID", 3 },
+            { "BOTTOM", 4 },
+            { "UTILITY", 5 }
+        };
+
+        var sortedParticipants = participantsWithRole
+            .OrderBy(p => p.teamId)
+            .ThenBy(p => roleOrder.GetValueOrDefault(p.predictedRole, 999))
+            .ToList();
+
+        spectatorData = JsonSerializer.Serialize(new { 
+            gameId = spectatorElement.GetProperty("gameId").GetInt64(),
+            gameType = spectatorElement.GetProperty("gameType").GetString(),
+            gameStartTime = spectatorElement.GetProperty("gameStartTime").GetInt64(),
+            mapId = spectatorElement.GetProperty("mapId").GetInt64(),
+            gameLength = spectatorElement.GetProperty("gameLength").GetInt64(),
+            platformId = spectatorElement.GetProperty("platformId").GetString(),
+            gameMode = spectatorElement.GetProperty("gameMode").GetString(),
+            bannedChampions = spectatorElement.GetProperty("bannedChampions"),
+            gameQueueConfigId = spectatorElement.GetProperty("gameQueueConfigId").GetInt64(),
+            participants = sortedParticipants, 
+        });
+    }
+
+    string summonerUrl = $"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={apiKey}";
+    string topMasteriesUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}/top?count=3&api_key={apiKey}";
+    string challengesUrl = $"https://{region}.api.riotgames.com/lol/challenges/v1/player-data/{puuid}?api_key={apiKey}";
+    string clashUrl = $"https://{region}.api.riotgames.com/lol/clash/v1/players/by-puuid/{puuid}?api_key={apiKey}"; // ukoliko nisi u clashu vraca [] i vraca 200
+
+    var summonerTask = GetStringAsyncWithRetry(summonerUrl);
+    var topMasteriesTask = GetStringAsyncWithRetry(topMasteriesUrl);
+    var challengesTask = GetStringAsyncWithRetry(challengesUrl);
+    var clashTask = GetStringAsyncWithRetry(clashUrl);
+
+    await Task.WhenAll(summonerTask, topMasteriesTask, challengesTask, clashTask);
+
+    existingPlayer.Puuid = puuid;
+    existingPlayer.SummonerData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await summonerTask));
+    existingPlayer.EntriesData = JsonSerializer.Serialize(entries);
+    existingPlayer.TopMasteriesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await topMasteriesTask));
+    existingPlayer.MatchesData = JsonSerializer.Serialize(combinedMatches);
+    existingPlayer.RankedMatchesData = JsonSerializer.Serialize(existingRankedMatches);
+    existingPlayer.ChallengesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await challengesTask));
+    existingPlayer.SpectatorData = spectatorData is string s ? s : JsonSerializer.Serialize(spectatorData);
+    existingPlayer.ClashData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await clashTask));
+    existingPlayer.ChampionStatsData = JsonSerializer.Serialize(championStatsMap.Values);
+    existingPlayer.PreferredRoleData = JsonSerializer.Serialize(preferredRoleMap.Values);
+    existingPlayer.AddedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+    await dbContext.SaveChangesAsync();
+    Console.WriteLine(existingPlayer.SpectatorData);
+    return Results.Ok(existingPlayer);
 });
 
 app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/spectator", async (string region, string puuid, IHttpClientFactory httpClientFactory) => {
@@ -543,7 +921,6 @@ async Task<Dictionary<int, string>> BuildChampionRoleMappingAsync(HttpClient cli
         { "Leona", "UTILITY" },
         { "Lulu", "UTILITY" },
         { "Milio", "UTILITY" },
-        { "Morgana", "UTILITY" },
         { "Nami", "UTILITY" },
         { "Nautilus", "UTILITY" },
         { "Pyke", "UTILITY" },
@@ -562,12 +939,13 @@ async Task<Dictionary<int, string>> BuildChampionRoleMappingAsync(HttpClient cli
 
     var ambiguousMapping = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase) {
         { "Brand",      new[] { "UTILITY", "MID", "BOTTOM" } },
-        { "Lux",        new[] { "MID", "UTILITY" } },
+        { "Lux",        new[] { "UTILITY", "MID" } },
         { "Maokai",     new[] { "TOP", "UTILITY" } },
         { "Mel",        new[] { "MID", "BOTTOM", "UTILITY" } },
         { "Neeko",      new[] { "UTILITY", "MID" } },
         { "Pantheon",   new[] { "UTILITY", "TOP", "MID" } },
         { "Poppy",      new[] { "UTILITY", "TOP" } },
+        { "Morgana",    new[] { "UTILITY", "MID" } },
         { "Senna",      new[] { "UTILITY", "BOTTOM" } },
         { "Seraphine",  new[] { "UTILITY", "BOTTOM", "MID" } },
         { "Swain",      new[] { "UTILITY", "MID", "BOTTOM", "TOP" } },
@@ -712,6 +1090,7 @@ public class ParticipantDto {
 }
 
 public class ChampionStats {
+    public int ChampionId { get; set; }
     public string ChampionName { get; set; } = string.Empty;
     public int Games { get; set; }
     public int Wins { get; set; }

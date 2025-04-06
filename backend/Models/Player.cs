@@ -21,6 +21,7 @@ namespace backend.Models {
         public string ClashData { get; set; } = string.Empty;
         public string ChampionStatsData { get; set; } = string.Empty;
         public string PreferredRoleData { get; set; } = string.Empty;
+        public long AddedAt { get; set; }
         public ICollection<Race> Races { get; set; } = new List<Race>();
     }
 }

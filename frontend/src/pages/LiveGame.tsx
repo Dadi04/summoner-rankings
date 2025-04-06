@@ -1,6 +1,7 @@
 import React, {useState, useEffect, } from "react";
 import { useLocation, useParams, Link } from "react-router-dom"
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import UpdateButton from "../components/UpdateButton";
 import queueJson from "../assets/json/queues.json";
 import championJson from "../assets/json/champion.json";
 import summonerSpellsJson from "../assets/json/summonerSpells.json";
@@ -400,78 +401,13 @@ const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolea
     );
 };
 
-const RefreshButton: React.FC<{region: string; puuid: string; setSpectatorData: React.Dispatch<React.SetStateAction<any>>;}> = ({region, puuid, setSpectatorData}) => {
-    const [cooldown, setCooldown] = useState(false);
-    const [remainingTime, setRemainingTime] = useState(0);
-
-    useEffect(() => {
-        const savedTime = localStorage.getItem("cooldownExpires");
-        if (savedTime) {
-            const expiresAt = parseInt(savedTime, 10);
-            const now = Date.now();
-            if (expiresAt > now) {
-                setCooldown(true);
-                setRemainingTime(Math.ceil((expiresAt - now) / 60000));
-            } else {
-                localStorage.removeItem("cooldownExpires");
-            }
-        }
-    }, []);
-
-    useEffect(() => {
-        if (cooldown && remainingTime > 0) {
-            const interval = setInterval(() => {
-                setRemainingTime((prev) => {
-                    if (prev <= 1) {
-                        clearInterval(interval);
-                        setCooldown(false);
-                        localStorage.removeItem("cooldownExpires");
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 60000);
-
-            return () => clearInterval(interval);
-        }
-    }, [cooldown, remainingTime])
-
-    const handleClick = async () => {
-        if (cooldown) return;
-        setCooldown(true);
-        setRemainingTime(5);
-
-        const expiresAt = Date.now() + 300000;
-        localStorage.setItem("cooldownExpires", expiresAt.toString());
-        console.log(region, puuid);
-        try {
-            const response = await fetch(`/api/lol/profile/${region}/by-puuid/${puuid}/spectator`); 
-            if (!response.ok) {
-                console.error("API Error:", response.statusText);
-            } else {
-                const newLiveData = await response.json();
-                setSpectatorData(newLiveData.spectator);
-            }
-        } catch (error) {
-            console.error("Fetch failed:", error);
-        }
-    };
-
-    return (
-        <button 
-            onClick={handleClick} 
-            disabled={cooldown} 
-            className={`focus:outline-none text-white font-medium rounded-lg text-sm px-5 py-2.5 
-                ${cooldown ? "bg-gray-500 cursor-not-allowed brightness-70" : "bg-purple-700 hover:bg-purple-800"} focus:ring-4 focus:ring-purple-300`}>
-            {cooldown ? `Wait ${remainingTime} min...` : "Refresh"}
-        </button>
-    );
-}; 
-
 const LiveGame: React.FC = () => {
     const location = useLocation();
     const data = location.state?.apiData;
     const {regionCode, encodedSummoner} = useParams<{regionCode: string; encodedSummoner: string }>(); 
+
+    const [newData, setNewData] = useState(data);
+
     if (!encodedSummoner) {
         return <div>Error: Summoner parameter is missing.</div>;
     }
@@ -479,17 +415,18 @@ const LiveGame: React.FC = () => {
         return <div>Error: RegionCode parameter is missing.</div>;
     }
     
-    // const playerData = JSON.parse(data.summonerData)
-    const summonerData = JSON.parse(data.summonerData);
-    // const entriesData = JSON.parse(data.entriesData);
-    // const topMasteriesData = JSON.parse(data.topMasteriesData);
-    // const matchesData = JSON.parse(data.matchesData);
-    // const rankedMatchesData = JSON.parse(data.rankedMatchesData);
-    // const challengesData = JSON.parse(data.challengesData);
-    const spectatorData = JSON.parse(data.spectatorData);
-    // const clashData = JSON.parse(data.clashData);
-    // const championStatsData = JSON.parse(data.championStatsData);
-    // const preferredRoleData = JSON.parse(data.preferredRoleData);
+    console.log(newData);
+    // const playerData = JSON.parse(newData.summonerData)
+    const summonerData = JSON.parse(newData.summonerData);
+    // const entriesData = JSON.parse(newData.entriesData);
+    // const topMasteriesData = JSON.parse(newData.topMasteriesData);
+    // const matchesData = JSON.parse(newData.matchesData);
+    // const rankedMatchesData = JSON.parse(newData.rankedMatchesData);
+    // const challengesData = JSON.parse(newData.challengesData);
+    const spectatorData = JSON.parse(newData.spectatorData);
+    // const clashData = JSON.parse(newData.clashData);
+    // const championStatsData = JSON.parse(newData.championStatsData);
+    // const preferredRoleData = JSON.parse(newData.preferredRoleData);
 
     const [newSpectatorData, setSpectatorData] = useState(spectatorData);
     if (!newSpectatorData) {
@@ -503,8 +440,8 @@ const LiveGame: React.FC = () => {
                         </div>
                         <div className="pt-3 pb-3">
                             <div className="flex">
-                                <h1 className="text-white font-bold text-3xl mr-2">{data.summonerName}</h1>
-                                <h1 className="text-neutral-400 text-3xl mr-2">#{data.summonerTag}</h1>
+                                <h1 className="text-white font-bold text-3xl mr-2">{newData.summonerName}</h1>
+                                <h1 className="text-neutral-400 text-3xl mr-2">#{newData.summonerTag}</h1>
                                 <button type="button" className="bg-neutral-200 pl-1.5 pr-1.5 rounded-lg">
                                     <img src={favorite} alt="favorite" className="h-6 border-2 border-neutral-700 rounded" />
                                 </button>
@@ -516,23 +453,23 @@ const LiveGame: React.FC = () => {
                                 <p className="p-2">Ladder Rank num </p>
                             </div>
                             <div className="w-fit">
-                                <button type="button" className="focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-semibold rounded-lg text-md px-8 py-2.5 mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900">Update</button>
+                                <UpdateButton updateSpectatorData={false} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
                             </div>
                         </div>  
                     </div>
                     <div className="p-2">
                         <ul className="flex gap-10 p-2">
-                            <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}`} state={{apiData: data}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Summary</Link></li>
-                            <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/champions`} state={{apiData: data}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Champions</Link></li>
-                            <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/mastery`} state={{apiData: data}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Mastery</Link></li>
-                            <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: data}} className="cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 bg-neutral-700 border text-purple-400 hover:text-neutral-100">Live Game</Link></li>
+                            <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Summary</Link></li>
+                            <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/champions`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Champions</Link></li>
+                            <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/mastery`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Mastery</Link></li>
+                            <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: newData}} className="cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 bg-neutral-700 border text-purple-400 hover:text-neutral-100">Live Game</Link></li>
                         </ul>
                     </div>
                 </div>
                 
                 <div className="m-auto container mt-2 text-center p-4 bg-neutral-800">
                     <h2 className="text-2xl font-semibold text-neutral-50">
-                        "{data.summonerName}#{data.summonerTag}" is not in an active game.
+                        "{newData.summonerName}#{newData.summonerTag}" is not in an active game.
                     </h2>
                     <p className="text-lg text-neutral-200">
                         Please try again later if the summoner is currently in game.
@@ -546,15 +483,6 @@ const LiveGame: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
-        const storageKey = `liveGameData-${regionCode}-${encodedSummoner}`;
-        const storedData = localStorage.getItem(storageKey);
-
-        if (storedData) {
-            setLiveGameData(JSON.parse(storedData));
-            setLoading(false);
-            return;
-        } 
-
         const fetchData = async () => {
             try {
                 const fetchPromises = newSpectatorData.participants.map(async (participant: Participant) => {
@@ -629,11 +557,6 @@ const LiveGame: React.FC = () => {
                     };
                 });
                 setLiveGameData(parsedData);
-                localStorage.setItem(storageKey, JSON.stringify(data));
-                setTimeout(() => {
-                    localStorage.removeItem(storageKey);
-                    console.log(`${storageKey} has been remove from localStorage.`);
-                }, 600000)
             } catch (error) {
                 console.error("Error fetching live game data:", error);
             } finally {
@@ -663,29 +586,29 @@ const LiveGame: React.FC = () => {
                         </div>
                         <div className="pt-3 pb-3">
                             <div className="flex">
-                                <h1 className="text-white font-bold text-3xl mr-2">{data.summonerName}</h1>
-                                <h1 className="text-neutral-400 text-3xl mr-2">#{data.summonerTag}</h1>
+                                <h1 className="text-white font-bold text-3xl mr-2">{newData.summonerName}</h1>
+                                <h1 className="text-neutral-400 text-3xl mr-2">#{newData.summonerTag}</h1>
                                 <button type="button" className="bg-neutral-200 pl-1.5 pr-1.5 rounded-lg">
                                     <img src={favorite} alt="favorite" className="h-6 border-2 border-neutral-700 rounded" />
                                 </button>
                             </div>
                             <div className="flex text-sm text-neutral-100">
                                 <div className="pt-2 pb-2 pl-1">
-                                    <p className="uppercase border-r-1 pr-2">{data.region}</p>
+                                    <p className="uppercase border-r-1 pr-2">{newData.region}</p>
                                 </div>
                                 <p className="p-2">Ladder Rank num </p>
                             </div>
                             <div>
-                                <button type="button" className="focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-semibold rounded-lg text-md px-8 py-2.5 mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900">Update</button>
+                                <UpdateButton updateSpectatorData={false} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
                             </div>
                         </div>  
                     </div>
                     <div className="p-2">
                         <ul className="flex gap-10 p-2">
-                            <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}`} state={{apiData: data}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Summary</Link></li>
-                            <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/champions`} state={{apiData: data}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Champions</Link></li>
-                            <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/mastery`} state={{apiData: data}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Mastery</Link></li>
-                            <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: data}} className="cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 bg-neutral-700 border text-purple-400 hover:text-neutral-100">Live Game</Link></li>
+                            <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Summary</Link></li>
+                            <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/champions`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Champions</Link></li>
+                            <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/mastery`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Mastery</Link></li>
+                            <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: newData}} className="cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 bg-neutral-700 border text-purple-400 hover:text-neutral-100">Live Game</Link></li>
                         </ul>
                     </div>
                 </div>
@@ -706,20 +629,20 @@ const LiveGame: React.FC = () => {
                     </div>
                     <div className="pt-3 pb-3">
                         <div className="flex">
-                            <h1 className="text-white font-bold text-3xl mr-2">{data.summonerName}</h1>
-                            <h1 className="text-neutral-400 text-3xl mr-2">#{data.summonerTag}</h1>
+                            <h1 className="text-white font-bold text-3xl mr-2">{newData.summonerName}</h1>
+                            <h1 className="text-neutral-400 text-3xl mr-2">#{newData.summonerTag}</h1>
                             <button type="button" className="bg-neutral-200 pl-1.5 pr-1.5 rounded-lg">
                                 <img src={favorite} alt="favorite" className="h-6 border-2 border-neutral-700 rounded" />
                             </button>
                         </div>
                         <div className="flex text-sm text-neutral-100">
                             <div className="pt-2 pb-2 pl-1">
-                                <p className="uppercase border-r-1 pr-2">{data.region}</p>
+                                <p className="uppercase border-r-1 pr-2">{newData.region}</p>
                             </div>
                             <p className="p-2">Ladder Rank num </p>
                         </div>
                         <div>
-                            <button type="button" className="focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-semibold rounded-lg text-md px-8 py-2.5 mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900">Update</button>
+                            <UpdateButton updateSpectatorData={false} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
                         </div>
                     </div>  
                 </div>
@@ -747,7 +670,7 @@ const LiveGame: React.FC = () => {
                         <GameTimer gameLength={newSpectatorData.gameLength} gameStartTime={newSpectatorData.gameStartTime} />
                     </h1>
                 </div>
-                <RefreshButton region={data.region} puuid={data.puuid} setSpectatorData={setSpectatorData} />
+                <UpdateButton updateSpectatorData={true} api={`/api/lol/profile/${regionCode}/by-puuid/${newData.puuid}/spectator`} buttonText={"Refresh"} setData={setSpectatorData} />
             </div>
 
             {isTeamIdSame ? (
@@ -779,7 +702,7 @@ const LiveGame: React.FC = () => {
                             <ParticipantRow
                                 key={participant.puuid}
                                 participant={participant}
-                                isBeingWatched={data.Puuid === participant.puuid}
+                                isBeingWatched={newData.Puuid === participant.puuid}
                                 liveGameData={liveGameData.find(player => player?.puuid === participant.puuid) || null}
                                 region={regionCode}
                                 gridCols="grid-cols-[50%_12.5%_12.5%_12.5%_12.5%]"
@@ -804,7 +727,7 @@ const LiveGame: React.FC = () => {
                             <ParticipantRow
                                 key={participant.puuid}
                                 participant={participant}
-                                isBeingWatched={data.Puuid === participant.puuid}
+                                isBeingWatched={newData.Puuid === participant.puuid}
                                 liveGameData={liveGameData.find(player => player?.puuid === participant.puuid) || null}
                                 region={regionCode}
                                 gridCols="grid-cols-[35%_20%_12%_12%_12%_9%]"
@@ -827,7 +750,7 @@ const LiveGame: React.FC = () => {
                             <ParticipantRow
                                 key={participant.puuid}
                                 participant={participant}
-                                isBeingWatched={data.Puuid === participant.puuid}
+                                isBeingWatched={newData.Puuid === participant.puuid}
                                 liveGameData={liveGameData.find(player => player?.puuid === participant.puuid) || null}
                                 region={regionCode}
                                 gridCols="grid-cols-[35%_20%_12%_12%_12%_9%]"

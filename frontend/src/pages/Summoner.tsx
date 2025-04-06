@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import UpdateButton from "../components/UpdateButton";
 import favorite from "../assets/favorite.svg";
 import loadingAnimation from "../assets/animations/loading.lottie";
 
@@ -34,34 +35,21 @@ const Summoner: React.FC = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const storageKey = `apiData-${regionCode}-${encodedSummoner}`;
-        const storedData = localStorage.getItem(storageKey);
-
-        if (storedData) {
-            setApiData(JSON.parse(storedData));
-            setLoading(false);
-        } else {
-            const fetchData = async () => {
-                try {
-                    const response = await fetch(`/api/lol/profile/${regionCode}/${summoner}`);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const data = await response.json();
-                    setApiData(data);
-                    localStorage.setItem(storageKey, JSON.stringify(data));
-                    setTimeout(() => {
-                        localStorage.removeItem(storageKey);
-                        console.log(`${storageKey} has been remove from localStorage.`);
-                    }, 600000)
-                } catch (error) {
-                    console.log('Error fetching API data:', error);
-                } finally {
-                    setLoading(false);
+        const fetchData = async () => {
+            try {
+                const response = await fetch(`/api/lol/profile/${regionCode}/${summoner}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                const data = await response.json();
+                setApiData(data);
+            } catch (error) {
+                console.log('Error fetching API data:', error);
+            } finally {
+                setLoading(false);
             }
-            fetchData();
         }
+        fetchData();
     }, [regionCode, summoner]);
 
     if (loading || !apiData) {
@@ -102,7 +90,7 @@ const Summoner: React.FC = () => {
                             <p className="p-2">Ladder Rank num </p>
                         </div>
                         <div>
-                            <button type="button" className="focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-semibold rounded-lg text-md px-8 py-2.5 mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900">Update</button>
+                            <UpdateButton updateSpectatorData={false} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setApiData} />
                         </div>
                     </div>  
                 </div>
