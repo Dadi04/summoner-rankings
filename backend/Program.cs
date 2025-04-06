@@ -770,6 +770,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
     return Results.Ok(existingPlayer);
 });
 
+// implement predictedRole and put add to db
 app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/spectator", async (string region, string puuid, IHttpClientFactory httpClientFactory) => {
     var client = httpClientFactory.CreateClient();
     string spectatorUrl = $"https://{region}.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={apiKey}";

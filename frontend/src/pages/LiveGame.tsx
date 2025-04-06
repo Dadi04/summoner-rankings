@@ -453,7 +453,7 @@ const LiveGame: React.FC = () => {
                                 <p className="p-2">Ladder Rank num </p>
                             </div>
                             <div className="w-fit">
-                                <UpdateButton updateSpectatorData={false} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
+                                <UpdateButton updateSpectatorData={false} regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
                             </div>
                         </div>  
                     </div>
@@ -566,7 +566,6 @@ const LiveGame: React.FC = () => {
         fetchData();
     }, [regionCode, encodedSummoner, newSpectatorData.participants]);
 
-    console.log(liveGameData);
     const queueId = newSpectatorData.gameQueueConfigId;
     const queueData = getQueueData(queueId);
     const gamemode = queueData ? queueData.description : "Unknown game mode";
@@ -599,7 +598,7 @@ const LiveGame: React.FC = () => {
                                 <p className="p-2">Ladder Rank num </p>
                             </div>
                             <div>
-                                <UpdateButton updateSpectatorData={false} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
+                                <UpdateButton updateSpectatorData={false} regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
                             </div>
                         </div>  
                     </div>
@@ -642,7 +641,7 @@ const LiveGame: React.FC = () => {
                             <p className="p-2">Ladder Rank num </p>
                         </div>
                         <div>
-                            <UpdateButton updateSpectatorData={false} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
+                            <UpdateButton updateSpectatorData={false} regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
                         </div>
                     </div>  
                 </div>
@@ -670,7 +669,7 @@ const LiveGame: React.FC = () => {
                         <GameTimer gameLength={newSpectatorData.gameLength} gameStartTime={newSpectatorData.gameStartTime} />
                     </h1>
                 </div>
-                <UpdateButton updateSpectatorData={true} api={`/api/lol/profile/${regionCode}/by-puuid/${newData.puuid}/spectator`} buttonText={"Refresh"} setData={setSpectatorData} />
+                <UpdateButton updateSpectatorData={true} regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/by-puuid/${newData.puuid}/spectator`} buttonText={"Refresh"} setData={setSpectatorData} />
             </div>
 
             {isTeamIdSame ? (

@@ -23,12 +23,16 @@ interface ApiData {
     preferredRoleData: string;
 }
 
-// on refresh dont call api call again
 const Summoner: React.FC = () => {
     const {regionCode, encodedSummoner} = useParams<{regionCode: string; encodedSummoner: string }>(); 
+
     if (!encodedSummoner) {
         return <div>Error: Summoner parameter is missing.</div>;
     }
+    if (!regionCode) {
+        return <div>Error: RegionCode parameter is missing.</div>;
+    }
+
     const summoner = decodeURIComponent(encodedSummoner);
 
     const [apiData, setApiData] = useState<ApiData | null>(null);
@@ -90,7 +94,7 @@ const Summoner: React.FC = () => {
                             <p className="p-2">Ladder Rank num </p>
                         </div>
                         <div>
-                            <UpdateButton updateSpectatorData={false} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setApiData} />
+                            <UpdateButton updateSpectatorData={false} regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setApiData} />
                         </div>
                     </div>  
                 </div>

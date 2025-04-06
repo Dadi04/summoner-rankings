@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import {  } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
-const UpdateButton: React.FC<{updateSpectatorData: boolean; api: string; buttonText: string; setData: React.Dispatch<React.SetStateAction<any>>;}> = ({updateSpectatorData, api, buttonText, setData}) => {
+const UpdateButton: React.FC<{updateSpectatorData: boolean; regionCode: string; encodedSummoner: string; api: string; buttonText: string; setData: React.Dispatch<React.SetStateAction<any>>;}> = ({updateSpectatorData, regionCode, encodedSummoner, api, buttonText, setData}) => {
     const [cooldown, setCooldown] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [remainingTime, setRemainingTime] = useState(0);
+    const navigate = useNavigate();
     const storageKey = `cooldownExpires-${buttonText}-${api}`;
     useEffect(() => {
         const savedTime = localStorage.getItem(storageKey);
@@ -18,7 +19,7 @@ const UpdateButton: React.FC<{updateSpectatorData: boolean; api: string; buttonT
                 localStorage.removeItem(storageKey);
             }
         }
-    }, [buttonText]);
+    }, [buttonText, api, storageKey]);
     
     useEffect(() => {
         if (cooldown && remainingTime > 0) {
@@ -36,7 +37,7 @@ const UpdateButton: React.FC<{updateSpectatorData: boolean; api: string; buttonT
 
             return () => clearInterval(interval);
         }
-    }, [cooldown, remainingTime, buttonText])
+    }, [cooldown, remainingTime, buttonText, api, storageKey])
 
     const handleClick = async () => {
         if (cooldown || isLoading) return;
@@ -53,7 +54,7 @@ const UpdateButton: React.FC<{updateSpectatorData: boolean; api: string; buttonT
                     setData(newLiveData.spectator);
                 } else {
                     setData(newLiveData);
-                    console.log("button", newLiveData);
+                    navigate(`/lol/profile/${regionCode}/${encodedSummoner}`);
                 }
             }
         } catch (error) {
