@@ -373,7 +373,7 @@ const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolea
             </div>
             <div className="text-center">
                 <p className={getKDAColor(champStats ? Math.round(champStats.AverageKDA*100)/100 : -1)}>
-                    {champStats ? `${Math.round(champStats.AverageKDA*100)/100}:1` : "-"}
+                    {champStats ? `${Math.round(champStats.AverageKDA*100)/100}:1 KDA` : "-"}
                 </p>
                 <p>
                     {champStats ? `(${Math.round(champStats.TotalKills/champStats.Games*10)/10} / ${Math.round(champStats.TotalDeaths/champStats.Games*10)/10} / ${Math.round(champStats.TotalAssists/champStats.Games*10)/10})` : ""}
@@ -403,10 +403,8 @@ const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolea
 
 const LiveGame: React.FC = () => {
     const location = useLocation();
-    const data = location.state?.apiData;
     const {regionCode, encodedSummoner} = useParams<{regionCode: string; encodedSummoner: string }>(); 
-
-    const [newData, setNewData] = useState(data);
+    
 
     if (!encodedSummoner) {
         return <div>Error: Summoner parameter is missing.</div>;
@@ -415,20 +413,13 @@ const LiveGame: React.FC = () => {
         return <div>Error: RegionCode parameter is missing.</div>;
     }
     
-    console.log(newData);
-    // const playerData = JSON.parse(newData.summonerData)
-    const summonerData = JSON.parse(newData.summonerData);
-    // const entriesData = JSON.parse(newData.entriesData);
-    // const topMasteriesData = JSON.parse(newData.topMasteriesData);
-    // const matchesData = JSON.parse(newData.matchesData);
-    // const rankedMatchesData = JSON.parse(newData.rankedMatchesData);
-    // const challengesData = JSON.parse(newData.challengesData);
-    const spectatorData = JSON.parse(newData.spectatorData);
-    // const clashData = JSON.parse(newData.clashData);
-    // const championStatsData = JSON.parse(newData.championStatsData);
-    // const preferredRoleData = JSON.parse(newData.preferredRoleData);
+    const initialData = location.state?.apiData || {};
+    const [newData, setNewData] = useState(initialData);
+    
+    const summonerData = newData.summonerData ? JSON.parse(newData.summonerData) : null;
+    const spectatorData = newData.spectatorData ? JSON.parse(newData.spectatorData) : null;
 
-    const [newSpectatorData, setSpectatorData] = useState(spectatorData);
+    const [newSpectatorData, _] = useState(spectatorData);
     if (!newSpectatorData) {
         return (
             <>
@@ -453,7 +444,7 @@ const LiveGame: React.FC = () => {
                                 <p className="p-2">Ladder Rank num </p>
                             </div>
                             <div className="w-fit">
-                                <UpdateButton updateSpectatorData={false} regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
+                                <UpdateButton regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
                             </div>
                         </div>  
                     </div>
@@ -598,7 +589,7 @@ const LiveGame: React.FC = () => {
                                 <p className="p-2">Ladder Rank num </p>
                             </div>
                             <div>
-                                <UpdateButton updateSpectatorData={false} regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
+                                <UpdateButton regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
                             </div>
                         </div>  
                     </div>
@@ -641,16 +632,16 @@ const LiveGame: React.FC = () => {
                             <p className="p-2">Ladder Rank num </p>
                         </div>
                         <div>
-                            <UpdateButton updateSpectatorData={false} regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
+                            <UpdateButton regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
                         </div>
                     </div>  
                 </div>
                 <div className="p-2">
                     <ul className="flex gap-10 p-2">
-                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}`} state={{apiData: data}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Summary</Link></li>
-                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/champions`} state={{apiData: data}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Champions</Link></li>
-                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/mastery`} state={{apiData: data}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Mastery</Link></li>
-                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: data}} className="cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 bg-neutral-700 border text-purple-400 hover:text-neutral-100">Live Game</Link></li>
+                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Summary</Link></li>
+                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/champions`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Champions</Link></li>
+                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/mastery`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Mastery</Link></li>
+                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: newData}} className="cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 bg-neutral-700 border text-purple-400 hover:text-neutral-100">Live Game</Link></li>
                     </ul>
                 </div>
             </div>
@@ -669,7 +660,6 @@ const LiveGame: React.FC = () => {
                         <GameTimer gameLength={newSpectatorData.gameLength} gameStartTime={newSpectatorData.gameStartTime} />
                     </h1>
                 </div>
-                <UpdateButton updateSpectatorData={true} regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/by-puuid/${newData.puuid}/spectator`} buttonText={"Refresh"} setData={setSpectatorData} />
             </div>
 
             {isTeamIdSame ? (

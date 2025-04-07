@@ -94,7 +94,7 @@ const Summoner: React.FC = () => {
                             <p className="p-2">Ladder Rank num </p>
                         </div>
                         <div>
-                            <UpdateButton updateSpectatorData={false} regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setApiData} />
+                            <UpdateButton regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setApiData} />
                         </div>
                     </div>  
                 </div>

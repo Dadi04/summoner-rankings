@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const UpdateButton: React.FC<{updateSpectatorData: boolean; regionCode: string; encodedSummoner: string; api: string; buttonText: string; setData: React.Dispatch<React.SetStateAction<any>>;}> = ({updateSpectatorData, regionCode, encodedSummoner, api, buttonText, setData}) => {
+const UpdateButton: React.FC<{regionCode: string; encodedSummoner: string; api: string; buttonText: string; setData: React.Dispatch<React.SetStateAction<any>>;}> = ({regionCode, encodedSummoner, api, buttonText, setData}) => {
     const [cooldown, setCooldown] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [remainingTime, setRemainingTime] = useState(0);
@@ -50,12 +50,8 @@ const UpdateButton: React.FC<{updateSpectatorData: boolean; regionCode: string; 
                 console.error("API Error:", response.statusText);
             } else {
                 const newLiveData = await response.json();
-                if (updateSpectatorData) {
-                    setData(newLiveData.spectator);
-                } else {
-                    setData(newLiveData);
-                    navigate(`/lol/profile/${regionCode}/${encodedSummoner}`);
-                }
+                setData(newLiveData);
+                navigate(`/lol/profile/${regionCode}/${encodedSummoner}`);
             }
         } catch (error) {
             console.error("Fetch failed:", error);

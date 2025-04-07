@@ -51,7 +51,7 @@ const Mastery: React.FC = () => {
                             <p className="p-2">Ladder Rank num </p>
                         </div>
                         <div>
-                            <UpdateButton updateSpectatorData={false} regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
+                            <UpdateButton regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
                         </div>
                     </div>  
                 </div>
