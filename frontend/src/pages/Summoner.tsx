@@ -8,11 +8,12 @@ import GameTimer from "../components/GameTime";
 import ChampionImage from '../components/ChampionImage';
 
 import Participant from '../interfaces/Participant';
+import Entry from '../interfaces/Entry';
 
 import queueJson from "../assets/json/queues.json";
 
-
 import favorite from "../assets/favorite.svg";
+import medallight from "../assets/medal-light.png"
 import loadingAnimation from "../assets/animations/loading.lottie";
 
 interface ApiData {
@@ -89,6 +90,17 @@ const Summoner: React.FC = () => {
     const queueData = queueJson.find((item) => item.queueId === queueId);
     const gamemode = queueData ? queueData.description : "Unknown game mode";
 
+    const rankedSoloDuoEntry = entriesData.find((entry: Entry) => entry.queueType === "RANKED_SOLO_5x5");
+    const rankedFlexEntry = entriesData.find((entry: Entry) => entry.queueType === "RANKED_FLEX_SR");
+    let rankedSoloDuoWinrate = 0;
+    if (rankedSoloDuoEntry) {
+        rankedSoloDuoWinrate = Math.round(rankedSoloDuoEntry.wins / (rankedSoloDuoEntry.wins + rankedSoloDuoEntry.losses) * 100);
+    }
+    let rankedFlexWinrate = 0;
+    if (rankedFlexEntry) {
+        rankedFlexWinrate = Math.round(rankedFlexEntry.wins / (rankedFlexEntry.wins + rankedFlexEntry.losses) * 100);
+    }
+
     return (
         <div className="container m-auto">
             <div className="w-full bg-neutral-800 mt-1">
@@ -121,7 +133,20 @@ const Summoner: React.FC = () => {
                         <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}`} state={{apiData: apiData}} className="cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 bg-neutral-700 border text-purple-400 hover:text-neutral-100">Summary</Link></li>
                         <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/champions`} state={{apiData: apiData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Champions</Link></li>
                         <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/mastery`} state={{apiData: apiData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Mastery</Link></li>
-                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: apiData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Live Game</Link></li>
+                        {spectatorData ? (
+                            <li>
+                                <Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: apiData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">
+                                    Live Game
+                                    <span className="animate-pulse text-purple-500 ml-1.5">●</span>
+                                </Link>
+                            </li>
+                        ) : (
+                            <li>
+                                <Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: apiData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">
+                                    Live Game
+                                </Link>
+                            </li>
+                        )}
                     </ul>
                 </div>
             </div>
@@ -152,7 +177,10 @@ const Summoner: React.FC = () => {
                                         ))}
                                     </div>
                                     <div className="flex flex-col gap-0.5 text-center">
-                                        <h1 className="text-xl font-bold">Live Game</h1>
+                                        <div className="flex items-center text-xl font-bold">
+                                            <span className="animate-pulse text-purple-500 mr-1.5">●</span>
+                                            <p>Live Game</p>
+                                        </div>
                                         <p className="text-sm">{gamemode}</p>
                                         <GameTimer gameLength={spectatorData.gameLength} gameStartTime={spectatorData.gameStartTime} classes="text-xl text-neutral-50" />
                                     </div>
@@ -177,7 +205,73 @@ const Summoner: React.FC = () => {
                         </div>
                     </Link>
                 )}
-                <div className="bg-neutral-800">
+                <div className="flex justify-between mt-2 gap-2">
+                    <div className="w-[30%] flex flex-col gap-2">
+                        <div className="bg-neutral-800">
+                            
+                            {rankedSoloDuoEntry ? (
+                                <>
+                                    <div className="flex items-center gap-1 p-2">
+                                        <img src={medallight} alt="medal-light" className="h-5" />
+                                        <h1>Ranked Solo/Duo</h1>
+                                    </div>
+                                    <div className="flex justify-around items-center">
+                                        {/* copyright issues */}
+                                        <img src={`https://dpm.lol/rank/${rankedSoloDuoEntry.tier}.webp`} alt={rankedSoloDuoEntry.tier.toLowerCase()} className="h-25" />
+                                        <div className="flex flex-col gap-1 text-center">
+                                            <p className="font-bold">{rankedSoloDuoEntry.tier} {rankedSoloDuoEntry.rank} {rankedSoloDuoEntry.LeaguePoints} LP</p>
+                                            <p>{rankedSoloDuoEntry.wins}W-{rankedSoloDuoEntry.losses}L ({rankedSoloDuoWinrate}%)</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-center">
+                                        GRAPH TODO
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex justify-between p-2">
+                                    <div className="flex items-center gap-1"> 
+                                        <img src={medallight} alt="medal-light" className="h-5" />
+                                        <h1>Ranked Solo/Duo</h1>
+                                    </div>
+                                    <p>Unranked</p>
+                                </div>
+                            )}
+                        </div>
+                        <div className="bg-neutral-800">
+                            {rankedFlexEntry ? (
+                                <>
+                                    <div className="flex items-center gap-1 p-2">
+                                        <img src={medallight} alt="medal-light" className="h-5" />
+                                        <h1>Ranked Flex</h1>
+                                    </div>
+                                    <div className="flex justify-around items-center">
+                                        {/* copyright issues */}
+                                        <img src={`https://dpm.lol/rank/${rankedSoloDuoEntry.tier}.webp`} alt={rankedFlexEntry.tier.toLowerCase()} className="h-25" />
+                                        <div className="flex flex-col gap-1 text-center">
+                                            <p className="font-bold">{rankedFlexEntry.tier} {rankedFlexEntry.rank} {rankedFlexEntry.LeaguePoints} LP</p>
+                                            <p>{rankedFlexEntry.wins}W-{rankedFlexEntry.losses}L ({rankedFlexWinrate}%)</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-center">
+                                        GRAPH TODO
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex justify-between p-2">
+                                    <div className="flex items-center gap-1"> 
+                                        <img src={medallight} alt="medal-light" className="h-5" />
+                                        <h1>Ranked Flex</h1>
+                                    </div>
+                                    <p>Unranked</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <div className="w-[70%] bg-neutral-800 text-center">
+                        <h1>Last 30 Solo Duo Games Pefrormance TODO</h1>
+                    </div>
+                </div>
+                <div className="bg-neutral-800 mt-2">
                     <pre>{JSON.stringify(summonerData, null, 2)}</pre>
                     <pre>{JSON.stringify(entriesData, null, 2)}</pre>
                     <pre>{JSON.stringify(championStatsData, null, 2)}</pre>

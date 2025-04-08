@@ -60,7 +60,20 @@ const Champions: React.FC = () => {
                         <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Summary</Link></li>
                         <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/champions`} state={{apiData: newData}} className="cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 bg-neutral-700 border text-purple-400 hover:text-neutral-100">Champions</Link></li>
                         <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/mastery`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Mastery</Link></li>
-                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Live Game</Link></li>
+                        {spectatorData ? (
+                            <li>
+                                <Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: apiData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">
+                                    Live Game
+                                    <span className="animate-pulse text-purple-500 ml-1.5">●</span>
+                                </Link>
+                            </li>
+                        ) : (
+                            <li>
+                                <Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: apiData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">
+                                    Live Game
+                                </Link>
+                            </li>
+                        )}
                     </ul>
                 </div>
             </div>

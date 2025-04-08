@@ -10,6 +10,7 @@ import GameTimer from "../components/GameTime";
 
 import Perk from "../interfaces/Perk";
 import Participant from "../interfaces/Participant";
+import Entry from "../interfaces/Entry";
 
 import queueJson from "../assets/json/queues.json";
 import summonerSpellsJson from "../assets/json/summonerSpells.json";
@@ -35,15 +36,6 @@ interface Summoner {
     id: string;
     puuid: string;
     summonerLevel: number;
-}
-
-interface Entry {
-    queueType: string;
-    tier: string;
-    rank: string;
-    LeaguePoints: number;
-    wins: number;
-    losses: number;
 }
 
 interface Player {
@@ -567,7 +559,20 @@ const LiveGame: React.FC = () => {
                             <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Summary</Link></li>
                             <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/champions`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Champions</Link></li>
                             <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/mastery`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Mastery</Link></li>
-                            <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: newData}} className="cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 bg-neutral-700 border text-purple-400 hover:text-neutral-100">Live Game</Link></li>
+                            {newSpectatorData ? (
+                                <li>
+                                    <Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">
+                                        Live Game
+                                        <span className="animate-pulse text-purple-500 ml-1.5">●</span>
+                                    </Link>
+                                </li>
+                            ) : (
+                                <li>
+                                    <Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">
+                                        Live Game
+                                    </Link>
+                                </li>
+                            )}
                         </ul>
                     </div>
                 </div>
@@ -610,7 +615,20 @@ const LiveGame: React.FC = () => {
                         <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Summary</Link></li>
                         <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/champions`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Champions</Link></li>
                         <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/mastery`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Mastery</Link></li>
-                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: newData}} className="cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 bg-neutral-700 border text-purple-400 hover:text-neutral-100">Live Game</Link></li>
+                        {newSpectatorData ? (
+                            <li>
+                                <Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">
+                                    Live Game
+                                    <span className="animate-pulse text-purple-500 ml-1.5">●</span>
+                                </Link>
+                            </li>
+                        ) : (
+                            <li>
+                                <Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: newData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">
+                                    Live Game
+                                </Link>
+                            </li>
+                        )}
                     </ul>
                 </div>
             </div>
@@ -619,8 +637,9 @@ const LiveGame: React.FC = () => {
                     <h1 className="mr-2">
                         {gamemode}
                     </h1>
-                    <h1 className="mr-2 bg-purple-600 pl-2 pr-2 rounded font-bold text-sm">
+                    <h1 className="mr-2 bg-purple-500 pl-2 pr-2 rounded font-bold text-sm">
                         Live
+                        <span className="animate-pulse text-purple-800 ml-1.5">●</span>
                     </h1>
                     <h1 className="mr-2 border-r-1 border-l-1 pl-2 pr-2 border-neutral-600">
                         {map}
