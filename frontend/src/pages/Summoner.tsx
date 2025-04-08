@@ -1,7 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { DD_VERSION } from '../version';
+
 import UpdateButton from "../components/UpdateButton";
+import GameTimer from "../components/GameTime";
+import ChampionImage from '../components/ChampionImage';
+
+import Participant from '../interfaces/Participant';
+
+import queueJson from "../assets/json/queues.json";
+
+
 import favorite from "../assets/favorite.svg";
 import loadingAnimation from "../assets/animations/loading.lottie";
 
@@ -71,12 +81,20 @@ const Summoner: React.FC = () => {
     const championStatsData = JSON.parse(apiData.championStatsData);
     const preferredRoleData = JSON.parse(apiData.preferredRoleData);
 
+    const isTeamIdSame = spectatorData?.participants.every(
+        (participant: Participant) => participant.teamId === spectatorData.participants[0].teamId
+    );
+
+    const queueId = spectatorData?.gameQueueConfigId;
+    const queueData = queueJson.find((item) => item.queueId === queueId);
+    const gamemode = queueData ? queueData.description : "Unknown game mode";
+
     return (
         <div className="container m-auto">
             <div className="w-full bg-neutral-800 mt-1">
                 <div className="flex border-b-1 pt-5 pb-5 pl-5">
                     <div className="relative p-3">
-                        <img src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/profileicon/${summonerData.profileIconId}.png`} alt={summonerData.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
+                        <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/profileicon/${summonerData.profileIconId}.png`} alt={summonerData.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
                         <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{summonerData.summonerLevel}</span>
                     </div>
                     <div className="pt-3 pb-3">
@@ -107,18 +125,70 @@ const Summoner: React.FC = () => {
                     </ul>
                 </div>
             </div>
-            <div className="mt-2 text-neutral-50 bg-neutral-800">
-                <h1 className="text-center">Summary</h1>
-                <pre>{JSON.stringify(summonerData, null, 2)}</pre>
-                <pre>{JSON.stringify(entriesData, null, 2)}</pre>
-                <pre>{JSON.stringify(championStatsData, null, 2)}</pre>
-                <pre>{JSON.stringify(preferredRoleData, null, 2)}</pre>
-                <pre>{JSON.stringify(topMasteriesData, null, 2)}</pre>
-                <pre>{JSON.stringify(matchesData, null, 2)}</pre>
-                <pre>{JSON.stringify(rankedMatchesData, null, 2)}</pre>
-                <pre>{JSON.stringify(spectatorData, null, 2)}</pre>
-                <pre>{JSON.stringify(clashData, null, 2)}</pre>
-                <pre>{JSON.stringify(challengesData, null, 2)}</pre>
+            <div className="mt-2 text-neutral-50">
+                {spectatorData && (
+                    <Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: apiData}}>
+                        <div className="relative group w-full flex items-center bg-neutral-800 cursor-pointer pb-4">
+                            {isTeamIdSame ? (
+                                <div className="flex p-2 cursor-pointer">
+                                    {spectatorData.participants.map((participant: Participant) => (
+                                        <div>
+                                            <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/profileicon/${participant.profileIconId}.png`} alt={`${participant.profileIconId}`} className="h-30 rounded-xl border-2 border-purple-600" />
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="w-full flex justify-between p-2">
+                                    <div className="flex w-[40%] justify-evenly">
+                                        {spectatorData.participants.filter((participant: Participant) => (participant.teamId === 100)).map((participant: Participant) => (
+                                            <div key={participant.championId} className="relative">
+                                                <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/profileicon/${participant.profileIconId}.png`} alt={`${participant.profileIconId}`} className="h-20 rounded-xl border-2 border-blue-600" />
+                                                <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} classes="h-[35px] absolute bottom-0 left-0 transform translate-y-1/3" />
+                                                {/* copyright issues */}
+                                                <div className="bg-black absolute bottom-0 right-0 transform translate-y-1/3">
+                                                    <img src={`https://dpm.lol/position/${participant.predictedRole}.svg`} alt={participant.predictedRole} className="h-[35px]" />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="flex flex-col gap-0.5 text-center">
+                                        <h1 className="text-xl font-bold">Live Game</h1>
+                                        <p className="text-sm">{gamemode}</p>
+                                        <GameTimer gameLength={spectatorData.gameLength} gameStartTime={spectatorData.gameStartTime} classes="text-xl text-neutral-50" />
+                                    </div>
+                                    <div className="flex w-[40%] justify-evenly">
+                                        {spectatorData.participants.filter((participant: Participant) => (participant.teamId === 200)).map((participant: Participant) => (
+                                            <div key={participant.championId} className="relative">
+                                                <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/profileicon/${participant.profileIconId}.png`} alt={`${participant.profileIconId}`} className="h-20 rounded-xl border-2 border-red-600" />
+                                                <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} classes="h-[35px] absolute bottom-0 left-0 transform translate-y-1/3" />
+                                                {/* copyright issues */}
+                                                <div className="bg-black absolute bottom-0 right-0 transform translate-y-1/3">
+                                                    <img src={`https://dpm.lol/position/${participant.predictedRole}.svg`} alt={participant.predictedRole} className="h-[35px]" />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            <div className="absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100" style={{background: 'linear-gradient(to right, rgba(0, 0, 0, 0) 10%, #262626 40%, #262626 100%)'}} />                        
+                            <div className="absolute right-0 top-0 bottom-0 flex items-center pr-4 opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100">
+                                <span className="text-white text-2xl font-bold">LIVE DETAILS</span>
+                            </div>
+                        </div>
+                    </Link>
+                )}
+                <div className="bg-neutral-800">
+                    <pre>{JSON.stringify(summonerData, null, 2)}</pre>
+                    <pre>{JSON.stringify(entriesData, null, 2)}</pre>
+                    <pre>{JSON.stringify(championStatsData, null, 2)}</pre>
+                    <pre>{JSON.stringify(preferredRoleData, null, 2)}</pre>
+                    <pre>{JSON.stringify(topMasteriesData, null, 2)}</pre>
+                    <pre>{JSON.stringify(matchesData, null, 2)}</pre>
+                    <pre>{JSON.stringify(rankedMatchesData, null, 2)}</pre>
+                    <pre>{JSON.stringify(spectatorData, null, 2)}</pre>
+                    <pre>{JSON.stringify(clashData, null, 2)}</pre>
+                    <pre>{JSON.stringify(challengesData, null, 2)}</pre>
+                </div>
             </div>
         </div>
     );

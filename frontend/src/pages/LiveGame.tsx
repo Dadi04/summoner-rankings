@@ -1,23 +1,24 @@
 import React, {useState, useEffect, } from "react";
 import { useLocation, useParams, Link } from "react-router-dom"
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { DD_VERSION } from '../version';
+
 import UpdateButton from "../components/UpdateButton";
+import BannedChampionsList from "../components/BannedChampionList";
+import ChampionImage from "../components/ChampionImage";
+import GameTimer from "../components/GameTime";
+
+import Perk from "../interfaces/Perk";
+import Participant from "../interfaces/Participant";
+
 import queueJson from "../assets/json/queues.json";
-import championJson from "../assets/json/champion.json";
 import summonerSpellsJson from "../assets/json/summonerSpells.json";
 import runesJson from "../assets/json/runes.json";
 import statModsJson from "../assets/json/statMods.json";
+
 import arrowdown from '../assets/arrow-down.png'
-import forbiddenlight from "../assets/forbidden-light.png";
-import noneicon from "../assets/none.jpg";
 import favorite from "../assets/favorite.svg";
 import loadingAnimation from '../assets/animations/loading.lottie';
-
-interface BannedChampion {
-    championId: number; 
-    teamId: number;
-    pickTurn: number;
-}
 
 interface Shard {
     id: number;
@@ -25,26 +26,6 @@ interface Shard {
     icon: string;
     name: string;
     shortDesc: string;
-}
-
-interface Perk {
-    perkIds: number[];
-    perkStyle: number;
-    perkSubStyle: number;
-}
-
-interface Participant {
-    puuid: string;
-    teamId: number;
-    spell1Id: number;
-    spell2Id: number;
-    championId: number;
-    profileIconId: number;
-    riotId: string;
-    bot: boolean;
-    summonerId: string;
-    gameCustomizationObjects: any[];
-    perks: Perk;
 }
 
 interface Summoner {
@@ -94,57 +75,20 @@ interface ChampionStats {
     AverageKDA: number;
 }
 
-const GameTimer: React.FC<{gameLength: number, gameStartTime: number}> = ({ gameLength, gameStartTime }) => {
-    const getElapsedTime = (): number => {
-        return Math.floor((Date.now() - gameStartTime) / 1000);
-    };
-
-    const [time, setTime] = useState<number>(getElapsedTime());
-    useEffect(() => {
-        const intervalId = setInterval(() => {
-            setTime(getElapsedTime());
-        }, 1000);
-        
-        return () => clearInterval(intervalId);
-    }, [gameLength]);
-
-    const minutes = Math.floor(time / 60);
-    const seconds = time % 60;
-    const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-    return formattedTime;
-};
-
-const getQueueData = (queueId: number) =>
-    queueJson.find((item) => item.queueId === queueId);
-
-const getChampionData = (championId: number) =>
-    Object.values(championJson.data).find(
-        (champion) => champion.key === championId.toString()
-    );
-
-const ChampionImage: React.FC<{championId: number; teamId: number; isTeamIdSame: boolean;}> = ({championId, teamId, isTeamIdSame}) => {
-    const championData = getChampionData(championId);
-    const borderClasses = isTeamIdSame ? "" : `border ${teamId === 200 ? "border-red-500" : "border-blue-500"}`;
-    return (
-        <img 
-            src={championData ? `https://ddragon.leagueoflegends.com/cdn/15.6.1/img/champion/${championData.id}.png` : noneicon} 
-            alt={championData ? championData.id : "noneicon"} 
-            className={`h-13 ${borderClasses}`} 
-        />
-    );
-};
-
-const BannedChampionsList: React.FC<{bannedChampions: BannedChampion[]; isTeamIdSame: boolean; teamFilter?: number;}> = ({bannedChampions, isTeamIdSame, teamFilter}) => (
-    <div className="flex gap-1.5">
-        {bannedChampions.filter((bc) => (teamFilter ? bc.teamId === teamFilter : true)).map((bc) => (
-            <div key={bc.championId} className="relative pb-2">
-                <ChampionImage championId={bc.championId} teamId={bc.teamId} isTeamIdSame={isTeamIdSame} />
-                <img src={forbiddenlight} alt="forbidden" className="absolute h-5 bottom-0 left-1/2 transform -translate-x-1/2" />
-            </div>
-        ))}
-    </div>
-);
+interface PreferredRole {
+    Games: number;
+    Wins: number;
+    TotalKills: number;
+    TotalDeaths: number;
+    TotalAssists: number;
+    WinRate: number;
+    AverageKDA: number;
+}
+  
+interface RoleAccumulator {
+    data: PreferredRole;
+    roleName: string;
+}
 
 const SummonerSpellImage: React.FC<{spellId: number}> = ({spellId}) => {
     const spellData = Object.values(summonerSpellsJson.data).find(
@@ -152,7 +96,7 @@ const SummonerSpellImage: React.FC<{spellId: number}> = ({spellId}) => {
     );
     return (
         <img 
-            src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/spell/${spellData?.id}.png`}
+            src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spellData?.id}.png`}
             alt={spellData?.id}
             className="h-6"
         />
@@ -261,7 +205,7 @@ const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolea
     const entries = typeof liveGameData?.entriesData === "string" ? JSON.parse(liveGameData.entriesData) : liveGameData?.entriesData || [];
     const summoner = typeof liveGameData?.summonerData === "string" ? JSON.parse(liveGameData.summonerData) : liveGameData?.summonerData || [];
     const championStats = typeof liveGameData?.championStatsData === "string" ? JSON.parse(liveGameData.championStatsData) : liveGameData?.championStatsData || [];
-    // const preferredRole = typeof liveGameData?.preferredRoleData === "string" ? JSON.parse(liveGameData.preferredRoleData) : liveGameData?.preferredRoleData || [];
+    const preferredRole = typeof liveGameData?.preferredRoleData === "string" ? JSON.parse(liveGameData.preferredRoleData) : liveGameData?.preferredRoleData || [];
     const rankedSoloDuoEntry = entries.find((entry: Entry) => entry.queueType === "RANKED_SOLO_5x5");
 
     const [champStats, setChampStats] = useState<ChampionStats | null>(null);
@@ -271,7 +215,7 @@ const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolea
         winratePercentage = Math.round(rankedSoloDuoEntry.wins / (rankedSoloDuoEntry.wins + rankedSoloDuoEntry.losses) * 100);
     }
     useEffect(() => {
-        fetch("https://ddragon.leagueoflegends.com/cdn/15.7.1/data/en_US/champion.json")
+        fetch(`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/data/en_US/champion.json`)
             .then(response => response.json())
             .then(data => {
                 const champions = data.data
@@ -288,8 +232,18 @@ const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolea
             })
             .catch(error => console.error("Error fetching champion data: ", error));
     }, [participant.championId]);
-    
-    // const role = preferredRole
+
+    const roleOrder = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
+    const mostPlayedRoleData = preferredRole.reduce(
+        (max: RoleAccumulator, curr: PreferredRole, index: number) => {
+            if (curr.Games > max.data.Games) {
+                return {data: curr, roleName: roleOrder[index]};
+            }
+            return max;
+        },
+        {data: preferredRole[0], roleName: roleOrder[0]}
+    );
+    const isOnRole = participant.predictedRole === mostPlayedRoleData.roleName;
 
     function getWinrateColor(winrate: number) {
         if (winrate == -1) return "";
@@ -318,7 +272,22 @@ const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolea
     return (
         <div className={`grid ${gridCols} w-full items-center relative  ${isBeingWatched ? "bg-[#303030]" : ""}`}>
             <div className="flex items-center gap-2 pl-0.5">
-                <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} />
+                <div className="ml-1">
+                    {/* copyright issues */}
+                    <img src={`https://dpm.lol/position/${participant.predictedRole}.svg`} alt={participant.predictedRole} className="h-[35px]" />
+                    {preferredRole.length === 0 ? (
+                        <p className="m-0 text-sm text-neutral-50 text-center">N/A</p> 
+                    ) : (
+                        <div>
+                            {isOnRole ? (
+                                <p className="m-0 text-sm text-neutral-50 text-center">MAIN</p>
+                            ) : (
+                                <p className="m-0 text-sm text-neutral-50 text-center">OFF</p>
+                            )}
+                        </div>
+                    )}
+                </div>
+                <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} classes="h-13"/>
                 <div className="flex flex-col gap-0.5">
                     <SummonerSpellImage spellId={participant.spell1Id} />
                     <SummonerSpellImage spellId={participant.spell2Id} />
@@ -426,7 +395,7 @@ const LiveGame: React.FC = () => {
                 <div className="m-auto container mt-2 text-center bg-neutral-800">
                     <div className="flex border-b-1 pt-5 pb-5 pl-5">
                         <div className="relative p-3">
-                            <img src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/profileicon/${summonerData.profileIconId}.png`} alt={summonerData.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
+                            <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/profileicon/${summonerData.profileIconId}.png`} alt={summonerData.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
                             <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{summonerData.summonerLevel}</span>
                         </div>
                         <div className="pt-3 pb-3">
@@ -558,7 +527,7 @@ const LiveGame: React.FC = () => {
     }, [regionCode, encodedSummoner, newSpectatorData.participants]);
 
     const queueId = newSpectatorData.gameQueueConfigId;
-    const queueData = getQueueData(queueId);
+    const queueData = queueJson.find((item) => item.queueId === queueId);
     const gamemode = queueData ? queueData.description : "Unknown game mode";
     const map = queueData ? queueData.map : "Unknown map";
     const isTeamIdSame = newSpectatorData.participants.every(
@@ -571,7 +540,7 @@ const LiveGame: React.FC = () => {
                 <div className="w-full bg-neutral-800 mt-1">
                     <div className="flex border-b-1 pt-5 pb-5 pl-5">
                         <div className="relative p-3">
-                            <img src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/profileicon/${summonerData.profileIconId}.png`} alt={summonerData.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
+                            <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/profileicon/${summonerData.profileIconId}.png`} alt={summonerData.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
                             <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{summonerData.summonerLevel}</span>
                         </div>
                         <div className="pt-3 pb-3">
@@ -614,7 +583,7 @@ const LiveGame: React.FC = () => {
             <div className="w-full bg-neutral-800 mt-1">
                 <div className="flex border-b-1 pt-5 pb-5 pl-5">
                     <div className="relative p-3">
-                        <img src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/profileicon/${summonerData.profileIconId}.png`} alt={summonerData.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
+                        <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/profileicon/${summonerData.profileIconId}.png`} alt={summonerData.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
                         <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{summonerData.summonerLevel}</span>
                     </div>
                     <div className="pt-3 pb-3">
@@ -656,9 +625,7 @@ const LiveGame: React.FC = () => {
                     <h1 className="mr-2 border-r-1 border-l-1 pl-2 pr-2 border-neutral-600">
                         {map}
                     </h1>
-                    <h1 className="mr-2">
-                        <GameTimer gameLength={newSpectatorData.gameLength} gameStartTime={newSpectatorData.gameStartTime} />
-                    </h1>
+                    <GameTimer gameLength={newSpectatorData.gameLength} gameStartTime={newSpectatorData.gameStartTime} classes="mr-2" />
                 </div>
             </div>
 

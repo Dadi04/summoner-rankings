@@ -93,33 +93,33 @@ var manualMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreC
     { "Yorick", "TOP" },
     { "Zac", "TOP" },
 
-    { "Ahri", "MID" },
-    { "Akshan", "MID" },
-    { "Anivia", "MID" },
-    { "Annie", "MID" },
-    { "Aurelion Sol", "MID" },
-    { "Azir", "MID" },
-    { "Diana", "MID" },
-    { "Ekko", "MID" },
-    { "Fizz", "MID" },
-    { "Kassadin", "MID" },
-    { "Katarina", "MID" },
-    { "LeBlanc", "MID" },
-    { "Lissandra", "MID" },
-    { "Malzahar", "MID" },
-    { "Naafiri", "MID" },
-    { "Nocturne", "MID" },
-    { "Nunu", "MID" },
-    { "Orianna", "MID" },
-    { "Qiyana", "MID" },
-    { "Syndra", "MID" },
-    { "Taliyah", "MID" },
-    { "Talon", "MID" },
-    { "TwistedFate", "MID" },
-    { "Vex", "MID" },
-    { "Viktor", "MID" },
-    { "Zed", "MID" },
-    { "Zoe", "MID" },
+    { "Ahri", "MIDDLE" },
+    { "Akshan", "MIDDLE" },
+    { "Anivia", "MIDDLE" },
+    { "Annie", "MIDDLE" },
+    { "Aurelion Sol", "MIDDLE" },
+    { "Azir", "MIDDLE" },
+    { "Diana", "MIDDLE" },
+    { "Ekko", "MIDDLE" },
+    { "Fizz", "MIDDLE" },
+    { "Kassadin", "MIDDLE" },
+    { "Katarina", "MIDDLE" },
+    { "LeBlanc", "MIDDLE" },
+    { "Lissandra", "MIDDLE" },
+    { "Malzahar", "MIDDLE" },
+    { "Naafiri", "MIDDLE" },
+    { "Nocturne", "MIDDLE" },
+    { "Nunu", "MIDDLE" },
+    { "Orianna", "MIDDLE" },
+    { "Qiyana", "MIDDLE" },
+    { "Syndra", "MIDDLE" },
+    { "Taliyah", "MIDDLE" },
+    { "Talon", "MIDDLE" },
+    { "TwistedFate", "MIDDLE" },
+    { "Vex", "MIDDLE" },
+    { "Viktor", "MIDDLE" },
+    { "Zed", "MIDDLE" },
+    { "Zoe", "MIDDLE" },
 
     { "Aphelios", "BOTTOM" },
     { "Ashe", "BOTTOM" },
@@ -166,50 +166,51 @@ var manualMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreC
     { "Thresh", "UTILITY" },
     { "Yuumi", "UTILITY" },
     { "Zilean", "UTILITY" },
-    { "Zyra", "UTILITY" },
 };
 
 var ambiguousMapping = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase) {
-    { "Brand",      new[] { "UTILITY", "MID", "BOTTOM" } },
-    { "Lux",        new[] { "UTILITY", "MID" } },
+    { "Brand",      new[] { "UTILITY", "MIDDLE", "BOTTOM" } },
+    { "Lux",        new[] { "UTILITY", "MIDDLE" } },
     { "Maokai",     new[] { "TOP", "UTILITY" } },
-    { "Mel",        new[] { "MID", "BOTTOM", "UTILITY" } },
-    { "Neeko",      new[] { "UTILITY", "MID" } },
-    { "Pantheon",   new[] { "UTILITY", "TOP", "MID" } },
+    { "Mel",        new[] { "MIDDLE", "BOTTOM", "UTILITY" } },
+    { "Neeko",      new[] { "UTILITY", "MIDDLE" } },
+    { "Pantheon",   new[] { "UTILITY", "TOP", "MIDDLE" } },
     { "Poppy",      new[] { "UTILITY", "TOP" } },
-    { "Morgana",    new[] { "UTILITY", "MID" } },
+    { "Morgana",    new[] { "UTILITY", "MIDDLE" } },
     { "Senna",      new[] { "UTILITY", "BOTTOM" } },
-    { "Seraphine",  new[] { "UTILITY", "BOTTOM", "MID" } },
-    { "Swain",      new[] { "UTILITY", "MID", "BOTTOM", "TOP" } },
+    { "Seraphine",  new[] { "UTILITY", "BOTTOM", "MIDDLE" } },
+    { "Swain",      new[] { "UTILITY", "MIDDLE", "BOTTOM", "TOP" } },
     { "TahmKench",  new[] { "UTILITY", "TOP" } },
-    { "Velkoz",     new[] { "UTILITY", "MID" } },
+    { "Velkoz",     new[] { "UTILITY", "MIDDLE" } },
     { "Nidalee",    new[] { "UTILITY", "TOP" } },
-    { "Xerath",     new[] { "UTILITY", "MID" } },
-    { "Corki",      new[] { "BOTTOM", "MID" } },
-    { "Lucian",     new[] { "BOTTOM", "MID" } },
-    { "Smolder",    new[] { "BOTTOM", "MID", "TOP" } },
-    { "Tristana",   new[] { "BOTTOM", "MID" } },
+    { "Maokai",     new[] { "UTILITY", "TOP" } },
+    { "Xerath",     new[] { "UTILITY", "MIDDLE" } },
+    { "Corki",      new[] { "BOTTOM", "MIDDLE" } },
+    { "Lucian",     new[] { "BOTTOM", "MIDDLE" } },
+    { "Smolder",    new[] { "BOTTOM", "MIDDLE", "TOP" } },
+    { "Tristana",   new[] { "BOTTOM", "MIDDLE" } },
     { "Vayne",      new[] { "BOTTOM", "TOP" } },
-    { "Ziggs",      new[] { "BOTTOM", "MID" } },
-    { "Akali",      new[] { "MID", "TOP" } },
-    { "Aurora",     new[] { "MID", "TOP" } },
-    { "Kennen",     new[] { "MID", "TOP" } },
-    { "Cassiopeia", new[] { "MID", "TOP" } },
-    { "Chogath",    new[] { "TOP", "MID" } },
-    { "Galio",      new[] { "MID", "UTILITY", "TOP" } },
-    { "Hwei",       new[] { "MID", "BOTTOM", "UTILITY" } },
-    { "Irelia",     new[] { "TOP", "MID" } },
-    { "Ryze",       new[] { "MID", "TOP" } },
-    { "Sylas",      new[] { "MID", "TOP" } },
-    { "Veigar",     new[] { "MID", "BOTTOM", "UTILITY" } },
-    { "Viktor",     new[] { "MID", "BOTTOM" } },
-    { "Vladimir",   new[] { "MID", "TOP" } },
-    { "Yasuo",      new[] { "MID", "TOP", "BOTTOM" } },
-    { "Yone",       new[] { "MID", "TOP" } },
-    { "Zoe",        new[] { "MID", "UTILITY" } },
+    { "Ziggs",      new[] { "BOTTOM", "MIDDLE" } },
+    { "Zyra",       new[] { "UTILITY", "BOTTOM" } },
+    { "Akali",      new[] { "MIDDLE", "TOP" } },
+    { "Aurora",     new[] { "MIDDLE", "TOP" } },
+    { "Kennen",     new[] { "MIDDLE", "TOP" } },
+    { "Cassiopeia", new[] { "MIDDLE", "TOP" } },
+    { "Chogath",    new[] { "TOP", "MIDDLE" } },
+    { "Galio",      new[] { "MIDDLE", "UTILITY", "TOP" } },
+    { "Hwei",       new[] { "MIDDLE", "BOTTOM", "UTILITY" } },
+    { "Irelia",     new[] { "TOP", "MIDDLE" } },
+    { "Ryze",       new[] { "MIDDLE", "TOP" } },
+    { "Sylas",      new[] { "MIDDLE", "TOP" } },
+    { "Veigar",     new[] { "MIDDLE", "BOTTOM", "UTILITY" } },
+    { "Viktor",     new[] { "MIDDLE", "BOTTOM" } },
+    { "Vladimir",   new[] { "MIDDLE", "TOP" } },
+    { "Yasuo",      new[] { "MIDDLE", "TOP", "BOTTOM" } },
+    { "Yone",       new[] { "MIDDLE", "TOP" } },
+    { "Zoe",        new[] { "MIDDLE", "UTILITY" } },
     { "Camille",    new[] { "TOP", "UTILITY" } },
-    { "Heimer",     new[] { "TOP", "MID", "BOTTOM", "UTILITY" } },
-    { "Jayce",      new[] { "TOP", "MID" } }
+    { "Heimer",     new[] { "TOP", "MIDDLE", "BOTTOM", "UTILITY" } },
+    { "Jayce",      new[] { "TOP", "MIDDLE" } }
 };
 
 var regionMapping = new Dictionary<string, string> {
@@ -339,7 +340,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
     var preferredRoleMap = new Dictionary<string, PrefferedRole>(StringComparer.OrdinalIgnoreCase){
         { "TOP", new PrefferedRole() },
         { "JUNGLE", new PrefferedRole() },
-        { "MID", new PrefferedRole() },
+        { "MIDDLE", new PrefferedRole() },
         { "BOTTOM", new PrefferedRole() },
         { "UTILITY", new PrefferedRole() },
     };
@@ -389,7 +390,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         var participantsWithRole = new List<ParticipantRoleDto>();
         foreach (var participant in participantsElement.EnumerateArray()) {
             int champId = participant.GetProperty("championId").GetInt32();
-            string predictedRole = championRoleMapping.ContainsKey(champId) ? championRoleMapping[champId] : "MID";
+            string predictedRole = championRoleMapping.ContainsKey(champId) ? championRoleMapping[champId] : "MIDDLE";
 
             int spell1Id = participant.GetProperty("spell1Id").GetInt32();
             int spell2Id = participant.GetProperty("spell2Id").GetInt32();
@@ -413,7 +414,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
             participantsWithRole.Add(participantWithRole);
         }
 
-        var requiredRoles = new HashSet<string> { "TOP", "JUNGLE", "MID", "BOTTOM", "UTILITY" };
+        var requiredRoles = new HashSet<string> { "TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY" };
         var teams = participantsWithRole.GroupBy(p => p.teamId);
         foreach (var teamGroup in teams) {
             var assignedRoles = new HashSet<string>(teamGroup.Select(p => p.predictedRole), StringComparer.OrdinalIgnoreCase);
@@ -464,7 +465,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         var roleOrder = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) {
             { "TOP", 1 },
             { "JUNGLE", 2 },
-            { "MID", 3 },
+            { "MIDDLE", 3 },
             { "BOTTOM", 4 },
             { "UTILITY", 5 }
         };
@@ -644,7 +645,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
     }
 
     // ne radi merge
-    var requiredRolesAll = new[] { "TOP", "JUNGLE", "MID", "BOTTOM", "UTILITY" };
+    var requiredRolesAll = new[] { "TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY" };
     Dictionary<string, PrefferedRole> preferredRoleMap;
     if (!string.IsNullOrEmpty(existingPlayer.PreferredRoleData)) {
         try {
@@ -725,7 +726,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         var participantsWithRole = new List<ParticipantRoleDto>();
         foreach (var participant in participantsElement.EnumerateArray()) {
             int champId = participant.GetProperty("championId").GetInt32();
-            string predictedRole = championRoleMapping.ContainsKey(champId) ? championRoleMapping[champId] : "MID";
+            string predictedRole = championRoleMapping.ContainsKey(champId) ? championRoleMapping[champId] : "MIDDLE";
 
             int spell1Id = participant.GetProperty("spell1Id").GetInt32();
             int spell2Id = participant.GetProperty("spell2Id").GetInt32();
@@ -749,7 +750,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
             participantsWithRole.Add(participantWithRole);
         }
 
-        var requiredRoles = new HashSet<string> { "TOP", "JUNGLE", "MID", "BOTTOM", "UTILITY" };
+        var requiredRoles = new HashSet<string> { "TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY" };
         var teams = participantsWithRole.GroupBy(p => p.teamId);
         foreach (var teamGroup in teams) {
             var assignedRoles = new HashSet<string>(teamGroup.Select(p => p.predictedRole), StringComparer.OrdinalIgnoreCase);
@@ -800,7 +801,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         var roleOrder = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) {
             { "TOP", 1 },
             { "JUNGLE", 2 },
-            { "MID", 3 },
+            { "MIDDLE", 3 },
             { "BOTTOM", 4 },
             { "UTILITY", 5 }
         };
@@ -877,8 +878,8 @@ async Task<Dictionary<int, string>> BuildChampionRoleMappingAsync(HttpClient cli
     var tagRoleMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
         { "Marksman", "BOTTOM" },
         { "Support", "UTILITY" },
-        { "Mage", "MID" },
-        { "Assassin", "MID" },
+        { "Mage", "MIDDLE" },
+        { "Assassin", "MIDDLE" },
         { "Fighter", "TOP" },
         { "Tank", "TOP" }
     };
@@ -912,9 +913,9 @@ async Task<Dictionary<int, string>> BuildChampionRoleMappingAsync(HttpClient cli
             var tags = champ.GetProperty("tags").EnumerateArray().Select(t => t.GetString()).ToList();
             if (tags.Contains("Marksman")) championRoleMapping[champId] = "BOTTOM";
             else if (tags.Contains("Support")) championRoleMapping[champId] = "SUPPORT";
-            else if (tags.Contains("Mage") || tags.Contains("Assassin")) championRoleMapping[champId] = "MID";
+            else if (tags.Contains("Mage") || tags.Contains("Assassin")) championRoleMapping[champId] = "MIDDLE";
             else if (tags.Contains("Fighter") || tags.Contains("Tank")) championRoleMapping[champId] = "TOP";
-            else championRoleMapping[champId] = "MID";
+            else championRoleMapping[champId] = "MIDDLE";
         }
     }
 
