@@ -11,6 +11,8 @@ import GameTimer from "../components/GameTime";
 import Perk from "../interfaces/Perk";
 import Participant from "../interfaces/Participant";
 import Entry from "../interfaces/Entry";
+import ChampionStats from "../interfaces/ChampionStats";
+import PreferredRole from "../interfaces/PreferredRole";
 
 import queueJson from "../assets/json/queues.json";
 import summonerSpellsJson from "../assets/json/summonerSpells.json";
@@ -54,27 +56,6 @@ interface Player {
     clashData: any;
     championStatsData: ChampionStats[];
     preferredRoleData: any;
-}
-
-interface ChampionStats {
-    ChampionName: string;
-    Games: number;
-    Wins: number;
-    TotalKills: number;
-    TotalDeaths: number;
-    TotalAssists: number;
-    WinRate: number;
-    AverageKDA: number;
-}
-
-interface PreferredRole {
-    Games: number;
-    Wins: number;
-    TotalKills: number;
-    TotalDeaths: number;
-    TotalAssists: number;
-    WinRate: number;
-    AverageKDA: number;
 }
   
 interface RoleAccumulator {
@@ -677,7 +658,7 @@ const LiveGame: React.FC = () => {
                             <ParticipantRow
                                 key={participant.puuid}
                                 participant={participant}
-                                isBeingWatched={newData.Puuid === participant.puuid}
+                                isBeingWatched={newData.puuid === participant.puuid}
                                 liveGameData={liveGameData.find(player => player?.puuid === participant.puuid) || null}
                                 region={regionCode}
                                 gridCols="grid-cols-[50%_12.5%_12.5%_12.5%_12.5%]"
@@ -702,7 +683,7 @@ const LiveGame: React.FC = () => {
                             <ParticipantRow
                                 key={participant.puuid}
                                 participant={participant}
-                                isBeingWatched={newData.Puuid === participant.puuid}
+                                isBeingWatched={newData.puuid === participant.puuid}
                                 liveGameData={liveGameData.find(player => player?.puuid === participant.puuid) || null}
                                 region={regionCode}
                                 gridCols="grid-cols-[35%_20%_12%_12%_12%_9%]"
@@ -725,7 +706,7 @@ const LiveGame: React.FC = () => {
                             <ParticipantRow
                                 key={participant.puuid}
                                 participant={participant}
-                                isBeingWatched={newData.Puuid === participant.puuid}
+                                isBeingWatched={newData.puuid === participant.puuid}
                                 liveGameData={liveGameData.find(player => player?.puuid === participant.puuid) || null}
                                 region={regionCode}
                                 gridCols="grid-cols-[35%_20%_12%_12%_12%_9%]"

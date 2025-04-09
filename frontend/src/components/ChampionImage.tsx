@@ -6,7 +6,7 @@ const getChampionData = (championId: number) =>
         (champion) => champion.key === championId.toString()
     );
 
-const ChampionImage: React.FC<{championId: number; teamId: number; isTeamIdSame: boolean; classes: string;}> = ({championId, teamId, isTeamIdSame, classes}) => {
+const ChampionImage: React.FC<{championId: number; teamId?: number; isTeamIdSame: boolean; classes?: string;}> = ({championId, teamId, isTeamIdSame, classes}) => {
     const championData = getChampionData(championId);
     const borderClasses = isTeamIdSame ? "" : `border ${teamId === 200 ? "border-red-500" : "border-blue-500"}`;
     return (

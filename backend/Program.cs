@@ -112,7 +112,6 @@ var manualMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreC
     { "Nunu", "MIDDLE" },
     { "Orianna", "MIDDLE" },
     { "Qiyana", "MIDDLE" },
-    { "Syndra", "MIDDLE" },
     { "Taliyah", "MIDDLE" },
     { "Talon", "MIDDLE" },
     { "TwistedFate", "MIDDLE" },
@@ -149,7 +148,6 @@ var manualMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreC
     { "Elise", "UTILITY" },
     { "Fiddlesticks", "UTILITY" },
     { "Janna", "UTILITY" },
-    { "Karma", "UTILITY" },
     { "Leona", "UTILITY" },
     { "Lulu", "UTILITY" },
     { "Milio", "UTILITY" },
@@ -171,7 +169,6 @@ var manualMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreC
 var ambiguousMapping = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase) {
     { "Brand",      new[] { "UTILITY", "MIDDLE", "BOTTOM" } },
     { "Lux",        new[] { "UTILITY", "MIDDLE" } },
-    { "Maokai",     new[] { "TOP", "UTILITY" } },
     { "Mel",        new[] { "MIDDLE", "BOTTOM", "UTILITY" } },
     { "Neeko",      new[] { "UTILITY", "MIDDLE" } },
     { "Pantheon",   new[] { "UTILITY", "TOP", "MIDDLE" } },
@@ -204,13 +201,15 @@ var ambiguousMapping = new Dictionary<string, string[]>(StringComparer.OrdinalIg
     { "Sylas",      new[] { "MIDDLE", "TOP" } },
     { "Veigar",     new[] { "MIDDLE", "BOTTOM", "UTILITY" } },
     { "Viktor",     new[] { "MIDDLE", "BOTTOM" } },
+    { "Syndra",     new[] { "MIDDLE", "BOTTOM" } },
     { "Vladimir",   new[] { "MIDDLE", "TOP" } },
     { "Yasuo",      new[] { "MIDDLE", "TOP", "BOTTOM" } },
     { "Yone",       new[] { "MIDDLE", "TOP" } },
     { "Zoe",        new[] { "MIDDLE", "UTILITY" } },
     { "Camille",    new[] { "TOP", "UTILITY" } },
     { "Heimer",     new[] { "TOP", "MIDDLE", "BOTTOM", "UTILITY" } },
-    { "Jayce",      new[] { "TOP", "MIDDLE" } }
+    { "Jayce",      new[] { "TOP", "MIDDLE" } },
+    { "Karma",      new[] { "UTILITY", "MIDDLE", "TOP" } },
 };
 
 var regionMapping = new Dictionary<string, string> {
@@ -338,11 +337,11 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
 
     var championStatsMap = new Dictionary<int, ChampionStats>();
     var preferredRoleMap = new Dictionary<string, PrefferedRole>(StringComparer.OrdinalIgnoreCase){
-        { "TOP", new PrefferedRole() },
-        { "JUNGLE", new PrefferedRole() },
-        { "MIDDLE", new PrefferedRole() },
-        { "BOTTOM", new PrefferedRole() },
-        { "UTILITY", new PrefferedRole() },
+        { "TOP", new PrefferedRole { RoleName = "TOP" } },
+        { "JUNGLE", new PrefferedRole { RoleName = "JUNGLE" } },
+        { "MIDDLE", new PrefferedRole { RoleName = "MIDDLE" } },
+        { "BOTTOM", new PrefferedRole { RoleName = "BOTTOM" } },
+        { "UTILITY", new PrefferedRole { RoleName = "UTILITY" } },
     };
     foreach (var match in rankedMatchInfoList) {
         var participant = match?.info.participants.FirstOrDefault(p => p.puuid == puuid);
@@ -644,28 +643,33 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         }
     }
 
-    // ne radi merge
     var requiredRolesAll = new[] { "TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY" };
     Dictionary<string, PrefferedRole> preferredRoleMap;
+
     if (!string.IsNullOrEmpty(existingPlayer.PreferredRoleData)) {
         try {
             var rolesList = JsonSerializer.Deserialize<List<PrefferedRole>>(existingPlayer.PreferredRoleData)
                             ?? new List<PrefferedRole>();
             preferredRoleMap = new Dictionary<string, PrefferedRole>(StringComparer.OrdinalIgnoreCase);
-            for (int i = 0; i < requiredRolesAll.Length; i++)
-            {
-                if (i < rolesList.Count)
-                    preferredRoleMap[requiredRolesAll[i]] = rolesList[i];
-                else
-                    preferredRoleMap[requiredRolesAll[i]] = new PrefferedRole();
+
+            for (int i = 0; i < requiredRolesAll.Length; i++) {
+                string roleName = requiredRolesAll[i];
+                if (i < rolesList.Count) {
+                    var roleData = rolesList[i];
+                    roleData.RoleName = roleName;
+                    preferredRoleMap[roleName] = roleData;
+                }
+                else {
+                    preferredRoleMap[roleName] = new PrefferedRole { RoleName = roleName };
+                }
             }
         }
         catch {
-            preferredRoleMap = requiredRolesAll.ToDictionary(role => role, role => new PrefferedRole(), StringComparer.OrdinalIgnoreCase);
+            preferredRoleMap = requiredRolesAll.ToDictionary(role => role, role => new PrefferedRole { RoleName = role }, StringComparer.OrdinalIgnoreCase);
         }
     }
     else {
-        preferredRoleMap = requiredRolesAll.ToDictionary(role => role, role => new PrefferedRole(), StringComparer.OrdinalIgnoreCase);
+        preferredRoleMap = requiredRolesAll.ToDictionary(role => role, role => new PrefferedRole { RoleName = role }, StringComparer.OrdinalIgnoreCase);
     }
 
 
@@ -998,6 +1002,7 @@ public class ChampionStats {
 }
 
 public class PrefferedRole {
+    public string RoleName { get; set; } = string.Empty;
     public int Games { get; set; }
     public int Wins { get; set; }
     public int TotalKills { get; set; }
