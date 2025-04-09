@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logodark from '../assets/logo-dark.png';
-import arrowdown from '../assets/arrow-down.png'
-import arrowup from '../assets/arrow-up.png'
+import arrowdown from '../assets/arrow-down-dark.png'
+import arrowup from '../assets/arrow-down-dark.png'
 
 interface RegionItem {
     name: string;

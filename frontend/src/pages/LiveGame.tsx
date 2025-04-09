@@ -19,7 +19,7 @@ import summonerSpellsJson from "../assets/json/summonerSpells.json";
 import runesJson from "../assets/json/runes.json";
 import statModsJson from "../assets/json/statMods.json";
 
-import arrowdown from '../assets/arrow-down.png'
+import arrowdowndark from '../assets/arrow-down-dark.png'
 import favorite from "../assets/favorite.svg";
 import loadingAnimation from '../assets/animations/loading.lottie';
 
@@ -325,11 +325,11 @@ const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolea
                 <>
                     <div onClick={() => setShowRunesDiv(prev => !prev)} className="cursor-pointer font-semibold text-neutral-800 bg-neutral-300 brightness-75 text-center flex justify-center items-center p-2 mr-2">
                         <p>Runes</p>
-                        <img src={arrowdown} alt="arrow-down" className={`h-4 ml-2 transform transition-transform ${showRunesDiv ? "rotate-180" : ""}`} />
+                        <img src={arrowdowndark} alt="arrow-down" className={`h-4 ml-2 transform transition-transform ${showRunesDiv ? "rotate-180" : ""}`} />
                     </div>
                     <div className={`col-span-full  transition-all duration-300 overflow-hidden ${showRunesDiv ? "max-h-[800px]" : "max-h-0"}`}>
                         <div className="bg-neutral-900 p-4">
-                        <h1 className="text-neutral-100 font-bold p-2 border-l-4 border-l-purple-600">Player Tags</h1>
+                            <h1 className="text-neutral-100 font-bold p-2 border-l-4 border-l-purple-600">Player Tags</h1>
                         </div>
                         <hr className="text-neutral-100" />
                         <div className="bg-neutral-900 p-4">

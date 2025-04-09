@@ -17,12 +17,15 @@ import queueJson from "../assets/json/queues.json";
 
 import favorite from "../assets/favorite.svg";
 import performance from "../assets/performance.png";
-import goldmedal from "../assets/gold-medal.png"
-import silvermedal from "../assets/silver-medal.png"
-import bronzemedal from "../assets/bronze-medal.png"
+import goldmedal from "../assets/gold-medal.png";
+import silvermedal from "../assets/silver-medal.png";
+import bronzemedal from "../assets/bronze-medal.png";
 import medallight from "../assets/medal-light.png";
-import topthreelight from "../assets/topthree-light.png"
+import topthreelight from "../assets/topthree-light.png";
+import filterlight from "../assets/filter-light.png";
+import fill from "../assets/fill.png";
 import loadingAnimation from "../assets/animations/loading.lottie";
+import arrowdownlight from '../assets/arrow-down-light.png'
 
 interface ApiData {
     summonerName: string;
@@ -53,7 +56,8 @@ const Summoner: React.FC = () => {
     }
 
     const summoner = decodeURIComponent(encodedSummoner);
-
+    
+    const [showFilter, setShowFilter] = useState<boolean>(false);
     const [apiData, setApiData] = useState<ApiData | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -288,7 +292,7 @@ const Summoner: React.FC = () => {
                                     </div>
                                     <div className="flex justify-around items-center">
                                         {/* copyright issues */}
-                                        <img src={`https://dpm.lol/rank/${rankedSoloDuoEntry.tier}.webp`} alt={rankedFlexEntry.tier.toLowerCase()} className="h-25" />
+                                        <img src={`https://dpm.lol/rank/${rankedFlexEntry.tier}.webp`} alt={rankedFlexEntry.tier.toLowerCase()} className="h-25" />
                                         <div className="flex flex-col gap-1 text-center">
                                             <p className="font-bold">{rankedFlexEntry.tier} {rankedFlexEntry.rank} {rankedFlexEntry.LeaguePoints} LP</p>
                                             <p>{rankedFlexEntry.wins}W-{rankedFlexEntry.losses}L ({rankedFlexWinrate}%)</p>
@@ -328,9 +332,9 @@ const Summoner: React.FC = () => {
                                 <h1 className="text-center">Winrate</h1>
                             </div>
                             <div>
-                                {championStatsSoloDuoData.slice(0, 5).map((championStat: ChampionStats, i: number) => (
+                                {championStatsSoloDuoData.slice(0, 5).map((championStat: ChampionStats, index: number) => (
                                     <React.Fragment key={championStat.ChampionId}>
-                                        { i !== 0 && <hr /> }
+                                        { index !== 0 && <hr /> }
                                         <div className="grid grid-cols-[28%_26%_26%_20%] pr-5 mb-1 mt-1 items-center text-center">
                                             <div className="flex justify-center">
                                                 <ChampionImage championId={championStat.ChampionId} isTeamIdSame={true} classes="h-15" />
@@ -437,8 +441,52 @@ const Summoner: React.FC = () => {
                             </Link>
                         </div>
                     </div>
-                    <div className="w-[75%] bg-neutral-800 text-center">
-                        <h1>Last 30 Solo Duo Games Pefrormance TODO</h1>
+                    <div className="w-[75%]">
+                        <div className="bg-neutral-800 text-center p-2 mb-2">
+                            <div className="p-2">
+                                <h1>Last 30 Games Pefrormance TODO</h1>
+                            </div>
+                            <div className="grid grid-cols-[25%_25%_25%_25%]">
+                                <div>
+                                    Winrate TODO (DPM.LOL)
+                                </div>
+                                <div>
+                                    Champions TODO (DPM.LOL)
+                                </div>
+                                <div>
+                                    KDA TODO (DPM.LOL)
+                                </div>
+                                <div>
+                                    Preferred Roles TODO (OP.GG)
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex justify-between items-center mb-2">
+                            <div className="flex bg-neutral-700 rounded-xl gap-3 p-2 border border-purple-500">
+                                <img src={fill} alt="FILL" className="h-[35px] cursor-pointer transition duration-200 hover:scale-110" />
+                                <img src={`https://dpm.lol/position/TOP.svg`} alt="TOP" className="h-[35px] cursor-pointer transition duration-200 hover:scale-110" />
+                                <img src={`https://dpm.lol/position/JUNGLE.svg`} alt="JUNGLE" className="h-[35px] cursor-pointer transition duration-200 hover:scale-110" />
+                                <img src={`https://dpm.lol/position/MIDDLE.svg`} alt="MIDDLE" className="h-[35px] cursor-pointer transition duration-200 hover:scale-110" />
+                                <img src={`https://dpm.lol/position/BOTTOM.svg`} alt="BOTTOM" className="h-[35px] cursor-pointer transition duration-200 hover:scale-110" />
+                                <img src={`https://dpm.lol/position/UTILITY.svg`} alt="UTILITY" className="h-[35px] cursor-pointer transition duration-200 hover:scale-110" />
+                            </div>
+                            <div>
+                                <div 
+                                    onClick={() => setShowFilter(prev => !prev)} 
+                                    className="flex gap-1 p-2 items-center text-xl font-bold relative cursor-pointer border bg-neutral-600 rounded-xl border-purple-500">
+                                    <img src={filterlight} alt="filter-light" className="h-6 mr-2" />
+                                    <p>Filter</p>
+                                    <img src={arrowdownlight} alt="arrow-down" className={`h-4 transform transition-transform ${showFilter ? "rotate-180" : ""}`} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className={`w-full bg-neutral-800 transition-all duration-300 overflow-hidden ${showFilter ? "max-h-[800px]" : "max-h-0"}`}>
+                            <div className="p-2">
+                                <p>TODO</p>
+                                <p>TODO</p>
+                                <p>TODO</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div className="bg-neutral-800 mt-2">
