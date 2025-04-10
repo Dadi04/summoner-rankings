@@ -59,6 +59,10 @@ const Summoner: React.FC = () => {
 
     const summoner = decodeURIComponent(encodedSummoner);
 
+    const [selectedRole, setSelectedRole] = useState<string>("fill");
+    const [selectedPatch, setSelectedPatch] = useState<string>("all-patches");
+    const [selectedQueue, setSelectedQueue] = useState<string>("all-queues");
+    const [selectedChampion, setSelectedChampion] = useState<string>("All Champions");
     const [showFilter, setShowFilter] = useState<boolean>(false);
     const [showPatch, setShowPatch] = useState<boolean>(false);
     const [champions, setChampions] = useState<any[]>([]);
@@ -479,8 +483,8 @@ const Summoner: React.FC = () => {
                             </Link>
                         </div>
                     </div>
-                    <div className="w-[75%] flex flex-col gap-2">
-                        <div className="bg-neutral-800 text-center p-2">
+                    <div className="w-[75%] flex flex-col">
+                        <div className="bg-neutral-800 text-center p-2 mb-2">
                             <div className="p-2">
                                 <h1>Last 30 Games Pefrormance TODO</h1>
                             </div>
@@ -499,14 +503,14 @@ const Summoner: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                        <div className="flex justify-between items-center">
+                        <div className="flex justify-between items-center mb-2">
                             <div className="flex bg-neutral-700 rounded-xl gap-3 p-2 border border-purple-500">
-                                <img src={fill} alt="FILL" className="h-[35px] cursor-pointer transition-all duration-200 hover:scale-110" />
-                                <img src={`https://dpm.lol/position/TOP.svg`} alt="TOP" className="h-[35px] cursor-pointer transition-all duration-200 hover:scale-110" />
-                                <img src={`https://dpm.lol/position/JUNGLE.svg`} alt="JUNGLE" className="h-[35px] cursor-pointer transition-all duration-200 hover:scale-110" />
-                                <img src={`https://dpm.lol/position/MIDDLE.svg`} alt="MIDDLE" className="h-[35px] cursor-pointer transition-all duration-200 hover:scale-110" />
-                                <img src={`https://dpm.lol/position/BOTTOM.svg`} alt="BOTTOM" className="h-[35px] cursor-pointer transition-all duration-200 hover:scale-110" />
-                                <img src={`https://dpm.lol/position/UTILITY.svg`} alt="UTILITY" className="h-[35px] cursor-pointer transition-all duration-200 hover:scale-110" />
+                                <img onClick={() => setSelectedRole("fill")} src={fill} alt="FILL" className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === "fill" ? "bg-neutral-800" : ""}`} />
+                                <img onClick={() => setSelectedRole("top")} src={`https://dpm.lol/position/TOP.svg`} alt="TOP" className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === "top" ? "bg-neutral-800" : ""}`} />
+                                <img onClick={() => setSelectedRole("jungle")} src={`https://dpm.lol/position/JUNGLE.svg`} alt="JUNGLE" className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === "jungle" ? "bg-neutral-800" : ""}`} />
+                                <img onClick={() => setSelectedRole("middle")} src={`https://dpm.lol/position/MIDDLE.svg`} alt="MIDDLE" className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === "middle" ? "bg-neutral-800" : ""}`} />
+                                <img onClick={() => setSelectedRole("bottom")} src={`https://dpm.lol/position/BOTTOM.svg`} alt="BOTTOM" className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === "bottom" ? "bg-neutral-800" : ""}`} />
+                                <img onClick={() => setSelectedRole("utility")} src={`https://dpm.lol/position/UTILITY.svg`} alt="UTILITY" className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === "utility" ? "bg-neutral-800" : ""}`} />
                             </div>
                             <div>
                                 <div 
@@ -518,15 +522,15 @@ const Summoner: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                        <div className={`w-full bg-neutral-800 transition-all duration-300 ${showFilter ? "max-h-[800px] overflow-visible" : "max-h-0 overflow-hidden"}`}>
+                        <div className={`w-full bg-neutral-800 transition-all duration-300 ${showFilter ? "max-h-[800px] overflow-visible mb-2" : "max-h-0 overflow-hidden"}`}>
                             <div className="flex justify-between items-center p-2">
                                 <div>
                                     <div className="flex gap-4 p-2">
-                                        <p className="cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300">All</p>
-                                        <p className="cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300">Solo Duo</p>
-                                        <p className="cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300">Flex</p>
-                                        <p className="cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300">Aram</p>
-                                        <p className="cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300">Normal</p>
+                                        <p onClick={() => setSelectedQueue("all-queues")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "all-queues" ? "bg-neutral-700" : ""}`}>All</p>
+                                        <p onClick={() => setSelectedQueue("solo-duo")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "solo-duo" ? "bg-neutral-700" : ""}`}>Solo Duo</p>
+                                        <p onClick={() => setSelectedQueue("flex")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "flex" ? "bg-neutral-700" : ""}`}>Flex</p>
+                                        <p onClick={() => setSelectedQueue("aram")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "aram" ? "bg-neutral-700" : ""}`}>Aram</p>
+                                        <p onClick={() => setSelectedQueue("normal")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "normal" ? "bg-neutral-700" : ""}`}>Normal</p>
                                     </div>
                                     <div className="relative">
                                         <div onClick={() => setShowPatch(prev => !prev)} className="flex items-center justify-center p-2 text-lg font-bold">
@@ -535,11 +539,11 @@ const Summoner: React.FC = () => {
                                         </div>
                                         <div className={`absolute top-full left-0 w-full bg-neutral-800 text-center transition-all duration-300 border border-purple-500 rounded-md overflow-y-auto shadow-lg max-h-[300px]
                                             ${showPatch ? "opacity-100 visible" : "opacity-0 invisible"}`}>
-                                            <p key="all-patches" className="p-1 cursor-pointer text-lg transition-all duration-100 hover:bg-neutral-700">
+                                            <p key="all-patches" onClick={() => setSelectedPatch("all-patches")} className={`p-1 cursor-pointer text-lg transition-all duration-100 hover:text-neutral-300 ${selectedPatch === "all-patches" ? "bg-neutral-700" : ""}`}>
                                                 All Patches
                                             </p>
                                             {versions.map((version) => (
-                                                <p key={version} className="p-1 cursor-pointer text-lg transition-all duration-100 hover:bg-neutral-700">
+                                                <p key={version} onClick={() => setSelectedPatch(`${version}`)} className={`p-1 cursor-pointer text-lg transition-all duration-100 hover:text-neutral-300 ${selectedPatch === version ? "bg-neutral-700" : ""}`}>
                                                     {version}
                                                 </p>
                                             ))}
@@ -548,17 +552,17 @@ const Summoner: React.FC = () => {
                                 </div>
                                 <div className="relative">
                                     <div ref={inputRef} onClick={() => setShowSelectChampions(true)} className="text-xl">
-                                        <input type="text" placeholder="Select Champion" className="w-full border-none outline-none" />
+                                        <input type="text" placeholder="Select Champion" value={selectedChampion} className="w-full border-none outline-none" />
                                     </div>
                                     <div ref={dropdownRef} className={`absolute top-full left-0 w-full bg-neutral-800 transition-all duration-300 border border-purple-500 rounded-md overflow-y-auto shadow-lg max-h-[400px]
                                          ${showSelectChampions ? "opacity-100 visible" : "opacity-0 invisible"} custom-scrollbar`}>
-                                        <div className="flex items-center text-lg justify-between pl-4 pr-4 pt-0.5 pb-0.5 cursor-pointer transition-all duration-100 hover:bg-neutral-700">
+                                        <div onClick={() => setSelectedChampion("All Champions")} className={`flex items-center text-lg justify-between pl-4 pr-4 pt-0.5 pb-0.5 cursor-pointer transition-all duration-100 hover:text-neutral-300 ${selectedChampion === "All Champions" ? "bg-neutral-700" : ""}`}>
                                             <img src={noneicon} alt="none-icon" className="h-12" />
                                             <span>All Champions</span>
                                         </div>
                                         <div>
                                             {champions.map((champion) => (
-                                                <div key={champion.id} className="flex items-center text-lg justify-between pl-4 pr-4 pt-0.5 pb-0.5 cursor-pointer transition-all duration-100 hover:bg-neutral-700">
+                                                <div key={champion.id} onClick={() => setSelectedChampion(champion.name)} className={`flex items-center text-lg justify-between pl-4 pr-4 pt-0.5 pb-0.5 cursor-pointer transition-all duration-100 hover:text-neutral-300 ${selectedChampion === champion.name ? "bg-neutral-700" : ""} `}>
                                                     <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/champion/${champion.id}.png`} alt={champion.name} className="h-12" />
                                                     <span>{champion.name}</span>
                                                 </div>
