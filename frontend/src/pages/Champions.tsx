@@ -34,7 +34,7 @@ const Champions: React.FC = () => {
                 <div className="flex border-b-1 pt-5 pb-5 pl-5">
                     <div className="relative p-3">
                         <img src={`https://ddragon.leagueoflegends.com/cdn/15.6.1/img/profileicon/${summonerData.profileIconId}.png`} alt={summonerData.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
-                        <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{summonerData.summonerLevel}</span>
+                        <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 -translate-y-[10px] z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{summonerData.summonerLevel}</span>
                     </div>
                     <div className="pt-3 pb-3">
                         <div className="flex">
@@ -50,8 +50,9 @@ const Champions: React.FC = () => {
                             </div>
                             <p className="p-2">Ladder Rank num </p>
                         </div>
-                        <div>
+                        <div className="text-neutral-50">
                             <UpdateButton regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setNewData} />
+                            <p>Last updated: {Math.round((Date.now() - newData.addedAt*1000)/60000)} minutes ago</p>
                         </div>
                     </div>  
                 </div>
