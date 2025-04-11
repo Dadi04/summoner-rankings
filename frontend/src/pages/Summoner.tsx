@@ -40,6 +40,9 @@ const Summoner: React.FC = () => {
 
     const summoner = decodeURIComponent(encodedSummoner);
 
+    const [selectedChampionPerformanceMode, setSelectedChampionPerformanceMode] = useState<string>("soloduo");
+    const [selectedRolePerformanceMode, setSelectedRolePerformanceMode] = useState<string>("soloduo");
+
     const [selectedRole, setSelectedRole] = useState<string>("fill");
     const [selectedPatch, setSelectedPatch] = useState<string>("all-patches");
     const [selectedQueue, setSelectedQueue] = useState<string>("all-queues");
@@ -108,15 +111,23 @@ const Summoner: React.FC = () => {
     const summonerData = JSON.parse(apiData.summonerData);
     const entriesData = JSON.parse(apiData.entriesData);
     const topMasteriesData = JSON.parse(apiData.topMasteriesData);
-    const matchesData = JSON.parse(apiData.matchesData);
-    const rankedMatchesData = JSON.parse(apiData.rankedMatchesData);
+    const soloDuoMatchesData = JSON.parse(apiData.soloDuoMatchesData);
+    const soloDuoMatchesDetailsData = JSON.parse(apiData.soloDuoMatchesDetailsData);
+    const flexMatchesData = JSON.parse(apiData.flexMatchesData);
+    const flexMatchesDetailsData = JSON.parse(apiData.flexMatchesDetailsData);
     const challengesData = JSON.parse(apiData.challengesData);
     const spectatorData = JSON.parse(apiData.spectatorData);
     const clashData = JSON.parse(apiData.clashData);
-    const championStatsSoloDuoData = JSON.parse(apiData.championStatsData);
+    const championStatsSoloDuoData = JSON.parse(apiData.championStatsSoloDuoData);
+    const championStatsFlexData = JSON.parse(apiData.championStatsFlexData);
+    const preferredSoloDuoRoleData = JSON.parse(apiData.preferredSoloDuoRoleData);
+    const preferredFlexRoleData = JSON.parse(apiData.preferredFlexRoleData);
+
     championStatsSoloDuoData.sort((a: ChampionStats, b: ChampionStats) => b.Games - a.Games || b.WinRate - a.WinRate);
-    // championStatsFlexData need to add
-    const preferredRoleData = JSON.parse(apiData.preferredRoleData);
+    championStatsFlexData.sort((a: ChampionStats, b: ChampionStats) => b.Games - a.Games || b.WinRate - a.WinRate);
+
+    const championsStatsData = selectedChampionPerformanceMode === "soloduo" ? championStatsSoloDuoData : championStatsFlexData;
+    const preferredRoleData = selectedRolePerformanceMode === "soloduo" ? preferredSoloDuoRoleData : preferredFlexRoleData
 
     const isTeamIdSame = spectatorData?.participants.every(
         (participant: Participant) => participant.teamId === spectatorData.participants[0].teamId
@@ -223,8 +234,8 @@ const Summoner: React.FC = () => {
                                             <h1>Ranked Solo/Duo</h1>
                                         </div>
                                         <div>
-                                            <select name="" id="" className="bg-neutral-800">
-                                                <option value="" selected>Last 7 days</option>
+                                            <select name="" id="" className="bg-neutral-800 outline-none border-none" defaultValue={"Last 7 days"}>
+                                                <option value="">Last 7 days</option>
                                                 <option value="">Last 30 days</option>
                                             </select>
                                         </div>
@@ -260,8 +271,8 @@ const Summoner: React.FC = () => {
                                             <h1>Ranked Flex</h1>
                                         </div>
                                         <div>
-                                            <select name="" id="" className="bg-neutral-800">
-                                                <option value="" selected>Last 7 days</option>
+                                            <select name="" id="" className="bg-neutral-800 outline-none border-none" defaultValue={"Last 7 days"}>
+                                                <option value="">Last 7 days</option>
                                                 <option value="">Last 30 days</option>
                                             </select>
                                         </div>
@@ -295,20 +306,26 @@ const Summoner: React.FC = () => {
                                     <h1>Champion Performance</h1>
                                 </div>
                                 <div>
-                                    <select name="" id="" className="bg-neutral-800">
-                                        <option value="" selected>Ranked Solo/Duo</option>
-                                        <option value="">Ranked Flex</option>
+                                    <select onChange={(e) => setSelectedChampionPerformanceMode(e.target.value)} className="bg-neutral-800 outline-none border-none" value={selectedChampionPerformanceMode}>
+                                        <option value="soloduo">Ranked Solo/Duo</option>
+                                        <option value="flex">Ranked Flex</option>
                                     </select>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-[28%_26%_26%_20%] mb-1 pr-5">
-                                <p></p>
-                                <h1 className="text-center">KDA</h1>
-                                <h1 className="text-center">Games</h1>
-                                <h1 className="text-center">Winrate</h1>
-                            </div>
+                            {championsStatsData.size > 0 ? (
+                                <div className="grid grid-cols-[28%_26%_26%_20%] mb-1 pr-5">
+                                    <p></p>
+                                    <h1 className="text-center">KDA</h1>
+                                    <h1 className="text-center">Games</h1>
+                                    <h1 className="text-center">Winrate</h1>
+                                </div>
+                            ) : (
+                                <div className="text-center p-2">
+                                    <p>No games found</p>
+                                </div>
+                            )}
                             <div>
-                                {championStatsSoloDuoData.slice(0, 5).map((championStat: ChampionStats, index: number) => (
+                                {championsStatsData.slice(0, 5).map((championStat: ChampionStats, index: number) => (
                                     <React.Fragment key={championStat.ChampionId}>
                                         { index !== 0 && <hr /> }
                                         <div className="grid grid-cols-[28%_26%_26%_20%] pr-5 mb-1 mt-1 items-center text-center">
@@ -346,9 +363,9 @@ const Summoner: React.FC = () => {
                                     <h1>Role Performance</h1>
                                 </div>
                                 <div>
-                                    <select name="" id="" className="bg-neutral-800">
-                                        <option value="" selected>Ranked Solo/Duo</option>
-                                        <option value="">Ranked Flex</option>
+                                    <select onChange={(e) => setSelectedRolePerformanceMode(e.target.value)} className="bg-neutral-800 outline-none border-none" value={selectedRolePerformanceMode}>
+                                        <option value="soloduo">Ranked Solo/Duo</option>
+                                        <option value="flex">Ranked Flex</option>
                                     </select>
                                 </div>
                             </div>
@@ -486,6 +503,7 @@ const Summoner: React.FC = () => {
                                 </div>
                                 <div className="relative">
                                     <div ref={inputRef} onClick={() => setShowSelectChampions(true)} className="text-xl">
+                                    {/* You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`. */}
                                         <input type="text" placeholder="Select Champion" value={selectedChampion} className="w-full border-none outline-none" />
                                     </div>
                                     <div ref={dropdownRef} className={`absolute top-full left-0 w-full bg-neutral-800 transition-all duration-300 border border-purple-500 overflow-y-auto shadow-lg max-h-[400px]
@@ -507,7 +525,12 @@ const Summoner: React.FC = () => {
                             </div>
                         </div>
                         <div className="bg-neutral-800">
-                            {matchesData.map((match: string) => (
+                            <p>Solo/Duo games</p>
+                            {soloDuoMatchesData.map((match: string) => (
+                                <div>{match}</div>
+                            ))}
+                            <p>Flex games</p>
+                            {flexMatchesData.map((match: string) => (
                                 <div>{match}</div>
                             ))}
                         </div>
@@ -517,10 +540,14 @@ const Summoner: React.FC = () => {
                     <pre>{JSON.stringify(summonerData, null, 2)}</pre>
                     <pre>{JSON.stringify(entriesData, null, 2)}</pre>
                     <pre>{JSON.stringify(championStatsSoloDuoData, null, 2)}</pre>
-                    <pre>{JSON.stringify(preferredRoleData, null, 2)}</pre>
+                    <pre>{JSON.stringify(championStatsFlexData, null, 2)}</pre>
+                    <pre>{JSON.stringify(preferredSoloDuoRoleData, null, 2)}</pre>
+                    <pre>{JSON.stringify(preferredFlexRoleData, null, 2)}</pre>
                     <pre>{JSON.stringify(topMasteriesData, null, 2)}</pre>
-                    <pre>{JSON.stringify(matchesData, null, 2)}</pre>
-                    <pre>{JSON.stringify(rankedMatchesData, null, 2)}</pre>
+                    <pre>{JSON.stringify(soloDuoMatchesData, null, 2)}</pre>
+                    <pre>{JSON.stringify(flexMatchesData, null, 2)}</pre>
+                    <pre>{JSON.stringify(soloDuoMatchesDetailsData, null, 2)}</pre>
+                    <pre>{JSON.stringify(flexMatchesDetailsData, null, 2)}</pre>
                     <pre>{JSON.stringify(spectatorData, null, 2)}</pre>
                     <pre>{JSON.stringify(clashData, null, 2)}</pre>
                     <pre>{JSON.stringify(challengesData, null, 2)}</pre>

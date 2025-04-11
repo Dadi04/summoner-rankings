@@ -150,8 +150,8 @@ const RunesList: React.FC<{runes: Perk}> = ({runes}) => {
 const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolean; liveGameData: Player | null; region: string; gridCols: string;}> = ({participant, isBeingWatched, liveGameData, region, gridCols}) => {
     const entries = typeof liveGameData?.entriesData === "string" ? JSON.parse(liveGameData.entriesData) : liveGameData?.entriesData || [];
     const summoner = typeof liveGameData?.summonerData === "string" ? JSON.parse(liveGameData.summonerData) : liveGameData?.summonerData || [];
-    const championStats = typeof liveGameData?.championStatsData === "string" ? JSON.parse(liveGameData.championStatsData) : liveGameData?.championStatsData || [];
-    const preferredRole = typeof liveGameData?.preferredRoleData === "string" ? JSON.parse(liveGameData.preferredRoleData) : liveGameData?.preferredRoleData || [];
+    const championStats = typeof liveGameData?.championStatsSoloDuoData === "string" ? JSON.parse(liveGameData.championStatsSoloDuoData) : liveGameData?.championStatsSoloDuoData || [];
+    const preferredRole = typeof liveGameData?.preferredSoloDuoRoleData === "string" ? JSON.parse(liveGameData.preferredSoloDuoRoleData) : liveGameData?.preferredSoloDuoRoleData || [];
     const rankedSoloDuoEntry = entries.find((entry: Entry) => entry.queueType === "RANKED_SOLO_5x5");
 
     const [champStats, setChampStats] = useState<ChampionStats | null>(null);

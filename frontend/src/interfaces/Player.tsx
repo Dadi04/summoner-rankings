@@ -8,13 +8,17 @@ interface Player {
     summonerData: string;
     entriesData: string;
     topMasteriesData: string;
-    matchesData: string; // ranked solo duo games id => string[]
-    rankedMatchesData: string; // ranked solo duo games info 
+    soloDuoMatchesData: string; // ranked solo duo games id => string[]
+    soloDuoMatchesDetailsData: string; // ranked solo duo games info 
+    flexMatchesData: string;
+    flexMatchesDetailsData: string;
     challengesData: string;
     spectatorData: string;
     clashData: string;
-    championStatsData: string;
-    preferredRoleData: string;
+    championStatsSoloDuoData: string;
+    preferredSoloDuoRoleData: string;
+    championStatsFlexData: string;
+    preferredFlexRoleData: string;
     addedAt: number;
 }
 

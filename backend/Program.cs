@@ -230,7 +230,7 @@ var regionMapping = new Dictionary<string, string> {
     {"me1", "europe"},
 };
 
-// get last 30 games and their info, get all ranked flex games and their info, if player doesnt exist return "Player doesnt exist"
+// get last 30 games and their info
 app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (string region, string summonerName, string summonerTag, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext) => {
     if (!regionMapping.TryGetValue(region, out var continent)) {
         return Results.Problem("Invalid region specified.");
@@ -295,33 +295,40 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         PropertyNameCaseInsensitive = true
     });
 
-    var allMatches = new List<string>();
-    var rankedSoloEntry = entries?.FirstOrDefault(entry => entry.queueType.Equals("RANKED_SOLO_5x5"));
-    if (rankedSoloEntry == null) return null;
+    string soloDuoMessage = "";
+    int winsSoloDuo = 0, lossesSoloDuo = 0, totalSoloDuoMatches = 0;
+    var rankedSoloDuoEntry = entries?.FirstOrDefault(entry => entry.queueType.Equals("RANKED_SOLO_5x5"));
+    if (rankedSoloDuoEntry == null) {
+        soloDuoMessage = "Ranked Solo/Duo entry not found for the specified player.";
+    } else {
+        winsSoloDuo = rankedSoloDuoEntry.wins;
+        lossesSoloDuo = rankedSoloDuoEntry.losses;
+        totalSoloDuoMatches = winsSoloDuo+lossesSoloDuo;
+    }
 
-    int wins = rankedSoloEntry.wins;
-    int losses = rankedSoloEntry.losses;
-    int totalMatches = wins+losses;
+    var allRankedSoloDuoMatches = new List<string>();
+    if (totalSoloDuoMatches > 0) {
 
-    int loopTimes = (int)Math.Ceiling((double)totalMatches/100);
-    var rankedMatchesTasks = Enumerable.Range(0, loopTimes).Select(i => {
-        int startAt = i * 100;
-        string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime=1736452800&queue=420&start={startAt}&count=100&api_key={apiKey}";
-        return GetStringAsyncWithRetry(url);
-    }).ToList();
+        int loopTimesSoloDuo = (int)Math.Ceiling((double)totalSoloDuoMatches/100);
+        var rankedSoloMatchesTasks = Enumerable.Range(0, loopTimesSoloDuo).Select(i => {
+            int startAt = i * 100;
+            string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime=1736452800&queue=420&start={startAt}&count=100&api_key={apiKey}";
+            return GetStringAsyncWithRetry(url);
+        }).ToList();
 
-    var batchResults = await Task.WhenAll(rankedMatchesTasks);
-    foreach (var result in batchResults) {
-        var rankedMatchArray = JsonSerializer.Deserialize<string[]>(result);
-        if (rankedMatchArray != null) {
-            allMatches.AddRange(rankedMatchArray);
+        var batchSoloDuoResults = await Task.WhenAll(rankedSoloMatchesTasks);
+        foreach (var result in batchSoloDuoResults) {
+            var rankedMatchArray = JsonSerializer.Deserialize<string[]>(result);
+            if (rankedMatchArray != null) {
+                allRankedSoloDuoMatches.AddRange(rankedMatchArray);
+            }
         }
     }
 
     int maxConcurrentRequests = 3;
-    var semaphore = new SemaphoreSlim(maxConcurrentRequests);
-    var rankedMatchDetailsTasks = allMatches.Select(async matchId => {
-        await semaphore.WaitAsync();
+    var semaphoreSoloDuo = new SemaphoreSlim(maxConcurrentRequests);
+    var rankedSoloDuoMatchDetailsTasks = allRankedSoloDuoMatches.Select(async matchId => {
+        await semaphoreSoloDuo.WaitAsync();
         try {
             string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/{matchId}?api_key={apiKey}";
             HttpResponseMessage response = await retryPolicyResponse.ExecuteAsync(() => client.GetAsync(url));
@@ -329,32 +336,32 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
             return JsonSerializer.Deserialize<LeagueRankedSoloMatchDto>(
                 content, new JsonSerializerOptions {PropertyNameCaseInsensitive = true});
         } finally {
-            semaphore.Release();
+            semaphoreSoloDuo.Release();
         }
     }).ToList();
 
-    var rankedMatchDetailsResponses = await Task.WhenAll(rankedMatchDetailsTasks);
-    var rankedMatchInfoList = rankedMatchDetailsResponses.Where(info => info != null).ToList();
+    var rankedSoloDuoMatchDetailsResponses = await Task.WhenAll(rankedSoloDuoMatchDetailsTasks);
+    var rankedSoloDuoMatchInfoList = rankedSoloDuoMatchDetailsResponses.Where(info => info != null).ToList();
 
-    var championStatsMap = new Dictionary<int, ChampionStats>();
-    var preferredRoleMap = new Dictionary<string, PrefferedRole>(StringComparer.OrdinalIgnoreCase){
+    var championStatsSoloDuoMap = new Dictionary<int, ChampionStats>();
+    var preferredSoloDuoRoleMap = new Dictionary<string, PrefferedRole>(StringComparer.OrdinalIgnoreCase){
         { "TOP", new PrefferedRole { RoleName = "TOP" } },
         { "JUNGLE", new PrefferedRole { RoleName = "JUNGLE" } },
         { "MIDDLE", new PrefferedRole { RoleName = "MIDDLE" } },
         { "BOTTOM", new PrefferedRole { RoleName = "BOTTOM" } },
         { "UTILITY", new PrefferedRole { RoleName = "UTILITY" } },
     };
-    foreach (var match in rankedMatchInfoList) {
+    foreach (var match in rankedSoloDuoMatchInfoList) {
         var participant = match?.info.participants.FirstOrDefault(p => p.puuid == puuid);
         if (participant == null || participant.gameEndedInEarlySurrender) continue;
 
         int champId = participant.championId;
-        if (!championStatsMap.TryGetValue(champId, out ChampionStats? stats)) {
+        if (!championStatsSoloDuoMap.TryGetValue(champId, out ChampionStats? stats)) {
             stats = new ChampionStats {
                 ChampionId = champId,
                 ChampionName = participant.championName
             };
-            championStatsMap[champId] = stats;
+            championStatsSoloDuoMap[champId] = stats;
         }
         stats.Games++;
         if (participant.win) stats.Wins++;
@@ -363,7 +370,87 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         stats.TotalAssists += participant.assists;
 
         string role = participant.teamPosition.ToUpper();
-        if (preferredRoleMap.TryGetValue(role, out PrefferedRole? preferredRole)) {
+        if (preferredSoloDuoRoleMap.TryGetValue(role, out PrefferedRole? preferredRole)) {
+            preferredRole.Games++;
+            if (participant.win) preferredRole.Wins++;
+            preferredRole.TotalKills += participant.kills;
+            preferredRole.TotalDeaths += participant.deaths;
+            preferredRole.TotalAssists += participant.assists;
+        }
+    }
+
+    string flexMessage = "";
+    int winsFlex = 0, lossesFlex = 0, totalFlexMatches = 0;
+    var rankedFlexEntry = entries?.FirstOrDefault(entry => entry.queueType.Equals("RANKED_FLEX_SR"));
+    if (rankedFlexEntry == null) {
+        flexMessage = "Ranked Flex entry not found for the specified player.";
+    } else {
+        winsFlex = rankedFlexEntry.wins;
+        lossesFlex = rankedFlexEntry.losses;
+        totalFlexMatches = winsFlex+lossesFlex;
+    }
+
+    var allRankedFlexMatches = new List<string>();
+    int loopTimesFlex = (int)Math.Ceiling((double)totalFlexMatches/100);
+    var rankedFlexMatchesTasks = Enumerable.Range(0, loopTimesFlex).Select(i => {
+        int startAt = i * 100;
+        string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime=1736452800&queue=440&start={startAt}&count=100&api_key={apiKey}";
+        return GetStringAsyncWithRetry(url);
+    }).ToList();
+
+    var batchFlexResults = await Task.WhenAll(rankedFlexMatchesTasks);
+    foreach (var result in batchFlexResults) {
+        var rankedMatchArray = JsonSerializer.Deserialize<string[]>(result);
+        if (rankedMatchArray != null) {
+            allRankedFlexMatches.AddRange(rankedMatchArray);
+        }
+    }
+
+    var semaphoreFlex = new SemaphoreSlim(maxConcurrentRequests);
+    var rankedFlexMatchDetailsTasks = allRankedFlexMatches.Select(async matchId => {
+        await semaphoreFlex.WaitAsync();
+        try {
+            string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/{matchId}?api_key={apiKey}";
+            HttpResponseMessage response = await retryPolicyResponse.ExecuteAsync(() => client.GetAsync(url));
+            string content = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<LeagueRankedSoloMatchDto>(
+                content, new JsonSerializerOptions {PropertyNameCaseInsensitive = true});
+        } finally {
+            semaphoreFlex.Release();
+        }
+    }).ToList();
+
+    var rankedFlexMatchDetailsResponses = await Task.WhenAll(rankedFlexMatchDetailsTasks);
+    var rankedFlexMatchInfoList = rankedFlexMatchDetailsResponses.Where(info => info != null).ToList();
+
+    var championStatsFlexMap = new Dictionary<int, ChampionStats>();
+    var preferredFlexRoleMap = new Dictionary<string, PrefferedRole>(StringComparer.OrdinalIgnoreCase){
+        { "TOP", new PrefferedRole { RoleName = "TOP" } },
+        { "JUNGLE", new PrefferedRole { RoleName = "JUNGLE" } },
+        { "MIDDLE", new PrefferedRole { RoleName = "MIDDLE" } },
+        { "BOTTOM", new PrefferedRole { RoleName = "BOTTOM" } },
+        { "UTILITY", new PrefferedRole { RoleName = "UTILITY" } },
+    };
+    foreach (var match in rankedFlexMatchInfoList) {
+        var participant = match?.info.participants.FirstOrDefault(p => p.puuid == puuid);
+        if (participant == null || participant.gameEndedInEarlySurrender) continue;
+
+        int champId = participant.championId;
+        if (!championStatsFlexMap.TryGetValue(champId, out ChampionStats? stats)) {
+            stats = new ChampionStats {
+                ChampionId = champId,
+                ChampionName = participant.championName
+            };
+            championStatsFlexMap[champId] = stats;
+        }
+        stats.Games++;
+        if (participant.win) stats.Wins++;
+        stats.TotalKills += participant.kills;
+        stats.TotalDeaths += participant.deaths;
+        stats.TotalAssists += participant.assists;
+
+        string role = participant.teamPosition.ToUpper();
+        if (preferredFlexRoleMap.TryGetValue(role, out PrefferedRole? preferredRole)) {
             preferredRole.Games++;
             if (participant.win) preferredRole.Wins++;
             preferredRole.TotalKills += participant.kills;
@@ -509,14 +596,20 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         SummonerData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await summonerTask)),
         EntriesData = JsonSerializer.Serialize(entries),
         TopMasteriesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await topMasteriesTask)),
-        MatchesData = JsonSerializer.Serialize(allMatches),
-        RankedMatchesData = JsonSerializer.Serialize(rankedMatchInfoList),
+        SoloDuoMatchesData = JsonSerializer.Serialize(allRankedSoloDuoMatches),
+        SoloDuoMatchesDetailsData = JsonSerializer.Serialize(rankedSoloDuoMatchInfoList),
+        FlexMatchesData = JsonSerializer.Serialize(allRankedFlexMatches),
+        FlexMatchesDetailsData = JsonSerializer.Serialize(rankedFlexMatchInfoList),
         ChallengesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await challengesTask)),
         SpectatorData = spectatorData is string s ? s : JsonSerializer.Serialize(spectatorData),
         ClashData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await clashTask)),
-        ChampionStatsData = JsonSerializer.Serialize(championStatsMap.Values),
-        PreferredRoleData = JsonSerializer.Serialize(preferredRoleMap.Values),
+        ChampionStatsSoloDuoData = JsonSerializer.Serialize(championStatsSoloDuoMap.Values),
+        PreferredSoloDuoRoleData = JsonSerializer.Serialize(preferredSoloDuoRoleMap.Values),
+        ChampionStatsFlexData = JsonSerializer.Serialize(championStatsFlexMap.Values),
+        PreferredFlexRoleData = JsonSerializer.Serialize(preferredFlexRoleMap.Values),
         AddedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+        SoloDuoMessage = soloDuoMessage,
+        FlexMessage = flexMessage,
     };
     dbContext.Players.Add(player);
     await dbContext.SaveChangesAsync();
@@ -588,43 +681,48 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         PropertyNameCaseInsensitive = true
     });
 
-    List<string> existingMatches = new();
-    if (!string.IsNullOrEmpty(existingPlayer.MatchesData)) {
-        existingMatches = JsonSerializer.Deserialize<List<string>>(existingPlayer.MatchesData) ?? new List<string>();
+    string soloDuoMessage = "";
+    int winsSoloDuo = 0, lossesSoloDuo = 0, totalSoloDuoMatches = 0;
+    var rankedSoloDuoEntry = entries?.FirstOrDefault(entry => entry.queueType.Equals("RANKED_SOLO_5x5"));
+    if (rankedSoloDuoEntry == null) {
+        soloDuoMessage = "Ranked Solo/Duo entry not found for the specified player.";
+    } else {
+        winsSoloDuo = rankedSoloDuoEntry.wins;
+        lossesSoloDuo = rankedSoloDuoEntry.losses;
+        totalSoloDuoMatches = winsSoloDuo + lossesSoloDuo;
     }
 
-    var newMatches = new List<string>();
-    var rankedSoloEntry = entries?.FirstOrDefault(entry => entry.queueType.Equals("RANKED_SOLO_5x5"));
-    if (rankedSoloEntry == null) return null;
+    var newSoloDuoMatches = new List<string>();
+    if (totalSoloDuoMatches > 0) {
+        int loopTimesSoloDuo = (int)Math.Ceiling((double)totalSoloDuoMatches/100);
+        var rankedMatchesTasks = Enumerable.Range(0, loopTimesSoloDuo).Select(i => {
+            long startTime = existingPlayer.AddedAt > 0 ? existingPlayer.AddedAt : 1736452800;
+            int startAt = i * 100;
+            string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={startTime}&queue=420&start={startAt}&count=100&api_key={apiKey}";
+            return GetStringAsyncWithRetry(url);
+        }).ToList();
 
-    int wins = rankedSoloEntry.wins;
-    int losses = rankedSoloEntry.losses;
-    int totalMatches = wins+losses;
-
-    int loopTimes = (int)Math.Ceiling((double)totalMatches/100);
-    var rankedMatchesTasks = Enumerable.Range(0, loopTimes).Select(i => {
-        long startTime = existingPlayer.AddedAt > 0 ? existingPlayer.AddedAt : 1736452800;
-        int startAt = i * 100;
-        string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={startTime}&queue=420&start={startAt}&count=100&api_key={apiKey}";
-        return GetStringAsyncWithRetry(url);
-    }).ToList();
-
-    var batchResults = await Task.WhenAll(rankedMatchesTasks);
-    foreach (var result in batchResults) {
-        var rankedMatchArray = JsonSerializer.Deserialize<string[]>(result);
-        if (rankedMatchArray != null) {
-            newMatches.AddRange(rankedMatchArray);
+        var batchResults = await Task.WhenAll(rankedMatchesTasks);
+        foreach (var result in batchResults) {
+            var rankedMatchArray = JsonSerializer.Deserialize<string[]>(result);
+            if (rankedMatchArray != null) {
+                newSoloDuoMatches.AddRange(rankedMatchArray);
+            }
         }
     }
+    
+    List<string> existingSoloDuoMatches = new();
+    if (!string.IsNullOrEmpty(existingPlayer.SoloDuoMatchesData)) {
+        existingSoloDuoMatches = JsonSerializer.Deserialize<List<string>>(existingPlayer.SoloDuoMatchesData) ?? new List<string>();
+    }
 
-    var combinedMatches = existingMatches.Union(newMatches).ToList();
-
-    var matchesToProcess = newMatches.Except(existingMatches).ToList();
+    var combinedSoloDuoMatches = existingSoloDuoMatches.Union(newSoloDuoMatches).ToList();
+    var soloDuoMatchesToProcess = newSoloDuoMatches.Except(existingSoloDuoMatches).ToList();
 
     int maxConcurrentRequests = 3;
-    var semaphore = new SemaphoreSlim(maxConcurrentRequests);
-    var rankedMatchDetailsTasks = matchesToProcess.Select(async matchId => {
-        await semaphore.WaitAsync();
+    var semaphoreSoloDuo = new SemaphoreSlim(maxConcurrentRequests);
+    var rankedSoloDuoMatchDetailsTasks = soloDuoMatchesToProcess.Select(async matchId => {
+        await semaphoreSoloDuo.WaitAsync();
         try {
             string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/{matchId}?api_key={apiKey}";
             HttpResponseMessage response = await retryPolicyResponse.ExecuteAsync(() => client.GetAsync(url));
@@ -632,45 +730,45 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
             return JsonSerializer.Deserialize<LeagueRankedSoloMatchDto>(
                 content, new JsonSerializerOptions {PropertyNameCaseInsensitive = true});
         } finally {
-            semaphore.Release();
+            semaphoreSoloDuo.Release();
         }
     }).ToList();
 
-    var championStatsMap = new Dictionary<int, ChampionStats>();
-    if (!string.IsNullOrEmpty(existingPlayer.ChampionStatsData)) {
-        var existingChampionStats = JsonSerializer.Deserialize<List<ChampionStats>>(existingPlayer.ChampionStatsData);
+    var championStatsSoloDuoMap = new Dictionary<int, ChampionStats>();
+    if (!string.IsNullOrEmpty(existingPlayer.ChampionStatsSoloDuoData)) {
+        var existingChampionStats = JsonSerializer.Deserialize<List<ChampionStats>>(existingPlayer.ChampionStatsSoloDuoData);
         if (existingChampionStats != null) {
-            championStatsMap = existingChampionStats.ToDictionary(cs => cs.ChampionId, cs => cs);
+            championStatsSoloDuoMap = existingChampionStats.ToDictionary(cs => cs.ChampionId, cs => cs);
         }
     }
 
     var requiredRolesAll = new[] { "TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY" };
-    Dictionary<string, PrefferedRole> preferredRoleMap;
+    Dictionary<string, PrefferedRole> preferredSoloDuoRoleMap;
 
-    if (!string.IsNullOrEmpty(existingPlayer.PreferredRoleData)) {
+    if (!string.IsNullOrEmpty(existingPlayer.PreferredSoloDuoRoleData)) {
         try {
-            var rolesList = JsonSerializer.Deserialize<List<PrefferedRole>>(existingPlayer.PreferredRoleData)
+            var rolesList = JsonSerializer.Deserialize<List<PrefferedRole>>(existingPlayer.PreferredSoloDuoRoleData)
                             ?? new List<PrefferedRole>();
-            preferredRoleMap = new Dictionary<string, PrefferedRole>(StringComparer.OrdinalIgnoreCase);
+            preferredSoloDuoRoleMap = new Dictionary<string, PrefferedRole>(StringComparer.OrdinalIgnoreCase);
 
             for (int i = 0; i < requiredRolesAll.Length; i++) {
                 string roleName = requiredRolesAll[i];
                 if (i < rolesList.Count) {
                     var roleData = rolesList[i];
                     roleData.RoleName = roleName;
-                    preferredRoleMap[roleName] = roleData;
+                    preferredSoloDuoRoleMap[roleName] = roleData;
                 }
                 else {
-                    preferredRoleMap[roleName] = new PrefferedRole { RoleName = roleName };
+                    preferredSoloDuoRoleMap[roleName] = new PrefferedRole { RoleName = roleName };
                 }
             }
         }
         catch {
-            preferredRoleMap = requiredRolesAll.ToDictionary(role => role, role => new PrefferedRole { RoleName = role }, StringComparer.OrdinalIgnoreCase);
+            preferredSoloDuoRoleMap = requiredRolesAll.ToDictionary(role => role, role => new PrefferedRole { RoleName = role }, StringComparer.OrdinalIgnoreCase);
         }
     }
     else {
-        preferredRoleMap = requiredRolesAll.ToDictionary(role => role, role => new PrefferedRole { RoleName = role }, StringComparer.OrdinalIgnoreCase);
+        preferredSoloDuoRoleMap = requiredRolesAll.ToDictionary(role => role, role => new PrefferedRole { RoleName = role }, StringComparer.OrdinalIgnoreCase);
     }
 
 
@@ -680,8 +778,8 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
                                 ?? new List<LeagueRankedSoloMatchDto>();
     }
 
-    var newRankedMatchDetails = (await Task.WhenAll(rankedMatchDetailsTasks)).Where(info => info != null).ToList();
-    foreach (var match in newRankedMatchDetails) {
+    var newRankedSoloDuoMatchDetails = (await Task.WhenAll(rankedSoloDuoMatchDetailsTasks)).Where(info => info != null).ToList();
+    foreach (var match in newRankedSoloDuoMatchDetails) {
         if (match != null && !existingRankedMatches.Any(x => x.metadata.matchId == match.metadata.matchId)) {
             existingRankedMatches.Add(match);
         }
@@ -690,12 +788,12 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         if (participant == null || participant.gameEndedInEarlySurrender) continue;
 
         int champId = participant.championId;
-        if (!championStatsMap.TryGetValue(champId, out ChampionStats? stats)) {
+        if (!championStatsSoloDuoMap.TryGetValue(champId, out ChampionStats? stats)) {
             stats = new ChampionStats {
                 ChampionId = champId,
                 ChampionName = participant.championName
             };
-            championStatsMap[champId] = stats;
+            championStatsSoloDuoMap[champId] = stats;
         }
         stats.Games++;
         if (participant.win) stats.Wins++;
@@ -704,7 +802,129 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         stats.TotalAssists += participant.assists;
 
         string role = participant.teamPosition.ToUpper();
-        if (preferredRoleMap.TryGetValue(role, out PrefferedRole? preferredRole)) {
+        if (preferredSoloDuoRoleMap.TryGetValue(role, out PrefferedRole? preferredRole)) {
+            preferredRole.Games++;
+            if (participant.win) preferredRole.Wins++;
+            preferredRole.TotalKills += participant.kills;
+            preferredRole.TotalDeaths += participant.deaths;
+            preferredRole.TotalAssists += participant.assists;
+        }
+    }
+
+    string flexMessage = "";
+    int winsFlex = 0, lossesFlex = 0, totalFlexMatches = 0;
+    var rankedFlexEntry = entries?.FirstOrDefault(entry => entry.queueType.Equals("RANKED_FLEX_SR"));
+    if (rankedFlexEntry == null) {
+        flexMessage = "Ranked Flex entry not found for the specified player.";
+    } else {
+        winsFlex = rankedFlexEntry.wins;
+        lossesFlex = rankedFlexEntry.losses;
+        totalFlexMatches = winsFlex + lossesFlex;
+    }
+
+    var newFlexMatches = new List<string>();
+    if (totalFlexMatches > 0) {
+        int loopTimes = (int)Math.Ceiling((double)totalFlexMatches/100);
+        var rankedFlexMatchesTasks = Enumerable.Range(0, loopTimes).Select(i => {
+            long startTime = existingPlayer.AddedAt > 0 ? existingPlayer.AddedAt : 1736452800;
+            int startAt = i * 100;
+            string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={startTime}&queue=420&start={startAt}&count=100&api_key={apiKey}";
+            return GetStringAsyncWithRetry(url);
+        }).ToList();
+
+        var batchFlexResults = await Task.WhenAll(rankedFlexMatchesTasks);
+        foreach (var result in batchFlexResults) {
+            var rankedMatchArray = JsonSerializer.Deserialize<string[]>(result);
+            if (rankedMatchArray != null) {
+                newFlexMatches.AddRange(rankedMatchArray);
+            }
+        }
+    }
+    
+    List<string> existingFlexMatches = new();
+    if (!string.IsNullOrEmpty(existingPlayer.SoloDuoMatchesData)) {
+        existingFlexMatches = JsonSerializer.Deserialize<List<string>>(existingPlayer.SoloDuoMatchesData) ?? new List<string>();
+    }
+
+    var combinedFlexMatches = existingFlexMatches.Union(newFlexMatches).ToList();
+    var flexMatchesToProcess = newFlexMatches.Except(existingFlexMatches).ToList();
+
+    var semaphoreFlex = new SemaphoreSlim(maxConcurrentRequests);
+    var rankedFlexMatchDetailsTasks = flexMatchesToProcess.Select(async matchId => {
+        await semaphoreFlex.WaitAsync();
+        try {
+            string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/{matchId}?api_key={apiKey}";
+            HttpResponseMessage response = await retryPolicyResponse.ExecuteAsync(() => client.GetAsync(url));
+            string content = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<LeagueRankedSoloMatchDto>(
+                content, new JsonSerializerOptions {PropertyNameCaseInsensitive = true});
+        } finally {
+            semaphoreFlex.Release();
+        }
+    }).ToList();
+
+    var championStatsFlexMap = new Dictionary<int, ChampionStats>();
+    if (!string.IsNullOrEmpty(existingPlayer.ChampionStatsSoloDuoData)) {
+        var existingChampionStats = JsonSerializer.Deserialize<List<ChampionStats>>(existingPlayer.ChampionStatsSoloDuoData);
+        if (existingChampionStats != null) {
+            championStatsFlexMap = existingChampionStats.ToDictionary(cs => cs.ChampionId, cs => cs);
+        }
+    }
+
+    Dictionary<string, PrefferedRole> preferredFlexRoleMap;
+    if (!string.IsNullOrEmpty(existingPlayer.PreferredSoloDuoRoleData)) {
+        try {
+            var rolesList = JsonSerializer.Deserialize<List<PrefferedRole>>(existingPlayer.PreferredSoloDuoRoleData) ?? new List<PrefferedRole>();
+            preferredFlexRoleMap = new Dictionary<string, PrefferedRole>(StringComparer.OrdinalIgnoreCase);
+
+            for (int i = 0; i < requiredRolesAll.Length; i++) {
+                string roleName = requiredRolesAll[i];
+                if (i < rolesList.Count) {
+                    var roleData = rolesList[i];
+                    roleData.RoleName = roleName;
+                    preferredFlexRoleMap[roleName] = roleData;
+                } else {
+                    preferredFlexRoleMap[roleName] = new PrefferedRole { RoleName = roleName };
+                }
+            }
+        } catch {
+            preferredFlexRoleMap = requiredRolesAll.ToDictionary(role => role, role => new PrefferedRole { RoleName = role }, StringComparer.OrdinalIgnoreCase);
+        }
+    } else {
+        preferredFlexRoleMap = requiredRolesAll.ToDictionary(role => role, role => new PrefferedRole { RoleName = role }, StringComparer.OrdinalIgnoreCase);
+    }
+
+
+    var existingRankedFlexMatches = new List<LeagueRankedSoloMatchDto>();
+    if (!string.IsNullOrEmpty(existingPlayer.RankedMatchesData)) {
+        existingRankedMatches = JsonSerializer.Deserialize<List<LeagueRankedSoloMatchDto>>(existingPlayer.RankedMatchesData) ?? new List<LeagueRankedSoloMatchDto>();
+    }
+
+    var newRankedFlexMatchDetails = (await Task.WhenAll(rankedFlexMatchDetailsTasks)).Where(info => info != null).ToList();
+    foreach (var match in newRankedFlexMatchDetails) {
+        if (match != null && !existingRankedMatches.Any(x => x.metadata.matchId == match.metadata.matchId)) {
+            existingRankedMatches.Add(match);
+        }
+
+        var participant = match?.info.participants.FirstOrDefault(p => p.puuid == puuid);
+        if (participant == null || participant.gameEndedInEarlySurrender) continue;
+
+        int champId = participant.championId;
+        if (!championStatsFlexMap.TryGetValue(champId, out ChampionStats? stats)) {
+            stats = new ChampionStats {
+                ChampionId = champId,
+                ChampionName = participant.championName
+            };
+            championStatsFlexMap[champId] = stats;
+        }
+        stats.Games++;
+        if (participant.win) stats.Wins++;
+        stats.TotalKills += participant.kills;
+        stats.TotalDeaths += participant.deaths;
+        stats.TotalAssists += participant.assists;
+
+        string role = participant.teamPosition.ToUpper();
+        if (preferredFlexRoleMap.TryGetValue(role, out PrefferedRole? preferredRole)) {
             preferredRole.Games++;
             if (participant.win) preferredRole.Wins++;
             preferredRole.TotalKills += participant.kills;
@@ -789,10 +1009,8 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
             foreach (var missingRole in missingRoles) {
                 var candidate = teamGroup.FirstOrDefault(p => {
                     if (ambiguousMapping.TryGetValue(p.championName, out string[]? possibleRoles)) {
-                        var currentRoleDuplicates = teamGroup.Count(t => 
-                            t.predictedRole.Equals(p.predictedRole, StringComparison.OrdinalIgnoreCase));
-                        return possibleRoles.Contains(missingRole, StringComparer.OrdinalIgnoreCase) 
-                            && currentRoleDuplicates > 1;
+                        var currentRoleDuplicates = teamGroup.Count(t => t.predictedRole.Equals(p.predictedRole, StringComparison.OrdinalIgnoreCase));
+                        return possibleRoles.Contains(missingRole, StringComparer.OrdinalIgnoreCase) && currentRoleDuplicates > 1;
                     }
                     return false;
                 });
@@ -846,14 +1064,20 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
     existingPlayer.SummonerData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await summonerTask));
     existingPlayer.EntriesData = JsonSerializer.Serialize(entries);
     existingPlayer.TopMasteriesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await topMasteriesTask));
-    existingPlayer.MatchesData = JsonSerializer.Serialize(combinedMatches);
-    existingPlayer.RankedMatchesData = JsonSerializer.Serialize(existingRankedMatches);
+    existingPlayer.SoloDuoMatchesData = JsonSerializer.Serialize(combinedSoloDuoMatches);
+    existingPlayer.SoloDuoMatchesDetailsData = JsonSerializer.Serialize(existingSoloDuoMatches);
+    existingPlayer.FlexMatchesData = JsonSerializer.Serialize(combinedFlexMatches);
+    existingPlayer.FlexMatchesDetailsData = JsonSerializer.Serialize(existingFlexMatches);
     existingPlayer.ChallengesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await challengesTask));
     existingPlayer.SpectatorData = spectatorData is string s ? s : JsonSerializer.Serialize(spectatorData);
     existingPlayer.ClashData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await clashTask));
-    existingPlayer.ChampionStatsData = JsonSerializer.Serialize(championStatsMap.Values);
-    existingPlayer.PreferredRoleData = JsonSerializer.Serialize(preferredRoleMap.Values);
+    existingPlayer.ChampionStatsSoloDuoData = JsonSerializer.Serialize(championStatsSoloDuoMap.Values);
+    existingPlayer.PreferredSoloDuoRoleData = JsonSerializer.Serialize(preferredSoloDuoRoleMap.Values);
+    existingPlayer.ChampionStatsFlexData = JsonSerializer.Serialize(championStatsFlexMap.Values);
+    existingPlayer.PreferredFlexRoleData = JsonSerializer.Serialize(preferredFlexRoleMap.Values);
     existingPlayer.AddedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+    existingPlayer.SoloDuoMessage = soloDuoMessage;
+    existingPlayer.FlexMessage = flexMessage;
 
     await dbContext.SaveChangesAsync();
     return Results.Ok(existingPlayer);
