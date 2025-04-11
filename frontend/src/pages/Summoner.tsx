@@ -3,19 +3,19 @@ import { useParams, Link } from 'react-router-dom';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { DD_VERSION, LOL_VERSION } from '../version';
 
-import UpdateButton from "../components/UpdateButton";
 import GameTimer from "../components/GameTime";
 import ChampionImage from '../components/ChampionImage';
+import SummonerProfileHeader from '../components/SummonerProfileHeader';
 
 import Participant from '../interfaces/Participant';
 import Entry from '../interfaces/Entry';
 import ChampionStats from '../interfaces/ChampionStats';
 import PreferredRole from '../interfaces/PreferredRole';
 import Mastery from '../interfaces/Mastery';
+import Player from '../interfaces/Player';
 
 import queueJson from "../assets/json/queues.json";
 
-import favorite from "../assets/favorite.svg";
 import performance from "../assets/performance.png";
 import goldmedal from "../assets/gold-medal.png";
 import silvermedal from "../assets/silver-medal.png";
@@ -27,25 +27,6 @@ import fill from "../assets/fill.png";
 import loadingAnimation from "../assets/animations/loading.lottie";
 import arrowdownlight from "../assets/arrow-down-light.png";
 import noneicon from "../assets/none.jpg";
-
-interface ApiData {
-    summonerName: string;
-    summonerTag: string;
-    region: string;
-    puuid: string;
-    playerData: string;
-    summonerData: string;
-    entriesData: string;
-    topMasteriesData: string;
-    matchesData: string; // ranked solo duo games id => string[]
-    rankedMatchesData: string; // ranked solo duo games info 
-    challengesData: string;
-    spectatorData: string;
-    clashData: string;
-    championStatsData: string;
-    preferredRoleData: string;
-    addedAt: number;
-}
 
 const Summoner: React.FC = () => {
     const {regionCode, encodedSummoner} = useParams<{regionCode: string; encodedSummoner: string }>(); 
@@ -70,7 +51,7 @@ const Summoner: React.FC = () => {
     const inputRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const [apiData, setApiData] = useState<ApiData | null>(null);
+    const [apiData, setApiData] = useState<Player | null>(null);
     const [loading, setLoading] = useState(true);
 
     const [major, minor] = LOL_VERSION.split('.').map(Number);
@@ -121,7 +102,7 @@ const Summoner: React.FC = () => {
     }, [regionCode, summoner]);
 
     if (loading || !apiData) {
-        return <div className="w-full flex justify-center mt-[125px]"><DotLottieReact src={loadingAnimation} className="w-[600px] bg-transparent" loop autoplay /></div>
+        return <div className="w-full flex justify-center mt-[125px] mb-[195px]"><DotLottieReact src={loadingAnimation} className="w-[600px] bg-transparent" loop autoplay /></div>
     }
 
     const summonerData = JSON.parse(apiData.summonerData);
@@ -175,55 +156,8 @@ const Summoner: React.FC = () => {
 
     return (
         <div className="container m-auto">
-            <div className="w-full bg-neutral-800 mt-1">
-                <div className="flex border-b-1 pt-5 pb-5 pl-5">
-                    <div className="relative p-3">
-                        <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/profileicon/${summonerData.profileIconId}.png`} alt={summonerData.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
-                        <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 -translate-y-[10px] z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{summonerData.summonerLevel}</span>
-                    </div>
-                    <div className="pt-3 pb-3">
-                        <div className="flex">
-                            <h1 className="text-white font-bold text-3xl mr-2">{apiData.summonerName}</h1>
-                            <h1 className="text-neutral-400 text-3xl mr-2">#{apiData.summonerTag}</h1>
-                            <button type="button" className="bg-neutral-200 pl-1.5 pr-1.5 rounded-lg">
-                                <img src={favorite} alt="favorite" className="h-6 border-2 border-neutral-700 rounded" />
-                            </button>
-                        </div>
-                        <div className="flex text-sm text-neutral-100">
-                            <div className="pt-2 pb-2 pl-1">
-                                <p className="uppercase border-r-1 pr-2">{apiData.region}</p>
-                            </div>
-                            <p className="p-2">Ladder Rank num </p>
-                        </div>
-                        <div className="text-neutral-50">
-                            <UpdateButton regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setApiData} />
-                            <p>Last updated: {Math.round((Date.now() - apiData.addedAt*1000)/60000)} minutes ago</p>
-                        </div>
-                    </div>  
-                </div>
-                <div className="p-2">
-                    <ul className="flex gap-10 p-2">
-                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}`} state={{apiData: apiData}} className="cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 bg-neutral-700 border text-purple-400 hover:text-neutral-100">Summary</Link></li>
-                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/champions`} state={{apiData: apiData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Champions</Link></li>
-                        <li><Link to={`/lol/profile/${regionCode}/${encodedSummoner}/mastery`} state={{apiData: apiData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">Mastery</Link></li>
-                        {spectatorData ? (
-                            <li>
-                                <Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: apiData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">
-                                    Live Game
-                                    <span className="animate-pulse text-purple-500 ml-1.5">●</span>
-                                </Link>
-                            </li>
-                        ) : (
-                            <li>
-                                <Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: apiData}} className="cursor-pointer text-neutral-200 pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600">
-                                    Live Game
-                                </Link>
-                            </li>
-                        )}
-                    </ul>
-                </div>
-            </div>
-            <div className="mt-2 text-neutral-50">
+            <SummonerProfileHeader data={apiData} regionCode={regionCode} encodedSummoner={encodedSummoner} setData={setApiData} />
+            <div className="mt-2 text-neutral-50"> 
                 {spectatorData && (
                     <Link to={`/lol/profile/${regionCode}/${encodedSummoner}/livegame`} state={{apiData: apiData}}>
                         <div className="relative group w-full flex items-center bg-neutral-800 cursor-pointer pb-4">
@@ -537,7 +471,7 @@ const Summoner: React.FC = () => {
                                             <p>Select Patch</p>
                                             <img src={arrowdownlight} alt="arrow-down" className={`h-4 transform transition-transform ${showPatch ? "rotate-180" : ""}`} />
                                         </div>
-                                        <div className={`absolute top-full left-0 w-full bg-neutral-800 text-center transition-all duration-300 border border-purple-500 rounded-md overflow-y-auto shadow-lg max-h-[300px]
+                                        <div className={`absolute top-full left-0 w-full bg-neutral-800 text-center transition-all duration-300 border border-purple-500 overflow-y-auto shadow-lg max-h-[300px]
                                             ${showPatch ? "opacity-100 visible" : "opacity-0 invisible"}`}>
                                             <p key="all-patches" onClick={() => setSelectedPatch("all-patches")} className={`p-1 cursor-pointer text-lg transition-all duration-100 hover:text-neutral-300 ${selectedPatch === "all-patches" ? "bg-neutral-700" : ""}`}>
                                                 All Patches
@@ -554,7 +488,7 @@ const Summoner: React.FC = () => {
                                     <div ref={inputRef} onClick={() => setShowSelectChampions(true)} className="text-xl">
                                         <input type="text" placeholder="Select Champion" value={selectedChampion} className="w-full border-none outline-none" />
                                     </div>
-                                    <div ref={dropdownRef} className={`absolute top-full left-0 w-full bg-neutral-800 transition-all duration-300 border border-purple-500 rounded-md overflow-y-auto shadow-lg max-h-[400px]
+                                    <div ref={dropdownRef} className={`absolute top-full left-0 w-full bg-neutral-800 transition-all duration-300 border border-purple-500 overflow-y-auto shadow-lg max-h-[400px]
                                          ${showSelectChampions ? "opacity-100 visible" : "opacity-0 invisible"} custom-scrollbar`}>
                                         <div onClick={() => setSelectedChampion("All Champions")} className={`flex items-center text-lg justify-between pl-4 pr-4 pt-0.5 pb-0.5 cursor-pointer transition-all duration-100 hover:text-neutral-300 ${selectedChampion === "All Champions" ? "bg-neutral-700" : ""}`}>
                                             <img src={noneicon} alt="none-icon" className="h-12" />

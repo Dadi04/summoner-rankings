@@ -104,4 +104,4 @@ const UpdateButton: React.FC<{regionCode: string; encodedSummoner: string; api: 
     );
 };
 
-export default UpdateButton
+export default UpdateButton;

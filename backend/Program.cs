@@ -112,7 +112,6 @@ var manualMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreC
     { "Nunu", "MIDDLE" },
     { "Orianna", "MIDDLE" },
     { "Qiyana", "MIDDLE" },
-    { "Taliyah", "MIDDLE" },
     { "Talon", "MIDDLE" },
     { "TwistedFate", "MIDDLE" },
     { "Vex", "MIDDLE" },
@@ -206,6 +205,7 @@ var ambiguousMapping = new Dictionary<string, string[]>(StringComparer.OrdinalIg
     { "Yasuo",      new[] { "MIDDLE", "TOP", "BOTTOM" } },
     { "Yone",       new[] { "MIDDLE", "TOP" } },
     { "Zoe",        new[] { "MIDDLE", "UTILITY" } },
+    { "Taliyah",    new[] { "MIDDLE", "BOTTOM" } },
     { "Camille",    new[] { "TOP", "UTILITY" } },
     { "Heimer",     new[] { "TOP", "MIDDLE", "BOTTOM", "UTILITY" } },
     { "Jayce",      new[] { "TOP", "MIDDLE" } },
@@ -230,6 +230,7 @@ var regionMapping = new Dictionary<string, string> {
     {"me1", "europe"},
 };
 
+// get last 30 games and their info, get all ranked flex games and their info, if player doesnt exist return "Player doesnt exist"
 app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (string region, string summonerName, string summonerTag, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext) => {
     if (!regionMapping.TryGetValue(region, out var continent)) {
         return Results.Problem("Invalid region specified.");
@@ -855,7 +856,6 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
     existingPlayer.AddedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
     await dbContext.SaveChangesAsync();
-    Console.WriteLine(existingPlayer.SpectatorData);
     return Results.Ok(existingPlayer);
 });
 

@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logodark from '../assets/logo-dark.png';
 import arrowdown from '../assets/arrow-down-dark.png'
-import arrowup from '../assets/arrow-down-dark.png'
 
 interface RegionItem {
     name: string;
@@ -32,12 +31,13 @@ const Home: React.FC = () => {
     const [showRegion, setShowRegion] = useState(false);
     const [selectedRegion, setSelectedRegion] = useState<RegionItem>(REGION_ITEMS[0]);
     const [summonerInput, setSummonerInput] = useState('');
-    const dropdownRef = useRef<HTMLDivElement>(null);
+    const dropdownToggleRef = useRef<HTMLDivElement>(null);
+    const dropdownListRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+            if (dropdownToggleRef.current && !dropdownToggleRef.current.contains(event.target as Node) && dropdownListRef.current && !dropdownListRef.current.contains(event.target as Node)) {
                 setShowRegion(false);
             }
         };
@@ -62,32 +62,28 @@ const Home: React.FC = () => {
     };
 
     return (
-        <div className="flex justify-center flex-col items-center mt-20">
+        <div className="flex justify-center flex-col items-center mt-20 mb-[251px]">
             <div className="container m-auto w-90">
                 <img src={logodark} alt="logo-dark" />
             </div>
-            <div className="container m-auto w-220 mt-5 p-5 bg-neutral-200 rounded-4xl">
+            <div className="container m-auto w-220 mt-5 p-5 bg-neutral-200 rounded-4xl relative">
                 <form onSubmit={handleSubmit} className="flex items-center justify-between">
-                    <div className="relative flex flex-col border-r-1 pl-2 pr-2 w-80">
+                    <div className="flex flex-col border-r-1 pl-2 pr-2 w-80">
                         <p className="font-medium">Region</p>
-                        <div ref={dropdownRef} className=" w-60">
-                            <div onClick={() => setShowRegion((prev) => !prev)} className="flex justify-between cursor-pointer">
-                                <span>{selectedRegion.name}</span>
-                                <img src={showRegion ? arrowup : arrowdown} alt={showRegion ? "arrow-up" : "arrow-down"} className="h-5" />
-                            </div>
-                            {showRegion && (
-                                <div className="absolute top-full left-0 w-full mt-1 bg-neutral-700 shadow-md z-50">
-                                    <ul className="flex flex-col text-white">
-                                        {REGION_ITEMS.map((region) => (
-                                            <li key={region.code} onClick={() => handleSelect(region)} className="flex justify-between border-b-1 border-white items-center px-3 py-2 hover:bg-neutral-600 cursor-pointer">
-                                                {region.name}
-                                                <span className="text-xl font-bold">{region.abbr}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
+                        <div ref={dropdownToggleRef} onClick={() => setShowRegion((prev) => !prev)} className="flex justify-between cursor-pointer w-60">
+                            <span>{selectedRegion.name}</span>
+                            <img src={arrowdown} alt="arrow-down" className={`h-5 transform transition-transform duration-150 ${showRegion ? "rotate-180" : ""} `} />
                         </div>
+                    </div>
+                    <div ref={dropdownListRef} className={`absolute top-full left-0 w-full bg-neutral-700 shadow-md z-150 transition-all duration-200 transform ${showRegion ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"}`}>
+                        <ul className="grid grid-cols-[33.33%_33.33%_33.33%] text-white">
+                            {REGION_ITEMS.map((region) => (
+                                <li key={region.code} onClick={() => handleSelect(region)} className="flex justify-between border-b-1 border-white items-center px-3 py-2 hover:bg-neutral-600 cursor-pointer">
+                                    {region.name}
+                                    <span className="text-xl font-bold">{region.abbr}</span>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                     <div className="flex flex-col w-full ml-2">
                         <p className="font-medium">Search</p>

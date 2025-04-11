@@ -17,7 +17,7 @@ const App: React.FC = () => {
     <Router>
       <div className="min-h-screen flex flex-col bg-[#f2f2f2]">
         <NavBar />
-        <div className="flex-grow overflow-auto overflow-y-scroll">
+        <div>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/lol/profile/:regionCode/:encodedSummoner" element={<Summoner />} />
