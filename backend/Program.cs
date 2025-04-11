@@ -230,7 +230,7 @@ var regionMapping = new Dictionary<string, string> {
     {"me1", "europe"},
 };
 
-// get last 30 games and their info
+// get all the games and their info, get last 30 games and their info
 app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (string region, string summonerName, string summonerTag, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext) => {
     if (!regionMapping.TryGetValue(region, out var continent)) {
         return Results.Problem("Invalid region specified.");
@@ -308,7 +308,6 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
 
     var allRankedSoloDuoMatches = new List<string>();
     if (totalSoloDuoMatches > 0) {
-
         int loopTimesSoloDuo = (int)Math.Ceiling((double)totalSoloDuoMatches/100);
         var rankedSoloMatchesTasks = Enumerable.Range(0, loopTimesSoloDuo).Select(i => {
             int startAt = i * 100;
@@ -391,18 +390,20 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
     }
 
     var allRankedFlexMatches = new List<string>();
-    int loopTimesFlex = (int)Math.Ceiling((double)totalFlexMatches/100);
-    var rankedFlexMatchesTasks = Enumerable.Range(0, loopTimesFlex).Select(i => {
-        int startAt = i * 100;
-        string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime=1736452800&queue=440&start={startAt}&count=100&api_key={apiKey}";
-        return GetStringAsyncWithRetry(url);
-    }).ToList();
+    if (totalFlexMatches > 0) {
+        int loopTimesFlex = (int)Math.Ceiling((double)totalFlexMatches/100);
+        var rankedFlexMatchesTasks = Enumerable.Range(0, loopTimesFlex).Select(i => {
+            int startAt = i * 100;
+            string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime=1736452800&queue=440&start={startAt}&count=100&api_key={apiKey}";
+            return GetStringAsyncWithRetry(url);
+        }).ToList();
 
-    var batchFlexResults = await Task.WhenAll(rankedFlexMatchesTasks);
-    foreach (var result in batchFlexResults) {
-        var rankedMatchArray = JsonSerializer.Deserialize<string[]>(result);
-        if (rankedMatchArray != null) {
-            allRankedFlexMatches.AddRange(rankedMatchArray);
+        var batchFlexResults = await Task.WhenAll(rankedFlexMatchesTasks);
+        foreach (var result in batchFlexResults) {
+            var rankedMatchArray = JsonSerializer.Deserialize<string[]>(result);
+            if (rankedMatchArray != null) {
+                allRankedFlexMatches.AddRange(rankedMatchArray);
+            }
         }
     }
 
