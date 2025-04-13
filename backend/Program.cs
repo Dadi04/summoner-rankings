@@ -301,7 +301,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
     int loopTimes = (int)Math.Ceiling(totalMatchesToFetch / 100.0);
     var matchListTasks = Enumerable.Range(0, loopTimes).Select(i => {
         int startAt = i * 100;
-        string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime=1736452800&start={startAt}&count=100&api_key={apiKey}";
+        string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime=1736409600&start={startAt}&count=100&api_key={apiKey}";
         return GetStringAsyncWithRetry(url);
     }).ToList();
 
@@ -638,7 +638,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
     int totalMatchesToFetch = 1000;
     int loopTimes = (int)Math.Ceiling(totalMatchesToFetch / 100.0);
     var newMatchIds = new List<string>();
-    long startTime = existingPlayer.AddedAt > 0 ? existingPlayer.AddedAt-300 : 1736452800;
+    long startTime = existingPlayer.AddedAt > 0 ? existingPlayer.AddedAt-300 : 1736409600;
     for (int i = 0; i < loopTimes; i++) {
         int startAt = i * 100;
         string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={startTime}&start={startAt}&count=100&api_key={apiKey}";
