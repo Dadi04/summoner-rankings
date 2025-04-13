@@ -14,21 +14,18 @@ namespace backend.Models {
         public string SummonerData { get; set; } = string.Empty;
         public string EntriesData { get; set; } = string.Empty;
         public string TopMasteriesData { get; set; } = string.Empty;
-        public string SoloDuoMatchesData { get; set; } = string.Empty;
-        public string SoloDuoMatchesDetailsData { get; set; } = string.Empty;
-        public string FlexMatchesData { get; set; } = string.Empty;
-        public string FlexMatchesDetailsData { get; set; } = string.Empty;
-        public string RankedMatchesData { get; set; } = string.Empty;
+        public string allMatchIds { get; set; } = string.Empty;
+        public string AllMatchesDetailsData { get; set; } = string.Empty;
+        public string AllGamesChampionStatsData { get; set; } = string.Empty;
+        public string AllGamesRoleStatsData { get; set; } = string.Empty;
+        public string RankedSoloChampionStatsData { get; set; } = string.Empty;
+        public string RankedSoloRoleStatsData { get; set; } = string.Empty;
+        public string RankedFlexChampionStatsData { get; set; } = string.Empty;
+        public string RankedFlexRoleStatsData { get; set; } = string.Empty;
         public string ChallengesData { get; set; } = string.Empty;
         public string SpectatorData { get; set; } = string.Empty;
         public string ClashData { get; set; } = string.Empty;
-        public string ChampionStatsSoloDuoData { get; set; } = string.Empty;
-        public string PreferredSoloDuoRoleData { get; set; } = string.Empty;
-        public string ChampionStatsFlexData { get; set; } = string.Empty;
-        public string PreferredFlexRoleData { get; set; } = string.Empty;
         public long AddedAt { get; set; }
-        public string SoloDuoMessage { get; set; } = string.Empty;
-        public string FlexMessage { get; set; } = string.Empty;
 
         public ICollection<Race> Races { get; set; } = new List<Race>();
     }

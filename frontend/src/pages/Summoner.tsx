@@ -13,6 +13,7 @@ import ChampionStats from '../interfaces/ChampionStats';
 import PreferredRole from '../interfaces/PreferredRole';
 import Mastery from '../interfaces/Mastery';
 import Player from '../interfaces/Player';
+import Match from '../interfaces/Match';
 
 import queueJson from "../assets/json/queues.json";
 
@@ -111,23 +112,27 @@ const Summoner: React.FC = () => {
     const summonerData = JSON.parse(apiData.summonerData);
     const entriesData = JSON.parse(apiData.entriesData);
     const topMasteriesData = JSON.parse(apiData.topMasteriesData);
-    const soloDuoMatchesData = JSON.parse(apiData.soloDuoMatchesData);
-    const soloDuoMatchesDetailsData = JSON.parse(apiData.soloDuoMatchesDetailsData);
-    const flexMatchesData = JSON.parse(apiData.flexMatchesData);
-    const flexMatchesDetailsData = JSON.parse(apiData.flexMatchesDetailsData);
+    const allMatchIds = JSON.parse(apiData.allMatchIds);
+    const allMatchesDetailsData = JSON.parse(apiData.allMatchesDetailsData) as Match[];
     const challengesData = JSON.parse(apiData.challengesData);
     const spectatorData = JSON.parse(apiData.spectatorData);
     const clashData = JSON.parse(apiData.clashData);
-    const championStatsSoloDuoData = JSON.parse(apiData.championStatsSoloDuoData);
-    const championStatsFlexData = JSON.parse(apiData.championStatsFlexData);
-    const preferredSoloDuoRoleData = JSON.parse(apiData.preferredSoloDuoRoleData);
-    const preferredFlexRoleData = JSON.parse(apiData.preferredFlexRoleData);
+    const championStatsSoloDuoData = Object.values(JSON.parse(apiData.rankedSoloChampionStatsData)) as ChampionStats[];
+    const championStatsFlexData = Object.values(JSON.parse(apiData.rankedFlexChampionStatsData)) as ChampionStats[];
+    const preferredSoloDuoRoleData = Object.values(JSON.parse(apiData.rankedSoloRoleStatsData)) as PreferredRole[];
+    const preferredFlexRoleData = Object.values(JSON.parse(apiData.rankedFlexRoleStatsData)) as PreferredRole[];
+    const allGamesChampionStatsData = Object.values(JSON.parse(apiData.allGamesChampionStatsData)) as ChampionStats[];
+    const allGamesRoleStatsData = Object.values(JSON.parse(apiData.allGamesRoleStatsData)) as PreferredRole[];
+
+    console.log("all matches info", allMatchesDetailsData);
+    console.log("soloduo champ stats", championStatsSoloDuoData);
+    console.log("soloduo role stats", preferredSoloDuoRoleData);
 
     championStatsSoloDuoData.sort((a: ChampionStats, b: ChampionStats) => b.Games - a.Games || b.WinRate - a.WinRate);
     championStatsFlexData.sort((a: ChampionStats, b: ChampionStats) => b.Games - a.Games || b.WinRate - a.WinRate);
 
     const championsStatsData = selectedChampionPerformanceMode === "soloduo" ? championStatsSoloDuoData : championStatsFlexData;
-    const preferredRoleData = selectedRolePerformanceMode === "soloduo" ? preferredSoloDuoRoleData : preferredFlexRoleData
+    const preferredRoleData = selectedRolePerformanceMode === "soloduo" ? preferredSoloDuoRoleData : preferredFlexRoleData;
 
     const isTeamIdSame = spectatorData?.participants.every(
         (participant: Participant) => participant.teamId === spectatorData.participants[0].teamId
@@ -138,6 +143,7 @@ const Summoner: React.FC = () => {
     const gamemode = queueData ? queueData.description : "Unknown game mode";
 
     const rankedSoloDuoEntry = entriesData.find((entry: Entry) => entry.queueType === "RANKED_SOLO_5x5");
+    console.log("ranked solo duo entry", rankedSoloDuoEntry)
     const rankedFlexEntry = entriesData.find((entry: Entry) => entry.queueType === "RANKED_FLEX_SR");
     let rankedSoloDuoWinrate = 0;
     if (rankedSoloDuoEntry) {
@@ -312,7 +318,7 @@ const Summoner: React.FC = () => {
                                     </select>
                                 </div>
                             </div>
-                            {championsStatsData.size > 0 ? (
+                            {championsStatsData.length > 0 ? (
                                 <div className="grid grid-cols-[28%_26%_26%_20%] mb-1 pr-5">
                                     <p></p>
                                     <h1 className="text-center">KDA</h1>
@@ -437,7 +443,7 @@ const Summoner: React.FC = () => {
                     <div className="w-[75%] flex flex-col">
                         <div className="bg-neutral-800 text-center p-2 mb-2">
                             <div className="p-2">
-                                <h1>Last 30 Games Pefrormance TODO</h1>
+                                <h1>Last 20 Games Pefrormance TODO</h1>
                             </div>
                             <div className="grid grid-cols-[25%_25%_25%_25%]">
                                 <div>
@@ -525,14 +531,13 @@ const Summoner: React.FC = () => {
                             </div>
                         </div>
                         <div className="bg-neutral-800">
-                            <p>Solo/Duo games</p>
-                            {soloDuoMatchesData.map((match: string) => (
+                            <p>All games</p>
+                            {allMatchIds.map((match: string) => (
                                 <div>{match}</div>
                             ))}
-                            <p>Flex games</p>
-                            {flexMatchesData.map((match: string) => (
+                            {/* {allMatchesDetailsData.map((match: string) => (
                                 <div>{match}</div>
-                            ))}
+                            ))} */}
                         </div>
                     </div>
                 </div>
@@ -544,10 +549,9 @@ const Summoner: React.FC = () => {
                     <pre>{JSON.stringify(preferredSoloDuoRoleData, null, 2)}</pre>
                     <pre>{JSON.stringify(preferredFlexRoleData, null, 2)}</pre>
                     <pre>{JSON.stringify(topMasteriesData, null, 2)}</pre>
-                    <pre>{JSON.stringify(soloDuoMatchesData, null, 2)}</pre>
-                    <pre>{JSON.stringify(flexMatchesData, null, 2)}</pre>
-                    <pre>{JSON.stringify(soloDuoMatchesDetailsData, null, 2)}</pre>
-                    <pre>{JSON.stringify(flexMatchesDetailsData, null, 2)}</pre>
+                    <pre>{JSON.stringify(allGamesChampionStatsData, null, 2)}</pre>
+                    <pre>{JSON.stringify(allGamesRoleStatsData, null, 2)}</pre>
+                    <pre>{JSON.stringify(allMatchesDetailsData, null, 2)}</pre>
                     <pre>{JSON.stringify(spectatorData, null, 2)}</pre>
                     <pre>{JSON.stringify(clashData, null, 2)}</pre>
                     <pre>{JSON.stringify(challengesData, null, 2)}</pre>

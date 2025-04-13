@@ -150,9 +150,15 @@ const RunesList: React.FC<{runes: Perk}> = ({runes}) => {
 const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolean; liveGameData: Player | null; region: string; gridCols: string;}> = ({participant, isBeingWatched, liveGameData, region, gridCols}) => {
     const entries = typeof liveGameData?.entriesData === "string" ? JSON.parse(liveGameData.entriesData) : liveGameData?.entriesData || [];
     const summoner = typeof liveGameData?.summonerData === "string" ? JSON.parse(liveGameData.summonerData) : liveGameData?.summonerData || [];
-    const championStats = typeof liveGameData?.championStatsSoloDuoData === "string" ? JSON.parse(liveGameData.championStatsSoloDuoData) : liveGameData?.championStatsSoloDuoData || [];
-    const preferredRole = typeof liveGameData?.preferredSoloDuoRoleData === "string" ? JSON.parse(liveGameData.preferredSoloDuoRoleData) : liveGameData?.preferredSoloDuoRoleData || [];
     const rankedSoloDuoEntry = entries.find((entry: Entry) => entry.queueType === "RANKED_SOLO_5x5");
+    
+    const rawChampionStats = liveGameData?.rankedSoloChampionStatsData;
+    const championStats: ChampionStats[] = typeof rawChampionStats === "string" ? (Object.values(JSON.parse(rawChampionStats)) as ChampionStats[]) : Array.isArray(rawChampionStats)
+    ? (rawChampionStats as ChampionStats[]) : rawChampionStats ? (Object.values(rawChampionStats) as ChampionStats[]) : [];   
+
+    const rawRoleData = liveGameData?.rankedSoloRoleStatsData;
+    const preferredRole: PreferredRole[] = typeof rawRoleData === "string" ? (Object.values(JSON.parse(rawRoleData)) as PreferredRole[]) : Array.isArray(rawRoleData) 
+    ? (rawRoleData as PreferredRole[]) : rawRoleData ? (Object.values(rawRoleData) as PreferredRole[]) : [];
 
     const [champStats, setChampStats] = useState<ChampionStats | null>(null);
     const [showRunesDiv, setShowRunesDiv] = useState(false);
@@ -160,34 +166,28 @@ const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolea
     if (rankedSoloDuoEntry) {
         winratePercentage = Math.round(rankedSoloDuoEntry.wins / (rankedSoloDuoEntry.wins + rankedSoloDuoEntry.losses) * 100);
     }
-    useEffect(() => {
-        fetch(`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/data/en_US/champion.json`)
-            .then(response => response.json())
-            .then(data => {
-                const champions = data.data
-                const championIdtoName: {[key: number]: string} = {};
-                
-                Object.values(champions).forEach((champ:any) => {
-                    championIdtoName[champ.key] = champ.id;
-                })
 
-                const championName = championIdtoName[participant.championId];
-                const stats = championStats.find((cs: ChampionStats) => cs.ChampionName === championName);
-                setChampStats(stats);
-            
-            })
-            .catch(error => console.error("Error fetching champion data: ", error));
-    }, [participant.championId]);
+    useEffect(() => {
+        const championId = participant.championId;
+      
+        const stats = championStats.find((cs: ChampionStats) => cs.ChampionId === championId);
+        
+        if (stats) {
+            setChampStats(stats);
+        } else {
+            setChampStats(null);
+        }
+    }, [participant.championId, championStats]);
 
     const roleOrder = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
-    const mostPlayedRoleData = preferredRole.reduce(
-        (max: RoleAccumulator, curr: PreferredRole, index: number) => {
+    const mostPlayedRoleData = preferredRole.reduce<RoleAccumulator>(
+        (max, curr, index) => {
             if (curr.Games > max.data.Games) {
-                return {data: curr, roleName: roleOrder[index]};
+                return { data: curr, roleName: roleOrder[index] };
             }
             return max;
         },
-        {data: preferredRole[0], roleName: roleOrder[0]}
+        { data: preferredRole[0], roleName: roleOrder[0] }
     );
     const isOnRole = participant.predictedRole === mostPlayedRoleData.roleName;
 
@@ -382,50 +382,71 @@ const LiveGame: React.FC = () => {
                     
                     return {
                         ...item,
-                        challengesData:
-                            typeof item.challengesData === "string" && item.challengesData.trim()
-                            ? JSON.parse(item.challengesData)
-                            : item.challengesData,
-                        championStatsData:
-                            typeof item.championStatsData === "string" && item.championStatsData.trim()
-                            ? JSON.parse(item.championStatsData)
-                            : item.championStatsData,
-                        clashData:
-                            typeof item.clashData === "string" && item.clashData.trim()
-                            ? JSON.parse(item.clashData)
-                            : item.clashData,
-                        entriesData:
-                            typeof item.entriesData === "string" && item.entriesData.trim()
-                            ? JSON.parse(item.entriesData)
-                            : item.entriesData,
-                        matchesData:
-                            typeof item.matchesData === "string" && item.matchesData.trim()
-                            ? JSON.parse(item.matchesData)
-                            : item.matchesData,
+                        summonerName: item.summonerName,
+                        summonerTag: item.summonerTag,
+                        region: item.region,
+                        puuid: item.puuid,
                         playerData:
                             typeof item.playerData === "string" && item.playerData.trim()
-                            ? JSON.parse(item.playerData)
-                            : item.playerData,
-                        preferredRoleData:
-                            typeof item.preferredRoleData === "string" && item.preferredRoleData.trim()
-                            ? JSON.parse(item.preferredRoleData)
-                            : item.preferredRoleData,
-                        rankedMatchesData:
-                            typeof item.rankedMatchesData === "string" && item.rankedMatchesData.trim()
-                            ? JSON.parse(item.rankedMatchesData)
-                            : item.rankedMatchesData,
-                        spectatorData:
-                            typeof item.spectatorData === "string" && item.spectatorData.trim()
-                            ? JSON.parse(item.spectatorData)
-                            : item.spectatorData,
+                                ? JSON.parse(item.playerData)
+                                : item.playerData,
                         summonerData:
                             typeof item.summonerData === "string" && item.summonerData.trim()
-                            ? JSON.parse(item.summonerData)
-                            : item.summonerData,
+                                ? JSON.parse(item.summonerData)
+                                : item.summonerData,
+                        entriesData:
+                            typeof item.entriesData === "string" && item.entriesData.trim()
+                                ? JSON.parse(item.entriesData)
+                                : item.entriesData,
                         topMasteriesData:
                             typeof item.topMasteriesData === "string" && item.topMasteriesData.trim()
-                            ? JSON.parse(item.topMasteriesData)
-                            : item.topMasteriesData,
+                                ? JSON.parse(item.topMasteriesData)
+                                : item.topMasteriesData,
+                        allMatchIds:
+                            typeof item.allMatchIds === "string" && item.allMatchIds.trim()
+                                ? JSON.parse(item.allMatchIds)
+                                : item.allMatchIds,
+                        allMatchesDetailsData:
+                            typeof item.allMatchesDetailsData === "string" && item.allMatchesDetailsData.trim()
+                                ? JSON.parse(item.allMatchesDetailsData)
+                                : item.allMatchesDetailsData,
+                        allGamesChampionStatsData:
+                            typeof item.allGamesChampionStatsData === "string" && item.allGamesChampionStatsData.trim()
+                                ? JSON.parse(item.allGamesChampionStatsData)
+                                : item.allGamesChampionStatsData,
+                        allGamesRoleStatsData:
+                            typeof item.allGamesRoleStatsData === "string" && item.allGamesRoleStatsData.trim()
+                                ? JSON.parse(item.allGamesRoleStatsData)
+                                : item.allGamesRoleStatsData,
+                        rankedSoloChampionStatsData:
+                            typeof item.rankedSoloChampionStatsData === "string" && item.rankedSoloChampionStatsData.trim()
+                                ? JSON.parse(item.rankedSoloChampionStatsData)
+                                : item.rankedSoloChampionStatsData,
+                        rankedSoloRoleStatsData:
+                            typeof item.rankedSoloRoleStatsData === "string" && item.rankedSoloRoleStatsData.trim()
+                                ? JSON.parse(item.rankedSoloRoleStatsData)
+                                : item.rankedSoloRoleStatsData,
+                        rankedFlexChampionStatsData:
+                            typeof item.rankedFlexChampionStatsData === "string" && item.rankedFlexChampionStatsData.trim()
+                                ? JSON.parse(item.rankedFlexChampionStatsData)
+                                : item.rankedFlexChampionStatsData,
+                        rankedFlexRoleStatsData:
+                            typeof item.rankedFlexRoleStatsData === "string" && item.rankedFlexRoleStatsData.trim()
+                                ? JSON.parse(item.rankedFlexRoleStatsData)
+                                : item.rankedFlexRoleStatsData,
+                        challengesData:
+                            typeof item.challengesData === "string" && item.challengesData.trim()
+                                ? JSON.parse(item.challengesData)
+                                : item.challengesData,
+                        spectatorData:
+                            typeof item.spectatorData === "string" && item.spectatorData.trim()
+                                ? JSON.parse(item.spectatorData)
+                                : item.spectatorData,
+                        clashData:
+                            typeof item.clashData === "string" && item.clashData.trim()
+                                ? JSON.parse(item.clashData)
+                                : item.clashData,
+                        addedAt: item.addedAt
                     };
                 });
                 setLiveGameData(parsedData);
