@@ -1,8 +1,10 @@
 import React, {useState, useEffect, } from "react";
 import { useLocation, useParams, Link } from "react-router-dom"
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import { DD_VERSION } from '../version';
 
+import IconImage from "../components/IconImage";
+import RuneImage from "../components/RuneImage";
+import SummonerSpellImage from "../components/SummonerSpellImage";
 import BannedChampionsList from "../components/BannedChampionList";
 import ChampionImage from "../components/ChampionImage";
 import GameTimer from "../components/GameTime";
@@ -16,7 +18,6 @@ import PreferredRole from "../interfaces/PreferredRole";
 import Player from "../interfaces/Player";
 
 import queueJson from "../assets/json/queues.json";
-import summonerSpellsJson from "../assets/json/summonerSpells.json";
 import runesJson from "../assets/json/runes.json";
 import statModsJson from "../assets/json/statMods.json";
 
@@ -35,39 +36,6 @@ interface RoleAccumulator {
     data: PreferredRole;
     roleName: string;
 }
-
-const SummonerSpellImage: React.FC<{spellId: number}> = ({spellId}) => {
-    const spellData = Object.values(summonerSpellsJson.data).find(
-        (spell) => spell.key === spellId.toString()
-    );
-    return (
-        <img 
-            src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spellData?.id}.png`}
-            alt={spellData?.id}
-            className="h-6"
-        />
-    );
-};
-
-const IconImage: React.FC<{icon: string; alt: string; className?: string}> = ({icon, alt, className = ""}) => (
-    <img src={`https://ddragon.leagueoflegends.com/cdn/img/${icon}`} alt={alt} className={className} />
-)
-
-export const RuneImage: React.FC<{runeTypeId: number; runeId?: number}> = ({runeTypeId, runeId}) => {
-    const runeTypeData = runesJson.find((runeType) => runeType.id === runeTypeId);
-    if (!runeTypeData) return <span>Rune Type Not Found</span>;
-
-    if (!runeId) return (
-        <IconImage icon={runeTypeData.icon} alt={runeTypeData.key} className="h-6" />
-    );
-
-    const runes = runeTypeData.slots.flatMap((slot) => slot.runes);
-    const runeData = runes.find((rune) => rune.id === runeId);
-    if (!runeData) return <span>Rune Not Found</span>;
-    return (
-        <IconImage icon={runeData.icon} alt={runeData.key} className="h-6" />
-    );
-};
 
 export const ShardSlot: React.FC<{slot: {shards: Shard[]}; selectedId?: number }> = ({slot, selectedId}) => (
     <div className="w-[60%] flex justify-evenly">
@@ -235,12 +203,12 @@ const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolea
                 </div>
                 <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} classes="h-13"/>
                 <div className="flex flex-col gap-0.5">
-                    <SummonerSpellImage spellId={participant.spell1Id} />
-                    <SummonerSpellImage spellId={participant.spell2Id} />
+                    <SummonerSpellImage spellId={participant.spell1Id} classes="h-6" />
+                    <SummonerSpellImage spellId={participant.spell2Id} classes="h-6" />
                 </div>
                 <div className="flex flex-col gap-0.5">
-                    <RuneImage runeTypeId={participant.perks.perkStyle} runeId={participant.perks.perkIds[0]} />
-                    <RuneImage runeTypeId={participant.perks.perkSubStyle} />
+                    <RuneImage runeTypeId={participant.perks.perkStyle} runeId={participant.perks.perkIds[0]} classes="h-6" />
+                    <RuneImage runeTypeId={participant.perks.perkSubStyle} classes="h-6" />
                 </div>
                 <div>
                     <Link to={`/lol/profile/${region}/${participant.riotId.replace(/#/g, '-')}`} className="cursor-pointer hover:underline">

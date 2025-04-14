@@ -1,4 +1,7 @@
+import { DD_VERSION } from "../version";
+
 import championJson from "../assets/json/champion.json";
+
 import noneicon from "../assets/none.jpg";
 
 const getChampionData = (championId: number) =>
@@ -11,7 +14,7 @@ const ChampionImage: React.FC<{championId: number; teamId?: number; isTeamIdSame
     const borderClasses = isTeamIdSame ? "" : `border ${teamId === 200 ? "border-red-500" : "border-blue-500"}`;
     return (
         <img 
-            src={championData ? `https://ddragon.leagueoflegends.com/cdn/15.6.1/img/champion/${championData.id}.png` : noneicon} 
+            src={championData ? `https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/champion/${championData.id}.png` : noneicon} 
             alt={championData ? championData.id : "noneicon"} 
             className={`${classes} ${borderClasses}`} 
         />

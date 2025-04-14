@@ -329,7 +329,11 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
     }).ToList();
 
     var matchDetailsList = await Task.WhenAll(matchDetailsTasks);
-    var allMatchInfoList = matchDetailsList.Where(info => info != null).ToList();
+    var allMatchInfoList = matchDetailsList.Where(match => match != null 
+                 && match.info != null 
+                 && match.info.gameId != 0 
+                 && match.info.participants != null 
+                 && match.info.participants.Any()).ToList();
 
     int rankedSoloQueueId = 420;
     int rankedFlexQueueId = 440;
@@ -554,7 +558,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         SpectatorData = spectatorData is string s ? s : JsonSerializer.Serialize(spectatorData),
         ClashData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await clashTask)),
 
-        allMatchIds = JsonSerializer.Serialize(allMatchIds),
+        AllMatchIds = JsonSerializer.Serialize(allMatchIds),
         AllMatchesDetailsData = JsonSerializer.Serialize(allMatchInfoList),
         AllGamesChampionStatsData = JsonSerializer.Serialize(allGamesChampionStats),
         AllGamesRoleStatsData = JsonSerializer.Serialize(allGamesRoleStats),
@@ -663,7 +667,11 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
             semaphore.Release();
         }
     }).ToList();
-    var newMatchDetailsList = (await Task.WhenAll(matchDetailsTasks)).Where(match => match != null).ToList();
+    var newMatchDetailsList = (await Task.WhenAll(matchDetailsTasks)).Where(match => match != null 
+                 && match.info != null 
+                 && match.info.gameId != 0 
+                 && match.info.participants != null 
+                 && match.info.participants.Any()).ToList();
 
     int rankedSoloQueueId = 420;
     int rankedFlexQueueId = 440;
@@ -836,14 +844,14 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         where matchId != null
         group m by matchId into g
         select g.First()
-    ).ToList();
+    ).OrderByDescending(m => m.info.gameStartTimestamp).ToList();
     Console.WriteLine($"Merged match details count: {mergedMatchDetails.Count}");
 
     List<string> existingMatchIdsList = new List<string>();
-    if (!string.IsNullOrEmpty(existingPlayer.allMatchIds)) {
-        existingMatchIdsList = JsonSerializer.Deserialize<List<string>>(existingPlayer.allMatchIds) ?? new List<string>();
+    if (!string.IsNullOrEmpty(existingPlayer.AllMatchIds)) {
+        existingMatchIdsList = JsonSerializer.Deserialize<List<string>>(existingPlayer.AllMatchIds) ?? new List<string>();
     }
-    var mergedMatchIds = existingMatchIdsList.Union(newMatchIds).ToList();
+    var mergedMatchIds = newMatchIds.Union(existingMatchIdsList).ToList();
 
     string spectatorUrl = $"https://{region}.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}?api_key={apiKey}";
     var spectatorResponse = await GetAsyncWithRetry(spectatorUrl);
@@ -979,7 +987,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
     existingPlayer.SpectatorData = spectatorData is string s ? s : JsonSerializer.Serialize(spectatorData);
     existingPlayer.ClashData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await clashTask));
 
-    existingPlayer.allMatchIds = JsonSerializer.Serialize(mergedMatchIds);
+    existingPlayer.AllMatchIds = JsonSerializer.Serialize(mergedMatchIds);
     existingPlayer.AllMatchesDetailsData = JsonSerializer.Serialize(mergedMatchDetails);
     existingPlayer.AllGamesChampionStatsData = JsonSerializer.Serialize(allGamesChampionStats);
     existingPlayer.AllGamesRoleStatsData = JsonSerializer.Serialize(allGamesRoleStats);
@@ -1100,6 +1108,7 @@ public class LeagueMatchDto {
     public LeagueMatchInfoDto info { get; set; } = new LeagueMatchInfoDto();
 }
 public class LeagueMatchMetadataDto {
+    public string dataVersion { get; set; } = string.Empty;
     public string matchId { get; set; } = string.Empty;
     public List<string> participants { get; set; } = new List<string>();
 }
@@ -1112,27 +1121,225 @@ public class LeagueMatchInfoDto {
     public long gameId { get; set; }
     public string gameMode { get; set; } = string.Empty;
     public string gameName { get; set; } = string.Empty;
-    public long gameStartTimeStamp { get; set; }
+    public long gameStartTimestamp { get; set; }
     public string gameType { get; set; } = string.Empty;
     public string gameVersion { get; set; } = string.Empty;
     public int mapId { get; set; }
     public List<ParticipantDto> participants { get; set; } = new List<ParticipantDto>();
     public string platformId { get; set; } = string.Empty;
     public int queueId { get; set; }
+    public List<TeamDto> teams { get; set; } = new List<TeamDto>();
+    public string tournamentCode { get; set; } = string.Empty;
+}
+
+public class TeamDto {
+    public List<BanDto> bans { get; set; } = new List<BanDto>();
+    public TeamObjectivesDto objectives { get; set; } = new TeamObjectivesDto();
+    public int teamId { get; set; }
+    public bool win { get; set; }
+}
+
+public class BanDto {
+    public int championId { get; set; }
+    public int pickTurn { get; set; }
+}
+
+public class TeamObjectivesDto {
+    public ObjectiveDto baron { get; set; } = new ObjectiveDto();
+    public ObjectiveDto champion { get; set; } = new ObjectiveDto();
+    public ObjectiveDto dragon { get; set; } = new ObjectiveDto();
+    public ObjectiveDto horde { get; set; } = new ObjectiveDto();
+    public ObjectiveDto inhibitor { get; set; } = new ObjectiveDto();
+    public ObjectiveDto riftHerald { get; set; } = new ObjectiveDto();
+    public ObjectiveDto tower { get; set; } = new ObjectiveDto();
+}
+
+public class ObjectiveDto {
+    public bool first { get; set; }
+    public int kills { get; set; }
 }
 
 public class ParticipantDto {
-    public int championId { get; set; }
-    public string championName { get; set; } = string.Empty;
-    public string individualPosition { get; set; } = string.Empty;
-    public string teamPosition { get; set; } = string.Empty;
-    public string lane { get; set; } = string.Empty;
+    // Early/General match state
+    public bool teamEarlySurrendered { get; set; }
+    public bool gameEndedInEarlySurrender { get; set; }
+    public bool gameEndedInSurrender { get; set; }
+
+    // Basic stats
+    public bool win { get; set; }
     public int kills { get; set; }
     public int deaths { get; set; }
     public int assists { get; set; }
-    public bool win { get; set; }
-    public bool gameEndedInEarlySurrender { get; set; }
-    public string puuid { get; set; }  = string.Empty;
+    public bool firstBloodKill { get; set; }
+    public bool firstBloodAssist { get; set; }
+
+    // Progression and timing
+    public bool eligibleForProgression { get; set; }
+    public int timePlayed { get; set; }
+
+    // Participant identification
+    public int participantId { get; set; }
+    public int profileIcon { get; set; }
+    public string puuid { get; set; } = string.Empty;
+    public string riotIdGameName { get; set; } = string.Empty;
+    public string riotIdTagline { get; set; } = string.Empty;
+    public string summonerId { get; set; } = string.Empty;
+    public int summonerLevel { get; set; }
+    public string summonerName { get; set; } = string.Empty;
+    public int teamId { get; set; }
+
+    // Champion information
+    public int championId { get; set; }
+    public string championName { get; set; } = string.Empty;
+    public int champLevel { get; set; }
+    public int champExperience { get; set; }
+    public int championTransform { get; set; }
+
+    // Damage and objective stats
+    public int damageDealtToBuildings { get; set; }
+    public int damageDealtToObjectives { get; set; }
+    public int damageDealtToTurrets { get; set; }
+    public int damageSelfMitigated { get; set; }
+    public int largestCriticalStrike { get; set; }
+    public int longestTimeSpentLiving { get; set; }
+    public int magicDamageDealt { get; set; }
+    public int magicDamageDealtToChampions { get; set; }
+    public int magicDamageTaken { get; set; }
+    public int neutralMinionsKilled { get; set; }
+    public int objectivesStolen { get; set; }
+    public int objectivesStolenAssists { get; set; }
+    public int physicalDamageDealt { get; set; }
+    public int physicalDamageDealtToChampions { get; set; }
+    public int physicalDamageTaken { get; set; }
+    public int timeCCingOthers { get; set; }
+    public int totalAllyJungleMinionsKilled { get; set; }
+    public int totalDamageDealt { get; set; }
+    public int totalDamageDealtToChampions { get; set; }
+    public int totalDamageShieldedOnTeammates { get; set; }
+    public int totalDamageTaken { get; set; }
+    public int totalEnemyJungleMinionsKilled { get; set; }
+    public int totalHeal { get; set; }
+    public int totalHealsOnTeammates { get; set; }
+    public int totalMinionsKilled { get; set; }
+    public int totalTimeCCDealt { get; set; }
+    public int totalTimeSpentDead { get; set; }
+    public int totalUnitsHealed { get; set; }
+    public int trueDamageDealt { get; set; }
+    public int trueDamageDealtToChampions { get; set; }
+    public int trueDamageTaken { get; set; }
+
+    // Objective-related kills
+    public int baronKills { get; set; }
+    public int dragonKills { get; set; }
+    public int inhibitorKills { get; set; }
+    public int inhibitorTakedowns { get; set; }
+    public int inhibitorsLost { get; set; }
+    public int nexusKills { get; set; }
+    public int nexusTakedowns { get; set; }
+    public int nexusLost { get; set; }
+    public int turretKills { get; set; }
+    public int turretTakedowns { get; set; }
+    public int turretsLost { get; set; }
+    public bool firstTowerAssist { get; set; }
+    public bool firstTowerKill { get; set; }
+
+    // Vision and wards
+    public int detectorWardsPlaced { get; set; }
+    public int sightWardsBoughtInGame { get; set; }
+    public int visionScore { get; set; }
+    public int visionWardsBoughtInGame { get; set; }
+    public int wardsKilled { get; set; }
+    public int wardsPlaced { get; set; }
+
+    // Spell casting
+    public int spell1Casts { get; set; }
+    public int spell2Casts { get; set; }
+    public int spell3Casts { get; set; }
+    public int spell4Casts { get; set; }
+    public int summoner1Casts { get; set; }
+    public int summoner1Id { get; set; }
+    public int summoner2Casts { get; set; }
+    public int summoner2Id { get; set; }
+
+    // Gold and bounty
+    public int bountyLevel { get; set; }
+    public int goldEarned { get; set; }
+    public int goldSpent { get; set; }
+
+    // Items
+    public int item0 { get; set; }
+    public int item1 { get; set; }
+    public int item2 { get; set; }
+    public int item3 { get; set; }
+    public int item4 { get; set; }
+    public int item5 { get; set; }
+    public int item6 { get; set; }
+    public int itemsPurchased { get; set; }
+    public int consumablesPurchased { get; set; }
+
+    // Perks (runes/masteries)
+    public PerksDto perks { get; set; } = new PerksDto();
+
+    // Multi-kill and spree data
+    public int killingSprees { get; set; }
+    public int largestKillingSpree { get; set; }
+    public int largestMultiKill { get; set; }
+    public int doubleKills { get; set; }
+    public int tripleKills { get; set; }
+    public int quadraKills { get; set; }
+    public int pentaKills { get; set; }
+
+    // Positioning
+    public string teamPosition { get; set; } = string.Empty;
+    public string individualPosition { get; set; } = string.Empty;
+    public string lane { get; set; } = string.Empty;
+    public string role { get; set; } = string.Empty;
+
+    // Pings
+    public int allInPings { get; set; }
+    public int assistMePings { get; set; }
+    public int commandPings { get; set; }
+    public int enemyMissingPings { get; set; }
+    public int enemyVisionPings { get; set; }
+    public int holdPings { get; set; }
+    public int getBackPings { get; set; }
+    public int needVisionPings { get; set; }
+    public int onMyWayPings { get; set; }
+    public int pushPings { get; set; }
+    public int visionClearedPings { get; set; }
+
+    // Arena fields
+    public int subteamPlacement { get; set; }
+    public int playerAugment1 { get; set; }
+    public int playerAugment2 { get; set; }
+    public int playerAugment3 { get; set; }
+    public int playerAugment4 { get; set; }
+    public int playerSubteamId { get; set; }
+    public int placement { get; set; }
+}
+
+public class PerksDto {
+    public StatPerksDto statPerks { get; set; } = new StatPerksDto();
+    public List<PerkStyleDto> styles { get; set; } = new List<PerkStyleDto>();
+}
+
+public class StatPerksDto {
+    public int defense { get; set; }
+    public int flex { get; set; }
+    public int offense { get; set; }
+}
+
+public class PerkStyleDto {
+    public string description { get; set; } = string.Empty;
+    public List<PerkSelectionDto> selections { get; set; } = new List<PerkSelectionDto>();
+    public int style { get; set; }
+}
+
+public class PerkSelectionDto {
+    public int perk { get; set; }
+    public int var1 { get; set; }
+    public int var2 { get; set; }
+    public int var3 { get; set; }
 }
 
 public class ChampionStats {
