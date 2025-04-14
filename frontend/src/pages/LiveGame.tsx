@@ -268,7 +268,7 @@ const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolea
                         <p>Runes</p>
                         <img src={arrowdowndark} alt="arrow-down" className={`h-4 ml-2 transform transition-transform ${showRunesDiv ? "rotate-180" : ""}`} />
                     </div>
-                    <div className={`col-span-full  transition-all duration-300 overflow-hidden ${showRunesDiv ? "max-h-[800px]" : "max-h-0"}`}>
+                    <div className={`col-span-full transition-all duration-300 overflow-hidden ${showRunesDiv ? "max-h-[800px]" : "max-h-0"}`}>
                         <div className="bg-neutral-900 p-4">
                             <h1 className="text-neutral-100 font-bold p-2 border-l-4 border-l-purple-600">Player Tags</h1>
                         </div>

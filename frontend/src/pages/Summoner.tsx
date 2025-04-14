@@ -32,10 +32,10 @@ import loadingAnimation from "../assets/animations/loading.lottie";
 import arrowdownlight from "../assets/arrow-down-light.png";
 import noneicon from "../assets/none.jpg";
 
-const ItemImage: React.FC<{itemId: number; classes: string}> = ({itemId, classes}) => {
+const ItemImage: React.FC<{itemId: number; matchWon: boolean; classes: string}> = ({itemId, matchWon, classes}) => {
     if (itemId === 0) {
         return (
-            <div className="h-8 w-8 bg-blue-400"></div>
+            <div className={`h-8 w-8 ${matchWon ? "bg-[#2F436E]" : "bg-[#703C47]"} `}></div>
         );
     }
 
@@ -45,14 +45,38 @@ const ItemImage: React.FC<{itemId: number; classes: string}> = ({itemId, classes
 }
 
 const MatchRow: React.FC<{info: MatchInfo; puuid: string;}> = ({info, puuid}) => {
+    const [showDetailsDiv, setShowDetailsDiv] = useState<boolean>(false);
+
     const participant = info.participants.find((p) => p.puuid === puuid);
     if (!participant) return <div>Player not found</div>
-    const divColor = participant.win ? "bg-blue-500" : "bg-red-500";
 
     const queueId = info.queueId;
     const queueData = queueJson.find((item) => item.queueId === queueId);
     const gamemode = queueData ? queueData.description : "Unknown game mode";
     const map = queueData ? queueData.map : "Unknown map";
+
+    let gameEnded = Math.round((Date.now() - info.gameEndTimestamp)/60000);
+    let timeUnit = gameEnded === 1 ? "minute ago" : "minutes ago";
+    if (gameEnded > 60) {
+        gameEnded = Math.round(gameEnded / 60);
+        timeUnit = gameEnded === 1 ? "hour ago" : "hours ago";
+        if (gameEnded > 24) {
+            gameEnded = Math.round(gameEnded / 24);
+            timeUnit = gameEnded === 1 ? "day ago" : "days ago";
+            if (gameEnded > 7) {
+                gameEnded = Math.round(gameEnded / 7);
+                timeUnit = gameEnded === 1 ? "week ago" : "weeks ago";
+                if (gameEnded > 4) {
+                    gameEnded = Math.round(gameEnded / 4);
+                    timeUnit = gameEnded === 1 ? "month ago" : "months ago";
+                    if (gameEnded > 12) {
+                        gameEnded = Math.round(gameEnded / 12);
+                        timeUnit = gameEnded === 1 ? "year ago" : "years ago";
+                    }
+                }
+            }
+        }
+    } 
 
     const teamParticipants = info.participants.filter((p) => p.teamId === participant.teamId);
     const totalKills = teamParticipants.reduce((sum, p) => sum + p.kills, 0);
@@ -64,80 +88,96 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string;}> = ({info, puuid}) =>
     }
 
     return (
-        <div className={`w-full grid grid-cols-[20%_35%_20%_20%_5%] items-center ${divColor}`}>
-            <div className="p-2">
-                <p>{gamemode}</p>
-                <p>{map}</p>
-                {/* fix da budu sati -> dani -> nedelje */}
-                <p>{Math.round((Date.now() - info.gameEndTimestamp)/60000)} minutes ago</p>
-                <div className="flex gap-2">
-                    <p>{participant.win ? "Victory" : "Defeat"}</p>
-                    <p>{Math.round(info.gameDuration/60)}m {Math.round(info.gameDuration%60)}s</p>
+        <>
+            <div className={`w-full grid grid-cols-[25%_35%_17.5%_17.5%_5%] items-center ${participant.win ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                <div className="p-2">
+                    <div className="w-[80%] border-b-2 border-neutral-400 p-2">
+                        <p className={`font-bold ${participant.win ? "text-blue-400" : "text-red-400"}`}>{gamemode}</p>
+                        <p className="text-sm text-neutral-300">{map}</p>
+                        <p>{gameEnded} {timeUnit}</p>
+                    </div>
+                    <div className="flex flex-col p-2">
+                        <p className="font-bold text-neutral-200">{participant.win ? "Victory" : "Defeat"}</p>
+                        <p className="text-md text-neutral-400">{Math.round(info.gameDuration/60)}m {Math.round(info.gameDuration%60)}s</p>
+                    </div>
                 </div>
-            </div>
-            <div className="flex flex-col gap-2 p-2">
-                <div className="flex gap-2">
-                    <div className="relative">
-                        <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} classes="h-15" />
-                        <p className="absolute right-0 bottom-0 bg-black px-0.5">{participant.champLevel}</p>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <SummonerSpellImage spellId={participant.summoner1Id} classes="h-7" />
-                        <SummonerSpellImage spellId={participant.summoner2Id} classes="h-7" />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <RuneImage runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="h-7" />
-                        <RuneImage runeTypeId={participant.perks.styles[1].style} classes="h-7" />
-                    </div>
-                    <div className="flex gap-2 items-center">
-                        <div>
-                            <p>{participant.kills} / {participant.deaths} / {participant.assists}</p>
-                            {participant.deaths === 0 ? (
-                                <p>Perfect</p>
-                            ) : (
-                                <p>{((participant.kills + participant.assists) / participant.deaths).toFixed(2)}:1 KDA</p>
-                            )}
+                <div className="flex flex-col gap-4 p-2">
+                    <div className="flex gap-2">
+                        <div className="relative">
+                            <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} classes="h-15" />
+                            <p className="absolute right-0 bottom-0 bg-black px-0.5">{participant.champLevel}</p>
                         </div>
-                        <div>
-                            <p>CS {participant.totalMinionsKilled + participant.neutralMinionsKilled} ({((participant.totalMinionsKilled + participant.neutralMinionsKilled)/(info.gameDuration/60)).toFixed(1)})</p>
-                            <p>KP {killParticipation}%</p>
+                        <div className="flex flex-col gap-1">
+                            <SummonerSpellImage spellId={participant.summoner1Id} classes="h-7" />
+                            <SummonerSpellImage spellId={participant.summoner2Id} classes="h-7" />
+                        </div>
+                        {participant.perks.styles[0].style ? (
+                            <div className="flex flex-col gap-1">
+                                <RuneImage runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="h-7" />
+                                <RuneImage runeTypeId={participant.perks.styles[1].style} classes="h-7" />
+                            </div>
+                        ) : (
+                            <></>
+                        )}
+                        <div className="flex gap-2 items-center">
+                            <div className="text-center pr-2">
+                                <div className="flex items-center">
+                                    <p className="font-bold text-xl">{participant.kills}</p>
+                                    <p className="text-xl text-neutral-400 px-2">/</p> 
+                                    <p className="text-red-500 font-bold text-xl">{participant.deaths}</p> 
+                                    <p className="text-xl text-neutral-400 px-2">/</p> 
+                                    <p className="font-bold text-xl">{participant.assists}</p>
+                                </div>
+                                {participant.deaths === 0 ? (
+                                    <p className="text-md text-neutral-400">Perfect</p>
+                                ) : (
+                                    <p className="text-md text-neutral-400">{((participant.kills + participant.assists) / participant.deaths).toFixed(2)}:1 KDA</p>
+                                )}
+                            </div>
+                            <div className="border-l-1 border-neutral-600 pl-2 text-md text-neutral-300">
+                                <p>CS {participant.totalMinionsKilled + participant.neutralMinionsKilled} ({((participant.totalMinionsKilled + participant.neutralMinionsKilled)/(info.gameDuration/60)).toFixed(1)})</p>
+                                <p>KP {killParticipation}%</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div className="flex gap-2">
-                    <ItemImage itemId={participant.item0} classes="h-8" />
-                    <ItemImage itemId={participant.item1} classes="h-8" />
-                    <ItemImage itemId={participant.item2} classes="h-8" />
-                    <ItemImage itemId={participant.item3} classes="h-8" />
-                    <ItemImage itemId={participant.item4} classes="h-8" />
-                    <ItemImage itemId={participant.item5} classes="h-8" />
-                    <ItemImage itemId={participant.item6} classes="h-8" />
-                </div>
-            </div>
-            <div className="flex flex-col gap-1 text-sm p-2">
-                {info.participants.filter((participant) => participant.teamId === 100).map(participant => (
-                    <div key={participant.puuid} className="flex gap-1 items-center">
-                        <ChampionImage championId={participant.championId} teamId={100} isTeamIdSame={true} classes="h-8" />
-                        <p className={`${participant.puuid === puuid ? "text-purple-500" : ""}`}>
-                            {participant.riotIdGameName}#{participant.riotIdTagline}
-                        </p>
+                    <div className="flex gap-2">
+                        <ItemImage itemId={participant.item0} matchWon={participant.win} classes="h-8" />
+                        <ItemImage itemId={participant.item1} matchWon={participant.win} classes="h-8" />
+                        <ItemImage itemId={participant.item2} matchWon={participant.win} classes="h-8" />
+                        <ItemImage itemId={participant.item3} matchWon={participant.win} classes="h-8" />
+                        <ItemImage itemId={participant.item4} matchWon={participant.win} classes="h-8" />
+                        <ItemImage itemId={participant.item5} matchWon={participant.win} classes="h-8" />
+                        <ItemImage itemId={participant.item6} matchWon={participant.win} classes="h-8" />
                     </div>
-                ))}
+                </div>
+                <div className="flex flex-col gap-0.5 text-sm p-2">
+                    {info.participants.filter((participant) => participant.teamId === 100).map(participant => (
+                        <div key={participant.puuid} className="flex gap-0.5 items-center">
+                            <ChampionImage championId={participant.championId} teamId={100} isTeamIdSame={true} classes="h-6" />
+                            <p className={`${participant.puuid === puuid ? "text-purple-400" : ""}`}>
+                                {participant.riotIdGameName}#{participant.riotIdTagline}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+                <div className="flex flex-col gap-0.5 text-sm p-2">
+                    {info.participants.filter(participant => participant.teamId === 200).map(participant => (
+                        <div key={participant.puuid} className="flex gap-1 items-center">
+                            <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-6" />
+                            <p className={`${participant.puuid === puuid ? "text-purple-400" : ""}`}>
+                                {participant.riotIdGameName}#{participant.riotIdTagline}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+                <div onClick={() => setShowDetailsDiv(prev => !prev)} className={`h-full flex items-end justify-end cursor-pointer ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"} transition-all duration-200 ${participant.win ? "hover:bg-[#28344E]" : "hover:bg-[#59343B]"}`}>
+                    <img src={arrowdownlight} alt="arrow-down-light" className={`h-10 transform transition-transform ${showDetailsDiv ? "rotate-180" : ""}`} />
+                </div>
             </div>
-            <div className="flex flex-col gap-1 text-sm p-2">
-                {info.participants.filter(participant => participant.teamId === 200).map(participant => (
-                    <div key={participant.puuid} className="flex gap-1 items-center">
-                        <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-8" />
-                        <p className={`${participant.puuid === puuid ? "text-purple-500" : ""}`}>
-                            {participant.riotIdGameName}#{participant.riotIdTagline}
-                        </p>
-                    </div>
-                ))}
+            <div className={`bg-neutral-800 overflow-hidden transition-all duration-300 ease-in-out ${showDetailsDiv ? "max-h-[500px] py-2" : "max-h-0 py-0"}`}>
+                <p>goran</p>
             </div>
-            <div className="flex items-end justify-end">
-                <img src={arrowdownlight} alt="arrow-down-light" className='h-10' />
-            </div>
-        </div>
+        </>
     );
 };
 
@@ -460,7 +500,7 @@ const Summoner: React.FC = () => {
                                             </div>
                                             <div className={`${getWinrateColor(Math.round(championStat.WinRate), championStat.Games)}`}>
                                                 <p>{Math.round(championStat.WinRate)}%</p> 
-                                                <p>({championStat.Wins}W-{championStat.Games-championStat.Wins}L)</p>
+                                                {/* <p>({championStat.Wins}W-{championStat.Games-championStat.Wins}L)</p> */}
                                             </div>
                                         </div>
                                     </React.Fragment>
@@ -640,7 +680,7 @@ const Summoner: React.FC = () => {
                             </div>
                         </div>
                         <div className="bg-neutral-800">
-                            <div className="flex flex-col gap-1 px-2">
+                            <div className="flex flex-col gap-1 p-2">
                                 {allMatchesDetailsData.map((match: Match) => (
                                     <MatchRow info={match.info} puuid={apiData.puuid} />
                                 ))}
