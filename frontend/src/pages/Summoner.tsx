@@ -44,8 +44,9 @@ const ItemImage: React.FC<{itemId: number; matchWon: boolean; classes: string}> 
     );
 }
 
-const MatchRow: React.FC<{info: MatchInfo; puuid: string;}> = ({info, puuid}) => {
+const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({info, puuid, region}) => {
     const [showDetailsDiv, setShowDetailsDiv] = useState<boolean>(false);
+    const [chooseTab, setChooseTab] = useState<string>("General");
 
     const participant = info.participants.find((p) => p.puuid === puuid);
     if (!participant) return <div>Player not found</div>
@@ -87,6 +88,34 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string;}> = ({info, puuid}) =>
         killParticipation = Math.round(((participant.kills + participant.assists) / totalKills) * 100);
     }
 
+    const blueSideWon = info.participants.find(p => p.teamId === 100)?.win;
+
+    const blueTeam = info.teams.find(team => team.teamId === 100)?.objectives;
+    const redTeam = info.teams.find(team => team.teamId === 200)?.objectives;
+
+    const blueTeamKills = {
+        grubs: blueTeam?.horde.kills,
+        dragon: blueTeam?.dragon.kills,
+        herald: blueTeam?.riftHerald.kills,
+        baron: blueTeam?.baron.kills,
+        atakhan: 999, // /lol/match/v5/matches/{matchId}/timeline
+        turret: blueTeam?.tower.kills,
+        inhibitor: blueTeam?.inhibitor.kills
+    };
+
+    const redTeamKills = {
+        grubs: redTeam?.horde.kills,
+        dragon: redTeam?.dragon.kills,
+        herald: redTeam?.riftHerald.kills,
+        baron: redTeam?.baron.kills,
+        atakhan: 999, // /lol/match/v5/matches/{matchId}/timeline
+        turret: redTeam?.tower.kills,
+        inhibitor: redTeam?.inhibitor.kills
+    };
+
+    const blueSideTotalKills = info.participants.filter((p) => p.teamId === 100).reduce((sum, p) => sum + p.kills, 0);
+    const redSideTotalKills = info.participants.filter((p) => p.teamId === 200).reduce((sum, p) => sum + p.kills, 0);
+
     return (
         <>
             <div className={`w-full grid grid-cols-[25%_35%_17.5%_17.5%_5%] items-center ${participant.win ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
@@ -105,7 +134,7 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string;}> = ({info, puuid}) =>
                     <div className="flex gap-2">
                         <div className="relative">
                             <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} classes="h-15" />
-                            <p className="absolute right-0 bottom-0 bg-black px-0.5">{participant.champLevel}</p>
+                            <p className="absolute text-sm right-0 bottom-0 transform translate-x-[4px] translate-y-[4px] bg-neutral-800 border border-neutral-400 px-0.5">{participant.champLevel}</p>
                         </div>
                         <div className="flex flex-col gap-1">
                             <SummonerSpellImage spellId={participant.summoner1Id} classes="h-7" />
@@ -152,21 +181,25 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string;}> = ({info, puuid}) =>
                 </div>
                 <div className="flex flex-col gap-0.5 text-sm p-2">
                     {info.participants.filter((participant) => participant.teamId === 100).map(participant => (
-                        <div key={participant.puuid} className="flex gap-0.5 items-center">
-                            <ChampionImage championId={participant.championId} teamId={100} isTeamIdSame={true} classes="h-6" />
-                            <p className={`${participant.puuid === puuid ? "text-purple-400" : ""}`}>
-                                {participant.riotIdGameName}#{participant.riotIdTagline}
-                            </p>
+                        <div key={participant.puuid}>
+                            <Link to={`/lol/profile/${region}/${participant.riotIdGameName}-${participant.riotIdTagline}`} className="flex gap-0.5 items-center cursor-pointer hover:underline">
+                                <ChampionImage championId={participant.championId} teamId={100} isTeamIdSame={true} classes="h-6" />
+                                <p className={`${participant.puuid === puuid ? "text-purple-400" : ""}`}>
+                                    {participant.riotIdGameName}
+                                </p>
+                            </Link>
                         </div>
                     ))}
                 </div>
                 <div className="flex flex-col gap-0.5 text-sm p-2">
                     {info.participants.filter(participant => participant.teamId === 200).map(participant => (
-                        <div key={participant.puuid} className="flex gap-1 items-center">
-                            <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-6" />
-                            <p className={`${participant.puuid === puuid ? "text-purple-400" : ""}`}>
-                                {participant.riotIdGameName}#{participant.riotIdTagline}
-                            </p>
+                        <div key={participant.puuid}>
+                            <Link to={`/lol/profile/${region}/${participant.riotIdGameName}-${participant.riotIdTagline}`} className="flex gap-0.5 items-center cursor-pointer hover:underline">
+                                <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-6" />
+                                <p className={`${participant.puuid === puuid ? "text-purple-400" : ""}`}>
+                                    {participant.riotIdGameName}
+                                </p>
+                            </Link>
                         </div>
                     ))}
                 </div>
@@ -174,8 +207,164 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string;}> = ({info, puuid}) =>
                     <img src={arrowdownlight} alt="arrow-down-light" className={`h-10 transform transition-transform ${showDetailsDiv ? "rotate-180" : ""}`} />
                 </div>
             </div>
-            <div className={`bg-neutral-800 overflow-hidden transition-all duration-300 ease-in-out ${showDetailsDiv ? "max-h-[500px] py-2" : "max-h-0 py-0"}`}>
-                <p>goran</p>
+            <div className={`bg-neutral-800 overflow-hidden transition-all duration-300 ease-in-out ${showDetailsDiv ? "max-h-[800px] py-2" : "max-h-0 py-0"}`}>
+                <div className="flex justify-around">
+                    <p onClick={() => setChooseTab("General")} className={`${chooseTab === "General" ? "bg-neutral-600" : ""} text-xl px-4 py-2 rounded-xl cursor-pointer transition-all hover:text-neutral-300`}>General</p>
+                    <p onClick={() => setChooseTab("Performance")} className={`${chooseTab === "Performance" ? "bg-neutral-600" : ""} text-xl px-4 py-2 rounded-xl cursor-pointer transition-all hover:text-neutral-300`}>Performance</p>
+                    <p onClick={() => setChooseTab("Details")} className={`${chooseTab === "Details" ? "bg-neutral-600" : ""} text-xl px-4 py-2 rounded-xl cursor-pointer transition-all hover:text-neutral-300`}>Details</p>
+                    <p onClick={() => setChooseTab("Runes")} className={`${chooseTab === "Runes" ? "bg-neutral-600" : ""} text-xl px-4 py-2 rounded-xl cursor-pointer transition-all hover:text-neutral-300`}>Runes</p>
+                    <p onClick={() => setChooseTab("Timeline")} className={`${chooseTab === "Timeline" ? "bg-neutral-600" : ""} text-xl px-4 py-2 rounded-xl cursor-pointer transition-all hover:text-neutral-300`}>Timeline</p>
+                </div>
+                {chooseTab === "General" && (
+                    <>
+                        <div>
+                            <div className="flex gap-3 items-center">
+                                {blueSideWon ? 
+                                    <p className="text-blue-500 font-bold text-lg">Victory</p> 
+                                : 
+                                    <p className="text-red-500 font-bold text-lg">Defeat</p>
+                                }
+                                <p className="text-neutral-400 text-lg">(Blue Side)</p>
+                                <div className="flex gap-2 font-normal text-2xl text-neutral-200">
+                                    <p>Voidgrubs: {blueTeamKills.grubs}</p>
+                                    <p>Drakes: {blueTeamKills.dragon}</p>
+                                    <p>Herald: {blueTeamKills.herald}</p>
+                                    <p>Barnos: {blueTeamKills.baron}</p>
+                                    <p>Atakhan: {blueTeamKills.atakhan}</p>
+                                    <p>Turrets: {blueTeamKills.turret}</p>
+                                    <p>Inhibitors: {blueTeamKills.inhibitor}</p>
+                                </div>
+                            </div>
+                            <div className={`${blueSideWon ? "bg-[#28344E]" : "bg-[#59343B]"} flex flex-col gap-2 text-sm p-2`}>
+                                {info.participants.filter((participant) => participant.teamId === 100).map(participant => (
+                                    <div key={participant.puuid} className="grid grid-cols-[40%_10%_10%_10%_30%] items-center gap-2">
+                                        <div className="flex gap-2 items-center">
+                                            <div className="relative">
+                                                <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-12" />
+                                                <p className="absolute text-sm right-0 bottom-0 transform translate-x-[2px] translate-y-[2px] bg-neutral-800 border border-neutral-400 px-0.5">{participant.champLevel}</p>
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <SummonerSpellImage spellId={participant.summoner1Id} classes="h-6" />
+                                                <SummonerSpellImage spellId={participant.summoner2Id} classes="h-6" />
+                                            </div>
+                                            {participant.perks.styles[0].style ? (
+                                                <div className="flex flex-col gap-1">
+                                                    <RuneImage runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="h-6" />
+                                                    <RuneImage runeTypeId={participant.perks.styles[1].style} classes="h-6" />
+                                                </div>
+                                            ) : (
+                                                <></>
+                                            )}
+                                            <div>
+                                                <Link to={`/lol/profile/${region}/${participant.riotIdGameName}-${participant.riotIdTagline}`} className={`cursor-pointer hover:underline ${participant.puuid === puuid ? "text-purple-400" : ""}`}>
+                                                    {participant.riotIdGameName}
+                                                </Link>
+                                                <p className="text-neutral-300">RANK</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <p className="font-bold text-lg">{participant.kills}</p>
+                                            <p className="text-neutral-400 px-2 text-lg">/</p> 
+                                            <p className="text-red-500 font-bold text-lg">{participant.deaths}</p> 
+                                            <p className="text-neutral-400 px-2 text-lg">/</p> 
+                                            <p className="font-bold text-lg">{participant.assists}</p>
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-xl font-normal">{blueSideTotalKills === 0 ? 100 : killParticipation = Math.round(((participant.kills + participant.assists) / blueSideTotalKills) * 100)}%</p>
+                                            <p className="text-neutral-400">KP</p>
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-xl text-yellow-200">{((participant.totalMinionsKilled + participant.neutralMinionsKilled)/(info.gameDuration/60)).toFixed(1)}</p>
+                                            <p className="text-neutral-400">CS/min</p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <ItemImage itemId={participant.item0} matchWon={participant.win} classes="h-8" />
+                                            <ItemImage itemId={participant.item1} matchWon={participant.win} classes="h-8" />
+                                            <ItemImage itemId={participant.item2} matchWon={participant.win} classes="h-8" />
+                                            <ItemImage itemId={participant.item3} matchWon={participant.win} classes="h-8" />
+                                            <ItemImage itemId={participant.item4} matchWon={participant.win} classes="h-8" />
+                                            <ItemImage itemId={participant.item5} matchWon={participant.win} classes="h-8" />
+                                            <ItemImage itemId={participant.item6} matchWon={participant.win} classes="h-8" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <div className="flex gap-3 items-center">
+                                {!blueSideWon ? 
+                                    <p className="text-blue-500 font-bold text-lg">Victory</p> 
+                                : 
+                                    <p className="text-red-500 font-bold text-lg">Defeat</p>
+                                }
+                                <p className="text-neutral-400 text-lg">(Blue Side)</p>
+                                <div className="flex gap-2 font-normal text-2xl text-neutral-200">
+                                    <p>Voidgrubs: {redTeamKills.grubs}</p>
+                                    <p>Drakes: {redTeamKills.dragon}</p>
+                                    <p>Herald: {redTeamKills.herald}</p>
+                                    <p>Barnos: {redTeamKills.baron}</p>
+                                    <p>Atakhan: {redTeamKills.atakhan}</p>
+                                    <p>Turrets: {redTeamKills.turret}</p>
+                                    <p>Inhibitors: {redTeamKills.inhibitor}</p>
+                                </div>
+                            </div>
+                            <div className={`${!blueSideWon ? "bg-[#28344E]" : "bg-[#59343B]"} flex flex-col gap-2 text-sm p-2`}>
+                                {info.participants.filter(participant => participant.teamId === 200).map(participant => (
+                                    <div key={participant.puuid} className="grid grid-cols-[40%_10%_10%_10%_30%] items-center gap-2">
+                                        <div className="flex gap-2 items-center">
+                                            <div className="relative">
+                                                <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-12" />
+                                                <p className="absolute text-sm right-0 bottom-0 transform translate-x-[2px] translate-y-[2px] bg-neutral-800 border border-neutral-400 px-0.5">{participant.champLevel}</p>
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <SummonerSpellImage spellId={participant.summoner1Id} classes="h-6" />
+                                                <SummonerSpellImage spellId={participant.summoner2Id} classes="h-6" />
+                                            </div>
+                                            {participant.perks.styles[0].style ? (
+                                                <div className="flex flex-col gap-1">
+                                                    <RuneImage runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="h-6" />
+                                                    <RuneImage runeTypeId={participant.perks.styles[1].style} classes="h-6" />
+                                                </div>
+                                            ) : (
+                                                <></>
+                                            )}
+                                            <div>
+                                                <Link to={`/lol/profile/${region}/${participant.riotIdGameName}-${participant.riotIdTagline}`} className={`cursor-pointer hover:underline ${participant.puuid === puuid ? "text-purple-400" : ""}`}>
+                                                    {participant.riotIdGameName}
+                                                </Link>
+                                                <p className="text-neutral-300">RANK</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <p className="font-bold text-lg">{participant.kills}</p>
+                                            <p className="text-neutral-400 px-2 text-lg">/</p> 
+                                            <p className="text-red-500 font-bold text-lg">{participant.deaths}</p> 
+                                            <p className="text-neutral-400 px-2 text-lg">/</p> 
+                                            <p className="font-bold text-lg">{participant.assists}</p>
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-xl font-normal">{redSideTotalKills === 0 ? 100 : killParticipation = Math.round(((participant.kills + participant.assists) / redSideTotalKills) * 100)}%</p>
+                                            <p className="text-neutral-400">KP</p>
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-xl text-yellow-200">{((participant.totalMinionsKilled + participant.neutralMinionsKilled)/(info.gameDuration/60)).toFixed(1)}</p>
+                                            <p className="text-neutral-400">CS/min</p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <ItemImage itemId={participant.item0} matchWon={participant.win} classes="h-8" />
+                                            <ItemImage itemId={participant.item1} matchWon={participant.win} classes="h-8" />
+                                            <ItemImage itemId={participant.item2} matchWon={participant.win} classes="h-8" />
+                                            <ItemImage itemId={participant.item3} matchWon={participant.win} classes="h-8" />
+                                            <ItemImage itemId={participant.item4} matchWon={participant.win} classes="h-8" />
+                                            <ItemImage itemId={participant.item5} matchWon={participant.win} classes="h-8" />
+                                            <ItemImage itemId={participant.item6} matchWon={participant.win} classes="h-8" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
         </>
     );
@@ -682,7 +871,7 @@ const Summoner: React.FC = () => {
                         <div className="bg-neutral-800">
                             <div className="flex flex-col gap-1 p-2">
                                 {allMatchesDetailsData.map((match: Match) => (
-                                    <MatchRow info={match.info} puuid={apiData.puuid} />
+                                    <MatchRow info={match.info} puuid={apiData.puuid} region={regionCode} />
                                 ))}
                             </div>
                         </div>
