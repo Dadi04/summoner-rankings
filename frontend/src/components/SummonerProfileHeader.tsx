@@ -12,6 +12,29 @@ const SummonerProfileHeader: React.FC<{data: Player; regionCode: string; encoded
 
     const [isFavorite, setIsFavorite] = useState(false);
 
+    let lastUpdated = Math.round((Date.now() - data.addedAt*1000)/60000);
+    let timeUnit = lastUpdated === 1 ? "minute ago" : "minutes ago";
+    if (lastUpdated > 60) {
+        lastUpdated = Math.round(lastUpdated / 60);
+        timeUnit = lastUpdated === 1 ? "hour ago" : "hours ago";
+        if (lastUpdated > 24) {
+            lastUpdated = Math.round(lastUpdated / 24);
+            timeUnit = lastUpdated === 1 ? "day ago" : "days ago";
+            if (lastUpdated > 7) {
+                lastUpdated = Math.round(lastUpdated / 7);
+                timeUnit = lastUpdated === 1 ? "week ago" : "weeks ago";
+                if (lastUpdated > 4) {
+                    lastUpdated = Math.round(lastUpdated / 4);
+                    timeUnit = lastUpdated === 1 ? "month ago" : "months ago";
+                    if (lastUpdated > 12) {
+                        lastUpdated = Math.round(lastUpdated / 12);
+                        timeUnit = lastUpdated === 1 ? "year ago" : "years ago";
+                    }
+                }
+            }
+        }
+    } 
+
     const getLinkClasses = (isActive: boolean) => 
         isActive 
             ? "cursor-pointer pt-3 pb-3 pl-5 pr-5 rounded transition-all duration-150 ease-in hover:bg-neutral-600 bg-neutral-700 border text-purple-400 hover:text-neutral-100"
@@ -42,7 +65,7 @@ const SummonerProfileHeader: React.FC<{data: Player; regionCode: string; encoded
                     </div>
                     <div className="text-neutral-50">
                         <UpdateButton regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setData} />
-                        <p>Last updated: {Math.round((Date.now() - data.addedAt*1000)/60000)} minutes ago</p>
+                        <p>Last updated: {lastUpdated} {timeUnit}</p>
                     </div>
                 </div>
             </div>

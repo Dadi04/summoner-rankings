@@ -65,6 +65,8 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
     const participant = info.participants.find((p) => p.puuid === puuid);
     if (!participant) return <div>Player not found</div>
 
+    const [choosePlayerDetails, setChoosePlayerDetails] = useState(participant.championName)
+
     const queueId = info.queueId;
     const queueData = queueJson.find((item) => item.queueId === queueId);
     const gamemode = queueData ? queueData.description : "Unknown game mode";
@@ -451,7 +453,10 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                             {sortedParticipants.map((participant, index: number) => (
                                 <div key={index} className={`grid grid-cols-[19%_6%_6%_6%_13%_13%_13%_10%_7%_7%] items-center my-2 ${participant.win ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
                                     <div className={`flex items-center text-center gap-0.5 p-2 ${participant.puuid === puuid ? "text-purple-600" : ""}`}>
-                                        <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-12" />
+                                        <div className="relative inline-block">
+                                            <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-12" />
+                                            <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform translate-x-1/8 translate-y-1/8" />
+                                        </div>
                                         <p>{participant.riotIdGameName}</p>
                                     </div>
                                     <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "kills" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
@@ -488,17 +493,80 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                 )}
                 {chooseTab === "Details" && (
                     <div>
-                        details
+                        <div className="flex items-center justify-between">
+                            <div className="flex gap-3">
+                                {info.participants.filter(participant => participant.teamId === 100).map(participant => (
+                                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
+                                        <ChampionImage championId={participant.championId} teamId={100} isTeamIdSame={false} classes="h-13" />
+                                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
+                                    </div>
+                                ))}
+                            </div>
+                            <div>
+                                <p className="text-neutral-400 text-2xl font-bold gap-1">VS</p>
+                            </div>
+                            <div className="flex gap-3">
+                                {info.participants.filter(participant => participant.teamId === 200).map(participant => (
+                                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
+                                        <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={false} classes="h-13" />
+                                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 )}
                 {chooseTab === "Runes" && (
                     <div>
-                        runes
+                        <div className="flex items-center justify-between">
+                            <div className="flex gap-3">
+                                {info.participants.filter(participant => participant.teamId === 100).map(participant => (
+                                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
+                                        <ChampionImage championId={participant.championId} teamId={100} isTeamIdSame={false} classes="h-13" />
+                                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
+                                    </div>
+                                ))}
+                            </div>
+                            <div>
+                                <p className="text-neutral-400 text-2xl font-bold gap-1">VS</p>
+                            </div>
+                            <div className="flex gap-3">
+                                {info.participants.filter(participant => participant.teamId === 200).map(participant => (
+                                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
+                                        <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={false} classes="h-13" />
+                                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+
+                        </div>
                     </div>
                 )}
                 {chooseTab === "Timeline" && (
                     <div>
-                        timeline
+                        <div className="flex items-center justify-between">
+                            <div className="flex gap-3">
+                                {info.participants.filter(participant => participant.teamId === 100).map(participant => (
+                                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
+                                        <ChampionImage championId={participant.championId} teamId={100} isTeamIdSame={false} classes="h-13" />
+                                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
+                                    </div>
+                                ))}
+                            </div>
+                            <div>
+                                <p className="text-neutral-400 text-2xl font-bold gap-1">VS</p>
+                            </div>
+                            <div className="flex gap-3">
+                                {info.participants.filter(participant => participant.teamId === 200).map(participant => (
+                                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
+                                        <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={false} classes="h-13" />
+                                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
