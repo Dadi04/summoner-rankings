@@ -2,7 +2,7 @@ import { DD_VERSION } from '../version';
 
 import summonerSpellsJson from "../assets/json/summonerSpells.json";
 
-const SummonerSpellImage: React.FC<{spellId: number; classes: string;}> = ({spellId, classes}) => {
+const SummonerSpellImage: React.FC<{spellId: number; classes?: string;}> = ({spellId, classes}) => {
     const spellData = Object.values(summonerSpellsJson.data).find(
         (spell) => spell.key === spellId.toString()
     );

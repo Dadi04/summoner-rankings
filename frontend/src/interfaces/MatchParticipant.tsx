@@ -1,3 +1,5 @@
+import MatchPerks from "./MatchPerks";
+
 interface MatchParticipant {
     teamEarlySurrendered: boolean;
     gameEndedInEarlySurrender: boolean; // remake ?
@@ -105,23 +107,7 @@ interface MatchParticipant {
     itemsPurchased: number;
     consumablesPurchased: number; // potovi
 
-    perks: {
-        statPerks: {
-            defense: number;
-            flex: number;
-            offense: number;
-        };
-        styles: {
-            description: string;
-            selections: {
-                perk: number;
-                var1: number;
-                var2: number;
-                var3: number;
-            }[];
-            style: number;
-        }[];
-    };
+    perks: MatchPerks;
 
     killingSprees: number;
     largestKillingSpree: number;
@@ -136,17 +122,17 @@ interface MatchParticipant {
     lane: string;
     role: string;
 
-    allInPings: number;
-    assistMePings: number;
-    commandPings: number;
-    enemyMissingPings: number;
-    enemyVisionPings: number;
-    holdPings: number;
-    getBackPings: number;
-    needVisionPings: number;
-    onMyWayPings: number;
-    pushPings: number;
-    visionClearedPings: number;
+    allInPings: number; // crossed yellow swords
+    assistMePings: number; // green flag
+    commandPings: number; // blue generic
+    enemyMissingPings: number; // yellow question mark
+    enemyVisionPings: number; // red eye
+    holdPings: number; // ?
+    getBackPings: number; // yellow circle with horizontal line, ctrl v ping
+    needVisionPings: number; // green ward
+    onMyWayPings: number; // blue pointing down arrow
+    pushPings: number; // green minion
+    visionClearedPings: number; // ?
 
     subteamPlacement: number; // arena placement
     playerAugment1: number; // arena
@@ -156,19 +142,6 @@ interface MatchParticipant {
     playerSubteamId: number; // arena
 
     placement: number; // what is this ?????
-    // ???
-    playerScore0: number;
-    playerScore1: number;
-    playerScore2: number;
-    playerScore3: number;
-    playerScore4: number;
-    playerScore5: number;
-    playerScore6: number;
-    playerScore7: number;
-    playerScore8: number;
-    playerScore9: number;
-    playerScore10: number;
-    playerScore11: number;
 }
 
 export default MatchParticipant;

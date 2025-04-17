@@ -1,25 +1,31 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import { DD_VERSION, LOL_VERSION } from '../version';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { DD_VERSION, LOL_VERSION } from "../version";
 
 import GameTimer from "../components/GameTime";
-import ChampionImage from '../components/ChampionImage';
+import ChampionImage from "../components/ChampionImage";
 import SummonerSpellImage from "../components/SummonerSpellImage";
-import RuneImage from '../components/RuneImage';
-import SummonerProfileHeader from '../components/SummonerProfileHeader';
+import RuneImage from "../components/RuneImage";
+import SummonerProfileHeader from "../components/SummonerProfileHeader";
 
-import Participant from '../interfaces/Participant';
-import Entry from '../interfaces/Entry';
-import ChampionStats from '../interfaces/ChampionStats';
-import PreferredRole from '../interfaces/PreferredRole';
-import Mastery from '../interfaces/Mastery';
-import Player from '../interfaces/Player';
-import Match from '../interfaces/Match';
-import MatchInfo from '../interfaces/MatchInfo';
-import MatchParticipant from '../interfaces/MatchParticipant';
+import Participant from "../interfaces/Participant";
+import Entry from "../interfaces/Entry";
+import ChampionStats from "../interfaces/ChampionStats";
+import PreferredRole from "../interfaces/PreferredRole";
+import Mastery from "../interfaces/Mastery";
+import Player from "../interfaces/Player";
+import Match from "../interfaces/Match";
+import MatchInfo from "../interfaces/MatchInfo";
+import MatchParticipant from "../interfaces/MatchParticipant";
+import MatchPerks from "../interfaces/MatchPerks";
+import IconImage from "../components/IconImage";
+import RuneSlot from "../components/RuneSlot";
+import ShardSlot from "../components/ShardSlot";
 
 import queueJson from "../assets/json/queues.json";
+import runesJson from "../assets/json/runes.json";
+import statModsJson from "../assets/json/statMods.json";
 
 import performance from "../assets/performance.png";
 import goldmedal from "../assets/gold-medal.png";
@@ -32,6 +38,15 @@ import fill from "../assets/fill.png";
 import loadingAnimation from "../assets/animations/loading.lottie";
 import arrowdownlight from "../assets/arrow-down-light.png";
 import noneicon from "../assets/none.jpg";
+import allInPing from "../assets/pings/allInPing.webp";
+import assistMePing from "../assets/pings/assistMePing.webp";
+import enemyMissingPing from "../assets/pings/enemyMissingPing.webp";
+import enemyVisionPing from "../assets/pings/enemyVisionPing.webp";
+import genericPing from "../assets/pings/genericPing.webp";
+import getBackPing from "../assets/pings/getBackPing.webp";
+import needVisionPing from "../assets/pings/needVisionPing.webp";
+import onMyWayPing from "../assets/pings/onMyWayPing.webp";
+import pushPing from "../assets/pings/pushPing.webp";
 
 type SortField = 
   | "kills"
@@ -56,22 +71,93 @@ const ItemImage: React.FC<{itemId: number; matchWon: boolean; classes: string}> 
     );
 }
 
+const MatchRunes: React.FC<MatchPerks> = ({ statPerks, styles }) => {
+    const primaryStyle = styles[0];
+    const primaryTypeData = runesJson.find((r) => r.id === primaryStyle.style);
+    if (!primaryTypeData) return <span>Primary Rune Type Not Found</span>;
+    const [slotP0, slotP1, slotP2, slotP3] = primaryTypeData.slots;
+    const primaryPerkIds = primaryStyle.selections.map((s) => s.perk);
+  
+    const secondaryStyle = styles[1];
+    const secondaryTypeData = runesJson.find((r) => r.id === secondaryStyle.style);
+    if (!secondaryTypeData) return <span>Secondary Rune Type Not Found</span>;
+    const [, slotS1, slotS2, slotS3] = secondaryTypeData.slots;
+    const secondaryPerkIds = secondaryStyle.selections.map((s) => s.perk);
+  
+    const [statMods0, statMods1, statMods2] = statModsJson.slots;
+    const selectedShard0 = statPerks.offense;
+    const selectedShard1 = statPerks.flex;
+    const selectedShard2 = statPerks.defense;
+  
+    return (
+        <div className="flex justify-evenly my-6">
+            <div className="w-[30%]">
+                <div className="flex items-center justify-center gap-4 bg-neutral-700 p-2 rounded">
+                    <IconImage icon={primaryTypeData.icon} alt={primaryTypeData.key} className="h-10" />
+                    <p className="font-bold text-lg text-neutral-100">{primaryTypeData.name}</p>
+                </div>
+                <div className="flex flex-col gap-6 items-center mt-4">
+                    <RuneSlot runes={slotP0.runes} perkIds={primaryPerkIds} height="h-17" />
+                    <hr className="w-full text-neutral-300" />
+                    <RuneSlot runes={slotP1.runes} perkIds={primaryPerkIds} height="h-12" />
+                    <RuneSlot runes={slotP2.runes} perkIds={primaryPerkIds} height="h-12" />
+                    <RuneSlot runes={slotP3.runes} perkIds={primaryPerkIds} height="h-12" />
+                </div>
+            </div>
+            <div className="w-[30%]">
+                <div className="flex items-center justify-center gap-4 bg-neutral-700 p-2 rounded">
+                    <IconImage icon={secondaryTypeData.icon} alt={secondaryTypeData.key} className="h-10" />
+                    <p className="font-bold text-lg text-neutral-100">{secondaryTypeData.name}</p>
+                </div>
+                <div className="flex flex-col gap-3 items-center mt-4 mb-4">
+                    <RuneSlot runes={slotS1.runes} perkIds={secondaryPerkIds} height="h-12" />
+                    <RuneSlot runes={slotS2.runes} perkIds={secondaryPerkIds} height="h-12" />
+                    <RuneSlot runes={slotS3.runes} perkIds={secondaryPerkIds} height="h-12" />
+                </div>
+                <hr className="text-neutral-300" />
+                <div className="flex flex-col items-center mt-3 gap-2">
+                    <ShardSlot slot={statMods0} selectedId={selectedShard0} />
+                    <ShardSlot slot={statMods1} selectedId={selectedShard1} />
+                    <ShardSlot slot={statMods2} selectedId={selectedShard2} />
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({info, puuid, region}) => {
     const [showDetailsDiv, setShowDetailsDiv] = useState<boolean>(false);
     const [chooseTab, setChooseTab] = useState<string>("General");
     const [sortBy, setSortBy] = useState<SortField | null>(null);
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+    const [champions, setChampions] = useState<any[]>([]);
 
     const participant = info.participants.find((p) => p.puuid === puuid);
-    if (!participant) return <div>Player not found</div>
+    if (!participant) return <div>Player not found</div>;
 
-    const [choosePlayerDetails, setChoosePlayerDetails] = useState(participant.championName)
+    const [choosePlayerDetails, setChoosePlayerDetails] = useState(participant.championName);
 
     const queueId = info.queueId;
     const queueData = queueJson.find((item) => item.queueId === queueId);
     const gamemode = queueData ? queueData.description : "Unknown game mode";
     const map = queueData ? queueData.map : "Unknown map";
 
+    const selectedPlayer = info.participants.find(participant => participant.championName === choosePlayerDetails);
+    if (!selectedPlayer) return <div>Detail not found</div>;
+    
+    useEffect(() => {
+        const fetchChampions = async () => {
+            try {
+                const response = await fetch(`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/data/en_US/championFull.json`);
+                const data = await response.json();
+                setChampions(Object.values(data.data));
+            } catch (error) {
+                console.error(error);
+            }
+        };
+        fetchChampions();
+    }, [DD_VERSION]);
+      
     let gameEnded = Math.round((Date.now() - info.gameEndTimestamp)/60000);
     let timeUnit = gameEnded === 1 ? "minute ago" : "minutes ago";
     if (gameEnded > 60) {
@@ -186,6 +272,22 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
         return sorted;
     }, [info.participants, sortBy, sortOrder]);
 
+    const champ = champions.find(c => c.id === selectedPlayer.championName);
+    if (!champ) return <div>Champion not found</div>;
+    const { spells,  } = champ;
+
+    const centerPing = { icon: genericPing, count: selectedPlayer.commandPings };
+    const edgePings = [
+        { icon: getBackPing,     count: selectedPlayer.getBackPings },
+        { icon: pushPing,        count: selectedPlayer.pushPings },
+        { icon: onMyWayPing,     count: selectedPlayer.onMyWayPings },
+        { icon: allInPing,       count: selectedPlayer.allInPings },
+        { icon: assistMePing,    count: selectedPlayer.assistMePings },
+        { icon: needVisionPing,  count: selectedPlayer.needVisionPings },
+        { icon: enemyMissingPing,count: selectedPlayer.enemyMissingPings },
+        { icon: enemyVisionPing, count: selectedPlayer.enemyVisionPings },
+    ];
+
     return (
         <>
             <div className={`w-full grid grid-cols-[25%_35%_17.5%_17.5%_5%] items-center ${participant.win ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
@@ -286,7 +388,7 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                     <p onClick={() => setChooseTab("Timeline")} className={`${chooseTab === "Timeline" ? "bg-neutral-600" : ""} text-xl px-4 py-2 rounded-xl cursor-pointer transition-all hover:text-neutral-300`}>Timeline</p>
                 </div>
                 {chooseTab === "General" && (
-                    <>
+                    <div className="mt-2 mb-1">
                         <div>
                             <div className="flex gap-3 items-center">
                                 {blueSideWon ? 
@@ -299,7 +401,7 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                                     <p>Voidgrubs: {blueTeamKills.grubs}</p>
                                     <p>Drakes: {blueTeamKills.dragon}</p>
                                     <p>Herald: {blueTeamKills.herald}</p>
-                                    <p>Barnos: {blueTeamKills.baron}</p>
+                                    <p>Barons: {blueTeamKills.baron}</p>
                                     <p>Atakhan: {blueTeamKills.atakhan}</p>
                                     <p>Turrets: {blueTeamKills.turret}</p>
                                     <p>Inhibitors: {blueTeamKills.inhibitor}</p>
@@ -372,7 +474,7 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                                     <p>Voidgrubs: {redTeamKills.grubs}</p>
                                     <p>Drakes: {redTeamKills.dragon}</p>
                                     <p>Herald: {redTeamKills.herald}</p>
-                                    <p>Barnos: {redTeamKills.baron}</p>
+                                    <p>Barons: {redTeamKills.baron}</p>
                                     <p>Atakhan: {redTeamKills.atakhan}</p>
                                     <p>Turrets: {redTeamKills.turret}</p>
                                     <p>Inhibitors: {redTeamKills.inhibitor}</p>
@@ -433,11 +535,11 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                                 ))}
                             </div>
                         </div>
-                    </>
+                    </div>
                 )}
                 {chooseTab === "Performance" && (
-                    <div>
-                        <div className="grid grid-cols-[19%_6%_6%_6%_13%_13%_13%_10%_7%_7%] text-center text-lg py-2 mt-2">
+                    <div className="mt-2 mb-1">
+                        <div className="grid grid-cols-[19%_6%_6%_6%_13%_13%_13%_13%_10%] text-center text-lg py-2 mt-2">
                             <p onClick={() => handleSort("player")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy === null ? "text-white font-bold" : ""}`}>Player</p>
                             <p onClick={() => handleSort("kills")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "kills" ? "text-white font-bold" : ""}`}>Kills</p>
                             <p onClick={() => handleSort("deaths")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "deaths" ? "text-white font-bold" : ""}`}>Deaths</p>
@@ -446,12 +548,11 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                             <p onClick={() => handleSort("totalDamageTaken")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "totalDamageTaken" ? "text-white font-bold" : ""}`}>Damage taken</p>
                             <p onClick={() => handleSort("goldEarned")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "goldEarned" ? "text-white font-bold" : ""}`}>Gold</p>
                             <p onClick={() => handleSort("visionScore")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "visionScore" ? "text-white font-bold" : ""}`}>Vision score</p>
-                            <p onClick={() => handleSort("wardsPlaced")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "wardsPlaced" ? "text-white font-bold" : ""}`}>Wards</p>
                             <p onClick={() => handleSort("cs")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "cs" ? "text-white font-bold" : ""}`}>CS</p>
                         </div>
                         <div>
                             {sortedParticipants.map((participant, index: number) => (
-                                <div key={index} className={`grid grid-cols-[19%_6%_6%_6%_13%_13%_13%_10%_7%_7%] items-center my-2 ${participant.win ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                <div key={index} className={`grid grid-cols-[19%_6%_6%_6%_13%_13%_13%_13%_10%] items-center mt-2 ${participant.win ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
                                     <div className={`flex items-center text-center gap-0.5 p-2 ${participant.puuid === puuid ? "text-purple-600" : ""}`}>
                                         <div className="relative inline-block">
                                             <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-12" />
@@ -480,9 +581,6 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                                     <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "visionScore" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
                                         <p>{participant.visionScore}</p>
                                     </div>
-                                    <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "wardsPlaced" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
-                                        <p>{participant.wardsPlaced}</p>
-                                    </div>
                                     <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "cs" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
                                         <p>{participant.totalMinionsKilled + participant.neutralMinionsKilled}</p>
                                     </div>
@@ -492,32 +590,7 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                     </div>
                 )}
                 {chooseTab === "Details" && (
-                    <div>
-                        <div className="flex items-center justify-between">
-                            <div className="flex gap-3">
-                                {info.participants.filter(participant => participant.teamId === 100).map(participant => (
-                                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
-                                        <ChampionImage championId={participant.championId} teamId={100} isTeamIdSame={false} classes="h-13" />
-                                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
-                                    </div>
-                                ))}
-                            </div>
-                            <div>
-                                <p className="text-neutral-400 text-2xl font-bold gap-1">VS</p>
-                            </div>
-                            <div className="flex gap-3">
-                                {info.participants.filter(participant => participant.teamId === 200).map(participant => (
-                                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
-                                        <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={false} classes="h-13" />
-                                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
-                {chooseTab === "Runes" && (
-                    <div>
+                    <div className="mt-2">
                         <div className="flex items-center justify-between">
                             <div className="flex gap-3">
                                 {info.participants.filter(participant => participant.teamId === 100).map(participant => (
@@ -540,12 +613,200 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                             </div>
                         </div>
                         <div>
+                            <div className="flex justify-between gap-2 my-2">
+                                <div className="w-[33%] bg-neutral-700 p-2">
+                                    <h1 className="text-xl text-neutral-300 mb-2">LANING PHASE (AT 15)</h1>
+                                    <div className="flex justify-between">
+                                        <div className="w-[25%] text-center">
+                                            <p>TODO</p>
+                                            <p className="text-neutral-400">cs diff</p>
+                                        </div>
+                                        <div className="w-[25%] text-center">
+                                            <p>TODO</p>
+                                            <p className="text-neutral-400">gold diff</p>
+                                        </div>
+                                        <div className="w-[25%] text-center">
+                                            <p>TODO</p>
+                                            <p className="text-neutral-400">xp diff</p>
+                                        </div>
+                                        <div className="w-[25%] text-center">
+                                            <p>TODO</p>
+                                            <p className="text-neutral-400">first lvl 2</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="w-[33%] bg-neutral-700 p-2">
+                                    <h1 className="text-xl text-neutral-300 mb-2">WARDS</h1>
+                                    <div className="flex justify-between">
+                                        <div className="w-[33%] text-center">
+                                            <p>{selectedPlayer.wardsPlaced-selectedPlayer.detectorWardsPlaced}</p>
+                                            <p className="text-neutral-400">placed</p>
+                                        </div>
+                                        <div className="w-[33%] text-center">
+                                            <p>{selectedPlayer.wardsKilled}</p>
+                                            <p className="text-neutral-400">killed</p>
+                                        </div>
+                                        <div className="w-[33%] text-center">
+                                            <p>{selectedPlayer.detectorWardsPlaced}</p>
+                                            <p className="text-neutral-400">control</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="w-[33%] bg-neutral-700 p-2">
+                                    <h1 className="text-xl text-neutral-300 mb-2">GLOBAL STATS</h1>
+                                    <div className="flex justify-between">
+                                        <div className="w-[25%] text-center">
+                                            <p>{((selectedPlayer.totalMinionsKilled+selectedPlayer.neutralMinionsKilled)/(info.gameDuration/60)).toFixed(1)}</p>
+                                            <p className="text-neutral-400">CS/min</p>
+                                        </div>
+                                        <div className="w-[25%] text-center">
+                                            <p>{(selectedPlayer.visionScore/(info.gameDuration/60)).toFixed(1)}</p>
+                                            <p className="text-neutral-400">VS/min</p>
+                                        </div>
+                                        <div className="w-[25%] text-center">
+                                            <p>{(selectedPlayer.totalDamageDealtToChampions/(info.gameDuration/60)).toFixed(1)}</p>
+                                            <p className="text-neutral-400">DMG/min</p>
+                                        </div>
+                                        <div className="w-[25%] text-center">
+                                            <p>{(selectedPlayer.goldEarned/(info.gameDuration/60)).toFixed(1)}</p>
+                                            <p className="text-neutral-400">gold/min</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-neutral-700 my-2 p-2">
+                            <h1 className="text-xl text-neutral-300 mb-2">BUILD ORDER</h1>
+                            <div>
+                                TODO
+                            </div>
+                        </div>
+                        <div className="bg-neutral-700 my-2 p-2">
+                            <h1 className="text-xl text-neutral-300 mb-2">SKILL ORDER</h1>
+                            <div>
+                                TODO
+                            </div>
+                        </div>
+                        <div className="flex my-1 gap-2 items-stretch">
+                            <div className="flex-1 flex flex-col gap-2">
+                                <div className="bg-neutral-700 p-2 pb-7">
+                                    <h1 className="text-xl text-neutral-300 mb-4">SPELLS CASTED</h1>
+                                    <div className="flex justify-around">
+                                        <div>
+                                            <div className="relative">
+                                                <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[0].image.full}`} alt="" />
+                                                <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">Q</p>
+                                            </div>
+                                            <div className="text-center mt-4">
+                                                <p className="font-bold">{selectedPlayer.spell1Casts}</p>
+                                                <p className="text-neutral-400">times</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="relative">
+                                                <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[1].image.full}`} alt="" />
+                                                <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">W</p>
+                                            </div>
+                                            <div className="text-center mt-4">
+                                                <p className="font-bold">{selectedPlayer.spell2Casts}</p>
+                                                <p className="text-neutral-400">times</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="relative">
+                                                <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[2].image.full}`} alt="" />
+                                                <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">E</p>
+                                            </div>
+                                            <div className="text-center mt-4">
+                                                <p className="font-bold">{selectedPlayer.spell3Casts}</p>
+                                                <p className="text-neutral-400">times</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="relative">
+                                                <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[3].image.full}`} alt="" />
+                                                <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">R</p>
+                                            </div>
+                                            <div className="text-center mt-4">
+                                                <p className="font-bold">{selectedPlayer.spell4Casts}</p>
+                                                <p className="text-neutral-400">times</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="bg-neutral-700 p-2 pb-6">
+                                    <h1 className="text-xl text-neutral-300 mb-4">SUMMONERS CASTED</h1>
+                                    <div className="flex justify-evenly">
+                                        <div>
+                                            <SummonerSpellImage spellId={selectedPlayer.summoner1Id} />
+                                            <div className="text-center mt-4">
+                                                <p className="font-bold">{selectedPlayer.summoner1Casts}</p>
+                                                <p className="text-neutral-400">times</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <SummonerSpellImage spellId={selectedPlayer.summoner2Id} />
+                                            <div className="text-center mt-4">
+                                                <p className="font-bold">{selectedPlayer.summoner2Casts}</p>
+                                                <p className="text-neutral-400">times</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex-1 flex flex-col bg-neutral-700 p-2 pb-4">
+                                <h1 className="text-xl text-neutral-300 mb-2">PINGS</h1>
+                                <div className="relative w-90 h-90 mx-auto">
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="w-20 h-20 rounded-full flex flex-col items-center justify-center">
+                                            <img src={centerPing.icon} alt="generic ping" className="w-14 mb-1" />
+                                            <span className="text-lg text-neutral-200">{centerPing.count}</span>
+                                        </div>
+                                    </div>
 
+                                    {edgePings.map((p, i) => {
+                                        const angle = (i / edgePings.length) * 360;
+                                        return (
+                                            <div key={i} className="absolute top-1/2 left-1/2 flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
+                                            style={{transform: `rotate(${angle}deg) translateY(-9rem) rotate(-${angle}deg)`}}>
+                                                <img src={p.icon} alt="" className="w-14 mb-1" />
+                                                <span className="text-lg text-neutral-200">{p.count}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
+                {chooseTab === "Runes" && (
+                    <div className="mt-2">
+                        <div className="flex items-center justify-between">
+                            <div className="flex gap-3">
+                                {info.participants.filter(participant => participant.teamId === 100).map(participant => (
+                                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
+                                        <ChampionImage championId={participant.championId} teamId={100} isTeamIdSame={false} classes="h-13" />
+                                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
+                                    </div>
+                                ))}
+                            </div>
+                            <div>
+                                <p className="text-neutral-400 text-2xl font-bold gap-1">VS</p>
+                            </div>
+                            <div className="flex gap-3">
+                                {info.participants.filter(participant => participant.teamId === 200).map(participant => (
+                                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
+                                        <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={false} classes="h-13" />
+                                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <MatchRunes statPerks={selectedPlayer.perks.statPerks} styles={selectedPlayer.perks.styles} />
+                    </div>
+                )}
                 {chooseTab === "Timeline" && (
-                    <div>
+                    <div className="mt-2">
                         <div className="flex items-center justify-between">
                             <div className="flex gap-3">
                                 {info.participants.filter(participant => participant.teamId === 100).map(participant => (
@@ -659,15 +920,15 @@ const Summoner: React.FC = () => {
     const topMasteriesData = JSON.parse(apiData.topMasteriesData);
     // const allMatchIds = JSON.parse(apiData.allMatchIds);
     const allMatchesDetailsData = JSON.parse(apiData.allMatchesDetailsData) as Match[];
-    const challengesData = JSON.parse(apiData.challengesData);
+    // const challengesData = JSON.parse(apiData.challengesData);
     const spectatorData = JSON.parse(apiData.spectatorData);
-    const clashData = JSON.parse(apiData.clashData);
+    // const clashData = JSON.parse(apiData.clashData);
     const championStatsSoloDuoData = Object.values(JSON.parse(apiData.rankedSoloChampionStatsData)) as ChampionStats[];
     const championStatsFlexData = Object.values(JSON.parse(apiData.rankedFlexChampionStatsData)) as ChampionStats[];
     const preferredSoloDuoRoleData = Object.values(JSON.parse(apiData.rankedSoloRoleStatsData)) as PreferredRole[];
     const preferredFlexRoleData = Object.values(JSON.parse(apiData.rankedFlexRoleStatsData)) as PreferredRole[];
-    const allGamesChampionStatsData = Object.values(JSON.parse(apiData.allGamesChampionStatsData)) as ChampionStats[];
-    const allGamesRoleStatsData = Object.values(JSON.parse(apiData.allGamesRoleStatsData)) as PreferredRole[];
+    // const allGamesChampionStatsData = Object.values(JSON.parse(apiData.allGamesChampionStatsData)) as ChampionStats[];
+    // const allGamesRoleStatsData = Object.values(JSON.parse(apiData.allGamesRoleStatsData)) as PreferredRole[];
 
     championStatsSoloDuoData.sort((a: ChampionStats, b: ChampionStats) => b.Games - a.Games || b.WinRate - a.WinRate);
     championStatsFlexData.sort((a: ChampionStats, b: ChampionStats) => b.Games - a.Games || b.WinRate - a.WinRate);
@@ -1083,7 +1344,7 @@ const Summoner: React.FC = () => {
                 </div>
                 <div className="bg-neutral-800 mt-2">
                     <pre>{JSON.stringify(summonerData, null, 2)}</pre>
-                    <pre>{JSON.stringify(entriesData, null, 2)}</pre>
+                {/*     <pre>{JSON.stringify(entriesData, null, 2)}</pre>
                     <pre>{JSON.stringify(championStatsSoloDuoData, null, 2)}</pre>
                     <pre>{JSON.stringify(championStatsFlexData, null, 2)}</pre>
                     <pre>{JSON.stringify(preferredSoloDuoRoleData, null, 2)}</pre>
@@ -1094,8 +1355,8 @@ const Summoner: React.FC = () => {
                     <pre>{JSON.stringify(allMatchesDetailsData, null, 2)}</pre>
                     <pre>{JSON.stringify(spectatorData, null, 2)}</pre>
                     <pre>{JSON.stringify(clashData, null, 2)}</pre>
-                    <pre>{JSON.stringify(challengesData, null, 2)}</pre>
-                </div>
+                    <pre>{JSON.stringify(challengesData, null, 2)}</pre>*/}
+                </div> 
             </div>
         </div>
     );

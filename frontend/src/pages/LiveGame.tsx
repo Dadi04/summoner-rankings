@@ -9,6 +9,8 @@ import BannedChampionsList from "../components/BannedChampionList";
 import ChampionImage from "../components/ChampionImage";
 import GameTimer from "../components/GameTime";
 import SummonerProfileHeader from "../components/SummonerProfileHeader";
+import ShardSlot from "../components/ShardSlot";
+import RuneSlot from "../components/RuneSlot";
 
 import Perk from "../interfaces/Perk";
 import Participant from "../interfaces/Participant";
@@ -24,46 +26,12 @@ import statModsJson from "../assets/json/statMods.json";
 import arrowdowndark from '../assets/arrow-down-dark.png'
 import loadingAnimation from '../assets/animations/loading.lottie';
 
-interface Shard {
-    id: number;
-    key: string;
-    icon: string;
-    name: string;
-    shortDesc: string;
-}
-
 interface RoleAccumulator {
     data: PreferredRole;
     roleName: string;
 }
 
-export const ShardSlot: React.FC<{slot: {shards: Shard[]}; selectedId?: number }> = ({slot, selectedId}) => (
-    <div className="w-[60%] flex justify-evenly">
-        {slot.shards.map((shard, index) => (
-            <IconImage
-                key={index}
-                icon={shard.icon}
-                alt={shard.name}
-                className={`h-9 ${selectedId === shard.id ? "border-2 rounded-full border-purple-700" : "filter grayscale brightness-50"}`}
-            />
-        ))}
-    </div>
-)
-
-export const RuneSlot: React.FC<{runes: { id: number; icon: string; name: string }[]; perkIds: number[]; height: string;}> = ({runes, perkIds, height}) => (
-    <div className="w-[80%] flex justify-evenly">
-        {runes.map((rune) => (
-            <IconImage
-                key={rune.id}
-                icon={rune.icon}
-                alt={rune.name}
-                className={`${height} ${perkIds.includes(rune.id) ? "border-2 rounded-full border-purple-700" : "filter grayscale brightness-50"}`}
-            />
-        ))}
-    </div>
-)
-
-const RunesList: React.FC<{runes: Perk}> = ({runes}) => {
+const RunesListLiveGame: React.FC<{runes: Perk}> = ({runes}) => {
     const runePrimaryTypeData = runesJson.find((runeType) => runeType.id === runes.perkStyle);
     if (!runePrimaryTypeData) return <span>Primary Rune Type Does Not Exist</span>
     const [slotPrimary0, slotPrimary1, slotPrimary2, slotPrimary3] = runePrimaryTypeData.slots;
@@ -275,7 +243,7 @@ const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolea
                         <hr className="text-neutral-100" />
                         <div className="bg-neutral-900 p-4">
                             <h1 className="text-neutral-100 font-bold p-2 border-l-4 border-l-purple-600">Runes</h1>
-                            <RunesList runes={participant.perks} />
+                            <RunesListLiveGame runes={participant.perks} />
                         </div>
                     </div>
                 </>
