@@ -196,7 +196,7 @@ const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolea
                         <img src={`https://static.bigbrain.gg/assets/lol/ranks/s13/mini/${rankedSoloDuoEntry.tier.toLowerCase()}.svg`} alt={rankedSoloDuoEntry.tier.toLowerCase()} className="h-7" />
                         <div className="flex gap-0.5">
                             <p className="capitalize">{rankedSoloDuoEntry.tier.toLowerCase()} {rankedSoloDuoEntry.rank}</p>
-                            <p>({rankedSoloDuoEntry.LeaguePoints}LP)</p>
+                            <p>({rankedSoloDuoEntry.leaguePoints}LP)</p>
                         </div>
                     </div>
                     <div className="flex flex-col gap-0.5">

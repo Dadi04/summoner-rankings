@@ -397,7 +397,7 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                                     <p className="text-red-500 font-bold text-lg">Defeat</p>
                                 }
                                 <p className="text-neutral-400 text-lg">(Blue Side)</p>
-                                <div className="flex gap-2 font-normal text-2xl text-neutral-200">
+                                <div className="flex gap-2 font-normal text-2xl text-neutral-200 py-2">
                                     <p>Voidgrubs: {blueTeamKills.grubs}</p>
                                     <p>Drakes: {blueTeamKills.dragon}</p>
                                     <p>Herald: {blueTeamKills.herald}</p>
@@ -408,7 +408,7 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                                 </div>
                             </div>
                             <div className={`${blueSideWon ? "bg-[#28344E]" : "bg-[#59343B]"} flex flex-col gap-2 text-sm p-2`}>
-                                {info.participants.filter((participant) => participant.teamId === 100).map(participant => (
+                                {info.participants.filter(participant => participant.teamId === 100).map(participant => (
                                     <div key={participant.puuid} className="grid grid-cols-[40%_10%_10%_10%_30%] items-center gap-2">
                                         <div className="flex gap-2 items-center">
                                             <div className="relative">
@@ -431,7 +431,10 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                                                 <Link to={`/lol/profile/${region}/${participant.riotIdGameName}-${participant.riotIdTagline}`} className={`cursor-pointer hover:underline ${participant.puuid === puuid ? "text-purple-400" : ""}`}>
                                                     {participant.riotIdGameName}
                                                 </Link>
-                                                <p className="text-neutral-300">RANK</p>
+                                                <div className="text-neutral-300 flex items-center gap-1">
+                                                    <img src={`https://static.bigbrain.gg/assets/lol/ranks/s13/mini/${participant.entry.tier.toLowerCase()}.svg`} alt={participant.entry.tier.toLowerCase()} className="h-5" />
+                                                    <p className="capitalize">{participant.entry.tier.toLowerCase()} {participant.entry.rank} {participant.entry.leaguePoints} LP</p>
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="flex items-center">
@@ -470,7 +473,7 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                                     <p className="text-red-500 font-bold text-lg">Defeat</p>
                                 }
                                 <p className="text-neutral-400 text-lg">(Blue Side)</p>
-                                <div className="flex gap-2 font-normal text-2xl text-neutral-200">
+                                <div className="flex gap-2 font-normal text-2xl text-neutral-200 py-2">
                                     <p>Voidgrubs: {redTeamKills.grubs}</p>
                                     <p>Drakes: {redTeamKills.dragon}</p>
                                     <p>Herald: {redTeamKills.herald}</p>
@@ -504,7 +507,10 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                                                 <Link to={`/lol/profile/${region}/${participant.riotIdGameName}-${participant.riotIdTagline}`} className={`cursor-pointer hover:underline ${participant.puuid === puuid ? "text-purple-400" : ""}`}>
                                                     {participant.riotIdGameName}
                                                 </Link>
-                                                <p className="text-neutral-300">RANK</p>
+                                                <div className="text-neutral-300 flex items-center gap-1">
+                                                    <img src={`https://static.bigbrain.gg/assets/lol/ranks/s13/mini/${participant.entry.tier.toLowerCase()}.svg`} alt={participant.entry.tier.toLowerCase()} className="h-5" />
+                                                    <p className="capitalize">{participant.entry.tier.toLowerCase()} {participant.entry.rank} {participant.entry.leaguePoints} LP</p>
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="flex items-center">
@@ -1051,7 +1057,7 @@ const Summoner: React.FC = () => {
                                         {/* copyright issues */}
                                         <img src={`https://dpm.lol/rank/${rankedSoloDuoEntry.tier}.webp`} alt={rankedSoloDuoEntry.tier.toLowerCase()} className="h-25" />
                                         <div className="flex flex-col gap-1 text-center">
-                                            <p className="font-bold text-lg">{rankedSoloDuoEntry.tier} {rankedSoloDuoEntry.rank} {rankedSoloDuoEntry.LeaguePoints} LP</p>
+                                            <p className="font-bold text-lg">{rankedSoloDuoEntry.tier} {rankedSoloDuoEntry.rank} {rankedSoloDuoEntry.leaguePoints} LP</p>
                                             <p>{rankedSoloDuoEntry.wins}W-{rankedSoloDuoEntry.losses}L ({rankedSoloDuoWinrate}%)</p>
                                         </div>
                                     </div>
@@ -1088,7 +1094,7 @@ const Summoner: React.FC = () => {
                                         {/* copyright issues */}
                                         <img src={`https://dpm.lol/rank/${rankedFlexEntry.tier}.webp`} alt={rankedFlexEntry.tier.toLowerCase()} className="h-25" />
                                         <div className="flex flex-col gap-1 text-center">
-                                            <p className="font-bold">{rankedFlexEntry.tier} {rankedFlexEntry.rank} {rankedFlexEntry.LeaguePoints} LP</p>
+                                            <p className="font-bold">{rankedFlexEntry.tier} {rankedFlexEntry.rank} {rankedFlexEntry.leaguePoints} LP</p>
                                             <p>{rankedFlexEntry.wins}W-{rankedFlexEntry.losses}L ({rankedFlexWinrate}%)</p>
                                         </div>
                                     </div>

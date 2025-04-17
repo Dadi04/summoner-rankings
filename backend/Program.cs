@@ -335,6 +335,47 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
                  && match.info.participants != null 
                  && match.info.participants.Any()).ToList();
 
+    var allPuuids = allMatchInfoList
+        .Where(m => m?.info?.participants != null)
+        .SelectMany(m => m!.info!.participants!)
+        .Select(p => p.puuid)
+        .Distinct()
+        .ToList();
+
+    var entryCache = new Dictionary<string, LeagueMatchSoloDuoEntryDto>();
+
+    foreach (var playerUuid in allPuuids) {
+        string entrySoloDuoUrl = $"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{playerUuid}?api_key={apiKey}";
+        var resp = await GetAsyncWithRetry(entrySoloDuoUrl);
+        if (!resp.IsSuccessStatusCode) continue;
+
+        var list = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(
+            await resp.Content.ReadAsStringAsync(),
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+        );
+        var solo = list?.FirstOrDefault(e => e.queueType == "RANKED_SOLO_5x5");
+        if (solo != null) {
+            entryCache[playerUuid] = new LeagueMatchSoloDuoEntryDto {
+                freshBlood = solo.freshBlood,
+                inactive = solo.inactive,
+                veteran = solo.veteran,
+                hotStreak = solo.hotStreak,
+                tier = solo.tier,
+                rank = solo.rank,
+                leaguePoints = solo.leaguePoints,
+                puuid = solo.puuid
+            };
+        }
+    }
+
+    foreach (var match in allMatchInfoList) {
+        if (match == null || match.info == null || match.info.participants == null) continue;
+
+        foreach (var participant in match.info.participants) {
+            if (entryCache.TryGetValue(participant.puuid, out var dto)) participant.entry = dto;
+        }
+    }
+
     int rankedSoloQueueId = 420;
     int rankedFlexQueueId = 440;
 
@@ -836,8 +877,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
     }
     var validExistingDetails = existingMatchDetailsList.Where(m => m != null && m.metadata != null && m.metadata.matchId != null).ToList();
     var validNewDetails = newMatchDetailsList.Where(m => m != null && m.metadata != null && m.metadata.matchId != null).ToList();
-    Console.WriteLine($"Existing matches count: {validExistingDetails.Count}");
-    Console.WriteLine($"New matches count: {validNewDetails.Count}");
+
     var mergedMatchDetails = (
         from m in validExistingDetails.Concat(validNewDetails)
         let matchId = m.metadata?.matchId
@@ -845,7 +885,44 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         group m by matchId into g
         select g.First()
     ).OrderByDescending(m => m.info.gameStartTimestamp).ToList();
-    Console.WriteLine($"Merged match details count: {mergedMatchDetails.Count}");
+
+    var allPuuids = mergedMatchDetails
+        .SelectMany(m => m.info.participants)
+        .Select(p => p.puuid)
+        .Distinct()
+        .ToList();
+        
+    var entryCache = new Dictionary<string, LeagueMatchSoloDuoEntryDto>();
+    foreach (var playerUuid in allPuuids) {
+        string entrySoloDuoUrl = $"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{playerUuid}?api_key={apiKey}";
+        var resp = await GetAsyncWithRetry(entrySoloDuoUrl);
+        if (!resp.IsSuccessStatusCode) continue;
+
+        var list = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(
+            await resp.Content.ReadAsStringAsync(),
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+        );
+
+        var solo = list?.FirstOrDefault(e => e.queueType == "RANKED_SOLO_5x5");
+        if (solo != null)  {
+            entryCache[playerUuid] = new LeagueMatchSoloDuoEntryDto {
+                freshBlood = solo.freshBlood,
+                inactive = solo.inactive,
+                veteran = solo.veteran,
+                hotStreak = solo.hotStreak,
+                tier = solo.tier,
+                rank = solo.rank,
+                leaguePoints = solo.leaguePoints,
+                puuid = solo.puuid
+            };
+        }
+    }
+
+    foreach (var match in mergedMatchDetails) {
+        foreach (var participant in match.info.participants) {
+            if (entryCache.TryGetValue(participant.puuid, out var dto)) participant.entry = dto;
+        }
+    }
 
     List<string> existingMatchIdsList = new List<string>();
     if (!string.IsNullOrEmpty(existingPlayer.AllMatchIds)) {
@@ -1098,7 +1175,11 @@ public class LeagueEntriesDto {
     public string queueType { get; set; } = string.Empty;
     public string tier { get; set; } = string.Empty;
     public string rank { get; set; } = string.Empty;
-    public int LeaguePoints { get; set; }
+    public int leaguePoints { get; set; }
+    public bool freshBlood  { get; set; }
+    public bool inactive  { get; set; }
+    public bool veteran  { get; set; }
+    public bool hotStreak  { get; set; }
     public int wins { get; set; }
     public int losses { get; set; }
 }
@@ -1172,6 +1253,7 @@ public class ParticipantDto {
     public int assists { get; set; }
     public bool firstBloodKill { get; set; }
     public bool firstBloodAssist { get; set; }
+    public LeagueMatchSoloDuoEntryDto entry { get; set; } = new LeagueMatchSoloDuoEntryDto();
 
     // Progression and timing
     public bool eligibleForProgression { get; set; }
@@ -1316,6 +1398,17 @@ public class ParticipantDto {
     public int playerAugment4 { get; set; }
     public int playerSubteamId { get; set; }
     public int placement { get; set; }
+}
+
+public class LeagueMatchSoloDuoEntryDto {
+    public bool freshBlood   { get; set; }
+    public bool inactive     { get; set; }
+    public bool veteran      { get; set; }
+    public bool hotStreak    { get; set; }
+    public string tier       { get; set; } = string.Empty;
+    public string rank       { get; set; } = string.Empty;
+    public int leaguePoints { get; set; }
+    public string puuid      { get; set; } = string.Empty;
 }
 
 public class PerksDto {

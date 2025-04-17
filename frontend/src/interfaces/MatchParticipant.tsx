@@ -11,6 +11,18 @@ interface MatchParticipant {
     assists: number;
     firstBloodKill: number;
     firstBloodAssist: number;
+    entry: {
+        puuid: string;
+    
+        freshBlood: boolean;
+        inactive: boolean;
+        veteran: boolean;
+        hotStreak: boolean;
+    
+        tier: string;
+        rank: string;
+        leaguePoints: number;
+    };
 
     eligibleForProgression: boolean;
     timePlayed: number;
