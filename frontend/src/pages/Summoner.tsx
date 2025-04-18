@@ -286,7 +286,7 @@ const MatchPerformance: React.FC<{info: MatchInfo, puuid: string}> = ({info, puu
             default:
                 return 0;
         }
-    };    
+    };
 
     const handleSort = (field: string) => {
         if (field === "player") {
@@ -952,7 +952,7 @@ const Summoner: React.FC = () => {
     const entriesData = JSON.parse(apiData.entriesData);
     const topMasteriesData = JSON.parse(apiData.topMasteriesData);
     // const allMatchIds = JSON.parse(apiData.allMatchIds);
-    const allMatchesDetailsData = JSON.parse(apiData.allMatchesDetailsData) as Match[];
+    const allMatchesData = JSON.parse(apiData.allMatchesData) as Match[];
     // const challengesData = JSON.parse(apiData.challengesData);
     const spectatorData = JSON.parse(apiData.spectatorData);
     // const clashData = JSON.parse(apiData.clashData);
@@ -1368,8 +1368,8 @@ const Summoner: React.FC = () => {
                         </div>
                         <div className="bg-neutral-800">
                             <div className="flex flex-col gap-1 p-2">
-                                {allMatchesDetailsData.map((match: Match) => (
-                                    <MatchRow info={match.info} puuid={apiData.puuid} region={regionCode} />
+                                {allMatchesData.map((match: Match) => (
+                                    <MatchRow info={match.details.info} puuid={apiData.puuid} region={regionCode} />
                                 ))}
                             </div>
                         </div>

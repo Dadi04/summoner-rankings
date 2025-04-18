@@ -9,7 +9,7 @@ interface Player {
     entriesData: string;
     topMasteriesData: string;
     allMatchIds: string;
-    allMatchesDetailsData: string;
+    allMatchesData: string;
     allGamesChampionStatsData: string;
     allGamesRoleStatsData: string;
     rankedSoloChampionStatsData: string;

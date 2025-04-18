@@ -56,7 +56,11 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("AllMatchesDetailsData")
+                    b.Property<string>("AllMatchIds")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AllMatchesData")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -117,10 +121,6 @@ namespace backend.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TopMasteriesData")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("allMatchIds")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

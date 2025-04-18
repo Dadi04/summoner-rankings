@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace backend.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreatePlayerRace : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -20,9 +20,23 @@ namespace backend.Migrations
                     SummonerName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     SummonerTag = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Region = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Rank = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    LeaguePoints = table.Column<int>(type: "int", nullable: false),
-                    Level = table.Column<int>(type: "int", nullable: false)
+                    Puuid = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PlayerData = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    SummonerData = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    EntriesData = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TopMasteriesData = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AllMatchIds = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AllMatchesData = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AllGamesChampionStatsData = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AllGamesRoleStatsData = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RankedSoloChampionStatsData = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RankedSoloRoleStatsData = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RankedFlexChampionStatsData = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RankedFlexRoleStatsData = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ChallengesData = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    SpectatorData = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ClashData = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AddedAt = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {
