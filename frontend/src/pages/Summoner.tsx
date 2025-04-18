@@ -38,6 +38,7 @@ import fill from "../assets/fill.png";
 import loadingAnimation from "../assets/animations/loading.lottie";
 import arrowdownlight from "../assets/arrow-down-light.png";
 import noneicon from "../assets/none.jpg";
+import map from "../assets/map11.png";
 import allInPing from "../assets/pings/allInPing.webp";
 import assistMePing from "../assets/pings/assistMePing.webp";
 import enemyMissingPing from "../assets/pings/enemyMissingPing.webp";
@@ -68,6 +69,524 @@ const ItemImage: React.FC<{itemId: number; matchWon: boolean; classes: string}> 
 
     return (
         <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/item/${itemId}.png`} alt={`${itemId}`} className={classes} />
+    );
+}
+
+const MatchGeneral: React.FC<{info: MatchInfo, puuid: string, region: string}> = ({info, puuid, region}) => {
+    const blueSideWon = info.participants.find(p => p.teamId === 100)?.win;
+
+    const blueTeamObjectives = info.teams.find(team => team.teamId === 100)?.objectives;
+    const redTeamObjectives = info.teams.find(team => team.teamId === 200)?.objectives;
+
+    const blueTeamKills = {
+        grubs: blueTeamObjectives?.horde.kills,
+        dragon: blueTeamObjectives?.dragon.kills,
+        herald: blueTeamObjectives?.riftHerald.kills,
+        baron: blueTeamObjectives?.baron.kills,
+        atakhan: 999, // /lol/match/v5/matches/{matchId}/timeline
+        turret: blueTeamObjectives?.tower.kills,
+        inhibitor: blueTeamObjectives?.inhibitor.kills
+    };
+
+    const redTeamKills = {
+        grubs: redTeamObjectives?.horde.kills,
+        dragon: redTeamObjectives?.dragon.kills,
+        herald: redTeamObjectives?.riftHerald.kills,
+        baron: redTeamObjectives?.baron.kills,
+        atakhan: 999, // /lol/match/v5/matches/{matchId}/timeline
+        turret: redTeamObjectives?.tower.kills,
+        inhibitor: redTeamObjectives?.inhibitor.kills
+    };
+
+    const blueSideTotalKills = info.participants.filter((p) => p.teamId === 100).reduce((sum, p) => sum + p.kills, 0);
+    const redSideTotalKills = info.participants.filter((p) => p.teamId === 200).reduce((sum, p) => sum + p.kills, 0);
+
+    return ( 
+        <>
+            <div>
+                <div className="flex gap-3 items-center">
+                    {blueSideWon ? 
+                        <p className="text-blue-500 font-bold text-lg">Victory</p> 
+                    : 
+                        <p className="text-red-500 font-bold text-lg">Defeat</p>
+                    }
+                    <p className="text-neutral-400 text-lg">(Blue Side)</p>
+                    <div className="flex gap-2 font-normal text-2xl text-neutral-200 py-2">
+                        <p>Voidgrubs: {blueTeamKills.grubs}</p>
+                        <p>Drakes: {blueTeamKills.dragon}</p>
+                        <p>Herald: {blueTeamKills.herald}</p>
+                        <p>Barons: {blueTeamKills.baron}</p>
+                        <p>Atakhan: {blueTeamKills.atakhan}</p>
+                        <p>Turrets: {blueTeamKills.turret}</p>
+                        <p>Inhibitors: {blueTeamKills.inhibitor}</p>
+                    </div>
+                </div>
+                <div className={`${blueSideWon ? "bg-[#28344E]" : "bg-[#59343B]"} flex flex-col gap-2 text-sm p-2`}>
+                    {info.participants.filter(participant => participant.teamId === 100).map(participant => (
+                        <div key={participant.puuid} className="grid grid-cols-[40%_10%_10%_10%_30%] items-center gap-2">
+                            <div className="flex gap-2 items-center">
+                                <div className="relative">
+                                    <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-12" />
+                                    <p className="absolute text-sm right-0 bottom-0 transform translate-x-[2px] translate-y-[2px] bg-neutral-800 border border-neutral-400 px-0.5">{participant.champLevel}</p>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <SummonerSpellImage spellId={participant.summoner1Id} classes="h-6" />
+                                    <SummonerSpellImage spellId={participant.summoner2Id} classes="h-6" />
+                                </div>
+                                {participant.perks.styles[0].style ? (
+                                    <div className="flex flex-col gap-1">
+                                        <RuneImage runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="h-6" />
+                                        <RuneImage runeTypeId={participant.perks.styles[1].style} classes="h-6" />
+                                    </div>
+                                ) : (
+                                    <></>
+                                )}
+                                <div>
+                                    <Link to={`/lol/profile/${region}/${participant.riotIdGameName}-${participant.riotIdTagline}`} className={`cursor-pointer hover:underline ${participant.puuid === puuid ? "text-purple-400" : ""}`}>
+                                        {participant.riotIdGameName}
+                                    </Link>
+                                    <div className="text-neutral-300 flex items-center gap-1">
+                                        <img src={`https://static.bigbrain.gg/assets/lol/ranks/s13/mini/${participant.entry.tier.toLowerCase()}.svg`} alt={participant.entry.tier.toLowerCase()} className="h-5" />
+                                        <p className="capitalize">{participant.entry.tier.toLowerCase()} {participant.entry.rank} {participant.entry.leaguePoints} LP</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center">
+                                <p className="font-bold text-lg">{participant.kills}</p>
+                                <p className="text-neutral-400 px-2 text-lg">/</p> 
+                                <p className="text-red-500 font-bold text-lg">{participant.deaths}</p> 
+                                <p className="text-neutral-400 px-2 text-lg">/</p> 
+                                <p className="font-bold text-lg">{participant.assists}</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-xl font-normal">{blueSideTotalKills === 0 ? 100 : Math.round(((participant.kills + participant.assists) / blueSideTotalKills) * 100)}%</p>
+                                <p className="text-neutral-400">KP</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-xl text-yellow-200">{((participant.totalMinionsKilled + participant.neutralMinionsKilled)/(info.gameDuration/60)).toFixed(1)}</p>
+                                <p className="text-neutral-400">CS/min</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <ItemImage itemId={participant.item0} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item1} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item2} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item3} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item4} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item5} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item6} matchWon={participant.win} classes="h-8" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <div>
+                <div className="flex gap-3 items-center">
+                    {!blueSideWon ? 
+                        <p className="text-blue-500 font-bold text-lg">Victory</p> 
+                    : 
+                        <p className="text-red-500 font-bold text-lg">Defeat</p>
+                    }
+                    <p className="text-neutral-400 text-lg">(Blue Side)</p>
+                    <div className="flex gap-2 font-normal text-2xl text-neutral-200 py-2">
+                        <p>Voidgrubs: {redTeamKills.grubs}</p>
+                        <p>Drakes: {redTeamKills.dragon}</p>
+                        <p>Herald: {redTeamKills.herald}</p>
+                        <p>Barons: {redTeamKills.baron}</p>
+                        <p>Atakhan: {redTeamKills.atakhan}</p>
+                        <p>Turrets: {redTeamKills.turret}</p>
+                        <p>Inhibitors: {redTeamKills.inhibitor}</p>
+                    </div>
+                </div>
+                <div className={`${!blueSideWon ? "bg-[#28344E]" : "bg-[#59343B]"} flex flex-col gap-2 text-sm p-2`}>
+                    {info.participants.filter(participant => participant.teamId === 200).map(participant => (
+                        <div key={participant.puuid} className="grid grid-cols-[40%_10%_10%_10%_30%] items-center gap-2">
+                            <div className="flex gap-2 items-center">
+                                <div className="relative">
+                                    <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-12" />
+                                    <p className="absolute text-sm right-0 bottom-0 transform translate-x-[2px] translate-y-[2px] bg-neutral-800 border border-neutral-400 px-0.5">{participant.champLevel}</p>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <SummonerSpellImage spellId={participant.summoner1Id} classes="h-6" />
+                                    <SummonerSpellImage spellId={participant.summoner2Id} classes="h-6" />
+                                </div>
+                                {participant.perks.styles[0].style ? (
+                                    <div className="flex flex-col gap-1">
+                                        <RuneImage runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="h-6" />
+                                        <RuneImage runeTypeId={participant.perks.styles[1].style} classes="h-6" />
+                                    </div>
+                                ) : (
+                                    <></>
+                                )}
+                                <div>
+                                    <Link to={`/lol/profile/${region}/${participant.riotIdGameName}-${participant.riotIdTagline}`} className={`cursor-pointer hover:underline ${participant.puuid === puuid ? "text-purple-400" : ""}`}>
+                                        {participant.riotIdGameName}
+                                    </Link>
+                                    <div className="text-neutral-300 flex items-center gap-1">
+                                        <img src={`https://static.bigbrain.gg/assets/lol/ranks/s13/mini/${participant.entry.tier.toLowerCase()}.svg`} alt={participant.entry.tier.toLowerCase()} className="h-5" />
+                                        <p className="capitalize">{participant.entry.tier.toLowerCase()} {participant.entry.rank} {participant.entry.leaguePoints} LP</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center">
+                                <p className="font-bold text-lg">{participant.kills}</p>
+                                <p className="text-neutral-400 px-2 text-lg">/</p> 
+                                <p className="text-red-500 font-bold text-lg">{participant.deaths}</p> 
+                                <p className="text-neutral-400 px-2 text-lg">/</p> 
+                                <p className="font-bold text-lg">{participant.assists}</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-xl font-normal">{redSideTotalKills === 0 ? 100 : Math.round(((participant.kills + participant.assists) / redSideTotalKills) * 100)}%</p>
+                                <p className="text-neutral-400">KP</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-xl text-yellow-200">{((participant.totalMinionsKilled + participant.neutralMinionsKilled)/(info.gameDuration/60)).toFixed(1)}</p>
+                                <p className="text-neutral-400">CS/min</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <ItemImage itemId={participant.item0} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item1} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item2} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item3} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item4} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item5} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item6} matchWon={participant.win} classes="h-8" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </>
+    );
+}
+
+const MatchPerformance: React.FC<{info: MatchInfo, puuid: string}> = ({info, puuid}) => {
+    const [sortBy, setSortBy] = useState<SortField | null>(null);
+    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+    const getSortValue = (participant: MatchParticipant, field: SortField) => {
+        switch (field) {
+            case "kills":
+                return participant.kills;
+            case "deaths":
+                return participant.deaths;
+            case "kda":
+                return participant.deaths === 0 ? Infinity : (participant.kills + participant.assists) / participant.deaths;
+            case "totalDamageDealt":
+                return participant.totalDamageDealtToChampions;
+            case "totalDamageTaken":
+                return participant.totalDamageTaken;
+            case "goldEarned":
+                return participant.goldEarned;
+            case "visionScore":
+                return participant.visionScore;
+            case "wardsPlaced":
+                return participant.wardsPlaced;
+            case "cs":
+                return participant.totalMinionsKilled + participant.neutralMinionsKilled;
+            default:
+                return 0;
+        }
+    };    
+
+    const handleSort = (field: string) => {
+        if (field === "player") {
+            setSortBy(null);
+            setSortOrder("desc");
+        } else {
+            const sortField = field as SortField;
+            if (sortBy === sortField) {
+                setSortOrder(sortOrder === "desc" ? "asc" : "desc");
+            } else {
+                setSortBy(sortField);
+                setSortOrder("desc");
+            }
+        }
+    };
+    
+    const sortedParticipants = useMemo(() => {
+        let sorted = [...info.participants];
+        if (sortBy) {
+            sorted.sort((a, b) => {
+                const aVal = getSortValue(a, sortBy);
+                const bVal = getSortValue(b, sortBy);
+                return sortOrder === "desc" ? bVal - aVal : aVal - bVal;
+            });
+        }
+        return sorted;
+    }, [info.participants, sortBy, sortOrder]);
+
+    return (
+        <>
+            <div className="grid grid-cols-[19%_6%_6%_6%_13%_13%_13%_13%_10%] text-center text-lg py-2 mt-2">
+                <p onClick={() => handleSort("player")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy === null ? "text-white font-bold" : ""}`}>Player</p>
+                <p onClick={() => handleSort("kills")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "kills" ? "text-white font-bold" : ""}`}>Kills</p>
+                <p onClick={() => handleSort("deaths")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "deaths" ? "text-white font-bold" : ""}`}>Deaths</p>
+                <p onClick={() => handleSort("kda")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "kda" ? "text-white font-bold" : ""}`}>KDA</p>
+                <p onClick={() => handleSort("totalDamageDealt")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "totalDamageDealt" ? "text-white font-bold" : ""}`}>Damage dealt</p>
+                <p onClick={() => handleSort("totalDamageTaken")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "totalDamageTaken" ? "text-white font-bold" : ""}`}>Damage taken</p>
+                <p onClick={() => handleSort("goldEarned")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "goldEarned" ? "text-white font-bold" : ""}`}>Gold</p>
+                <p onClick={() => handleSort("visionScore")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "visionScore" ? "text-white font-bold" : ""}`}>Vision score</p>
+                <p onClick={() => handleSort("cs")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "cs" ? "text-white font-bold" : ""}`}>CS</p>
+            </div>
+            <div>
+                {sortedParticipants.map((participant, index: number) => {
+                    const rawKDA = participant.deaths === 0 ? Infinity  : (participant.kills + participant.assists) / participant.deaths;
+                    const displayKDA = participant.deaths === 0 ? "Perfect" : rawKDA.toFixed(2);
+
+                    return (
+                        <div key={index} className={`grid grid-cols-[19%_6%_6%_6%_13%_13%_13%_13%_10%] items-center mt-2 ${participant.win ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                            <div className={`flex items-center text-center gap-0.5 p-2 ${participant.puuid === puuid ? "text-purple-600" : ""}`}>
+                                <div className="relative inline-block">
+                                    <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-12" />
+                                    <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform translate-x-1/8 translate-y-1/8" />
+                                </div>
+                                <p>{participant.riotIdGameName}</p>
+                            </div>
+                            <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "kills" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
+                                <p>{participant.kills}</p>
+                            </div>
+                            <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "deaths" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
+                                <p>{participant.deaths}</p>
+                            </div>
+                            <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "kda" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
+                                <p>{displayKDA}</p>
+                            </div>
+                            <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "totalDamageDealt" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
+                                <p>{participant.totalDamageDealtToChampions}</p>
+                            </div>
+                            <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "totalDamageTaken" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
+                                <p>{participant.totalDamageTaken}</p>
+                            </div>
+                            <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "goldEarned" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
+                                <p>{participant.goldEarned}</p>
+                            </div>
+                            <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "visionScore" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
+                                <p>{participant.visionScore}</p>
+                            </div>
+                            <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "cs" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
+                                <p>{participant.totalMinionsKilled + participant.neutralMinionsKilled}</p>
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+        </>
+    );
+}
+
+const MatchDetails: React.FC<{info: MatchInfo, selectedPlayer: MatchParticipant, champions: any[]}> = ({info, selectedPlayer, champions}) => {
+
+    const champ = champions.find(c => c.id === selectedPlayer.championName);
+    if (!champ) return <div>Champion not found</div>;
+    const { spells,  } = champ;
+
+    const centerPing = { icon: genericPing, count: selectedPlayer.commandPings };
+    const edgePings = [
+        { icon: getBackPing,     count: selectedPlayer.getBackPings },
+        { icon: pushPing,        count: selectedPlayer.pushPings },
+        { icon: onMyWayPing,     count: selectedPlayer.onMyWayPings },
+        { icon: allInPing,       count: selectedPlayer.allInPings },
+        { icon: assistMePing,    count: selectedPlayer.assistMePings },
+        { icon: needVisionPing,  count: selectedPlayer.needVisionPings },
+        { icon: enemyMissingPing,count: selectedPlayer.enemyMissingPings },
+        { icon: enemyVisionPing, count: selectedPlayer.enemyVisionPings },
+    ];
+
+    return (
+        <>
+            <div>
+                <div className="flex justify-between gap-2 my-2">
+                    <div className="w-[33%] bg-neutral-700 p-2">
+                        <h1 className="text-xl text-neutral-300 mb-2">LANING PHASE (AT 15)</h1>
+                        <div className="flex justify-between">
+                            <div className="w-[25%] text-center">
+                                <p>TODO</p>
+                                <p className="text-neutral-400">cs diff</p>
+                            </div>
+                            <div className="w-[25%] text-center">
+                                <p>TODO</p>
+                                <p className="text-neutral-400">gold diff</p>
+                            </div>
+                            <div className="w-[25%] text-center">
+                                <p>TODO</p>
+                                <p className="text-neutral-400">xp diff</p>
+                            </div>
+                            <div className="w-[25%] text-center">
+                                <p>TODO</p>
+                                <p className="text-neutral-400">first lvl 2</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="w-[33%] bg-neutral-700 p-2">
+                        <h1 className="text-xl text-neutral-300 mb-2">WARDS</h1>
+                        <div className="flex justify-between">
+                            <div className="w-[33%] text-center">
+                                <p>{selectedPlayer.wardsPlaced-selectedPlayer.detectorWardsPlaced}</p>
+                                <p className="text-neutral-400">placed</p>
+                            </div>
+                            <div className="w-[33%] text-center">
+                                <p>{selectedPlayer.wardsKilled}</p>
+                                <p className="text-neutral-400">killed</p>
+                            </div>
+                            <div className="w-[33%] text-center">
+                                <p>{selectedPlayer.detectorWardsPlaced}</p>
+                                <p className="text-neutral-400">control</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="w-[33%] bg-neutral-700 p-2">
+                        <h1 className="text-xl text-neutral-300 mb-2">GLOBAL STATS</h1>
+                        <div className="flex justify-between">
+                            <div className="w-[25%] text-center">
+                                <p>{((selectedPlayer.totalMinionsKilled+selectedPlayer.neutralMinionsKilled)/(info.gameDuration/60)).toFixed(1)}</p>
+                                <p className="text-neutral-400">CS/min</p>
+                            </div>
+                            <div className="w-[25%] text-center">
+                                <p>{(selectedPlayer.visionScore/(info.gameDuration/60)).toFixed(1)}</p>
+                                <p className="text-neutral-400">VS/min</p>
+                            </div>
+                            <div className="w-[25%] text-center">
+                                <p>{(selectedPlayer.totalDamageDealtToChampions/(info.gameDuration/60)).toFixed(1)}</p>
+                                <p className="text-neutral-400">DMG/min</p>
+                            </div>
+                            <div className="w-[25%] text-center">
+                                <p>{(selectedPlayer.goldEarned/(info.gameDuration/60)).toFixed(1)}</p>
+                                <p className="text-neutral-400">gold/min</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className="bg-neutral-700 my-2 p-2">
+                <h1 className="text-xl text-neutral-300 mb-2">BUILD ORDER</h1>
+                <div>
+                    TODO
+                </div>
+            </div>
+            <div className="bg-neutral-700 my-2 p-2">
+                <h1 className="text-xl text-neutral-300 mb-2">SKILL ORDER</h1>
+                <div>
+                    TODO
+                </div>
+            </div>
+            <div className="flex my-1 gap-2 items-stretch">
+                <div className="flex-1 flex flex-col gap-2">
+                    <div className="bg-neutral-700 p-2 pb-7">
+                        <h1 className="text-xl text-neutral-300 mb-4">SPELLS CASTED</h1>
+                        <div className="flex justify-around">
+                            <div>
+                                <div className="relative">
+                                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[0].image.full}`} alt="" />
+                                    <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">Q</p>
+                                </div>
+                                <div className="text-center mt-4">
+                                    <p className="font-bold">{selectedPlayer.spell1Casts}</p>
+                                    <p className="text-neutral-400">times</p>
+                                </div>
+                            </div>
+                            <div>
+                                <div className="relative">
+                                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[1].image.full}`} alt="" />
+                                    <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">W</p>
+                                </div>
+                                <div className="text-center mt-4">
+                                    <p className="font-bold">{selectedPlayer.spell2Casts}</p>
+                                    <p className="text-neutral-400">times</p>
+                                </div>
+                            </div>
+                            <div>
+                                <div className="relative">
+                                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[2].image.full}`} alt="" />
+                                    <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">E</p>
+                                </div>
+                                <div className="text-center mt-4">
+                                    <p className="font-bold">{selectedPlayer.spell3Casts}</p>
+                                    <p className="text-neutral-400">times</p>
+                                </div>
+                            </div>
+                            <div>
+                                <div className="relative">
+                                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[3].image.full}`} alt="" />
+                                    <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">R</p>
+                                </div>
+                                <div className="text-center mt-4">
+                                    <p className="font-bold">{selectedPlayer.spell4Casts}</p>
+                                    <p className="text-neutral-400">times</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-neutral-700 p-2 pb-6">
+                        <h1 className="text-xl text-neutral-300 mb-4">SUMMONERS CASTED</h1>
+                        <div className="flex justify-evenly">
+                            <div>
+                                <SummonerSpellImage spellId={selectedPlayer.summoner1Id} />
+                                <div className="text-center mt-4">
+                                    <p className="font-bold">{selectedPlayer.summoner1Casts}</p>
+                                    <p className="text-neutral-400">times</p>
+                                </div>
+                            </div>
+                            <div>
+                                <SummonerSpellImage spellId={selectedPlayer.summoner2Id} />
+                                <div className="text-center mt-4">
+                                    <p className="font-bold">{selectedPlayer.summoner2Casts}</p>
+                                    <p className="text-neutral-400">times</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex-1 flex flex-col bg-neutral-700 p-2 pb-4">
+                    <h1 className="text-xl text-neutral-300 mb-2">PINGS</h1>
+                    <div className="relative w-90 h-90 mx-auto">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-20 h-20 rounded-full flex flex-col items-center justify-center">
+                                <img src={centerPing.icon} alt="generic ping" className="w-14 mb-1" />
+                                <span className="text-lg text-neutral-200">{centerPing.count}</span>
+                            </div>
+                        </div>
+
+                        {edgePings.map((p, i) => {
+                            const angle = (i / edgePings.length) * 360;
+                            return (
+                                <div key={i} className="absolute top-1/2 left-1/2 flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
+                                style={{transform: `rotate(${angle}deg) translateY(-9rem) rotate(-${angle}deg)`}}>
+                                    <img src={p.icon} alt="" className="w-14 mb-1" />
+                                    <span className="text-lg text-neutral-200">{p.count}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+}
+
+const MatchParticipantList: React.FC<{info: MatchInfo; choosePlayerDetails: string; setChoosePlayerDetails: React.Dispatch<React.SetStateAction<string>>; }> = ({info, choosePlayerDetails, setChoosePlayerDetails }) => {
+
+    return (
+        <div className="flex items-center justify-between">
+            <div className="flex gap-3">
+                {info.participants.filter(participant => participant.teamId === 100).map(participant => (
+                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
+                        <ChampionImage championId={participant.championId} teamId={100} isTeamIdSame={false} classes="h-13" />
+                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
+                    </div>
+                ))}
+            </div>
+            <div>
+                <p className="text-neutral-400 text-2xl font-bold gap-1">VS</p>
+            </div>
+            <div className="flex gap-3">
+                {info.participants.filter(participant => participant.teamId === 200).map(participant => (
+                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
+                        <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={false} classes="h-13" />
+                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
+                    </div>
+                ))}
+            </div>
+        </div>
     );
 }
 
@@ -125,17 +644,43 @@ const MatchRunes: React.FC<MatchPerks> = ({ statPerks, styles }) => {
     );
 };
 
+const MatchTimeline: React.FC<{info: MatchInfo; selectedPlayer: MatchParticipant}> = ({info, selectedPlayer}) => {
+    console.log(info, selectedPlayer)
+    return (
+        <>  
+            <div className="flex justify-center gap-4">
+                <div>
+                    <input type="checkbox" />
+                    <span>Kills</span>
+                </div>
+                <div>
+                    <input type="checkbox" />
+                    <span>Objectives</span>
+                </div>
+                <div>
+                    <input type="checkbox" />
+                    <span>Vision</span>
+                </div>
+            </div>
+            <div className="flex">
+                <div className="flex-1">
+                    info
+                </div>
+                <div className="flex-1">
+                    <img src={map} alt="summonersrift" />
+                </div>
+            </div>
+        </>
+    );
+}
+
 const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({info, puuid, region}) => {
     const [showDetailsDiv, setShowDetailsDiv] = useState<boolean>(false);
     const [chooseTab, setChooseTab] = useState<string>("General");
-    const [sortBy, setSortBy] = useState<SortField | null>(null);
-    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
     const [champions, setChampions] = useState<any[]>([]);
 
-    const participant = info.participants.find((p) => p.puuid === puuid);
-    if (!participant) return <div>Player not found</div>;
-
-    const [choosePlayerDetails, setChoosePlayerDetails] = useState(participant.championName);
+    const participant = info.participants.find((p) => p.puuid === puuid)!;
+    const [choosePlayerDetails, setChoosePlayerDetails] = useState<string>(participant.championName);
 
     const queueId = info.queueId;
     const queueData = queueJson.find((item) => item.queueId === queueId);
@@ -144,19 +689,6 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
 
     const selectedPlayer = info.participants.find(participant => participant.championName === choosePlayerDetails);
     if (!selectedPlayer) return <div>Detail not found</div>;
-    
-    useEffect(() => {
-        const fetchChampions = async () => {
-            try {
-                const response = await fetch(`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/data/en_US/championFull.json`);
-                const data = await response.json();
-                setChampions(Object.values(data.data));
-            } catch (error) {
-                console.error(error);
-            }
-        };
-        fetchChampions();
-    }, [DD_VERSION]);
       
     let gameEnded = Math.round((Date.now() - info.gameEndTimestamp)/60000);
     let timeUnit = gameEnded === 1 ? "minute ago" : "minutes ago";
@@ -189,104 +721,19 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
     } else {
         killParticipation = Math.round(((participant.kills + participant.assists) / totalKills) * 100);
     }
-
-    const blueSideWon = info.participants.find(p => p.teamId === 100)?.win;
-
-    const blueTeam = info.teams.find(team => team.teamId === 100)?.objectives;
-    const redTeam = info.teams.find(team => team.teamId === 200)?.objectives;
-
-    const blueTeamKills = {
-        grubs: blueTeam?.horde.kills,
-        dragon: blueTeam?.dragon.kills,
-        herald: blueTeam?.riftHerald.kills,
-        baron: blueTeam?.baron.kills,
-        atakhan: 999, // /lol/match/v5/matches/{matchId}/timeline
-        turret: blueTeam?.tower.kills,
-        inhibitor: blueTeam?.inhibitor.kills
-    };
-
-    const redTeamKills = {
-        grubs: redTeam?.horde.kills,
-        dragon: redTeam?.dragon.kills,
-        herald: redTeam?.riftHerald.kills,
-        baron: redTeam?.baron.kills,
-        atakhan: 999, // /lol/match/v5/matches/{matchId}/timeline
-        turret: redTeam?.tower.kills,
-        inhibitor: redTeam?.inhibitor.kills
-    };
-
-    const blueSideTotalKills = info.participants.filter((p) => p.teamId === 100).reduce((sum, p) => sum + p.kills, 0);
-    const redSideTotalKills = info.participants.filter((p) => p.teamId === 200).reduce((sum, p) => sum + p.kills, 0);
-
-    const getSortValue = (participant: MatchParticipant, field: SortField) => {
-        switch (field) {
-            case "kills":
-                return participant.kills;
-            case "deaths":
-                return participant.deaths;
-            case "kda":
-                return participant.deaths === 0
-                ? participant.kills + participant.assists
-                : (participant.kills + participant.assists) / participant.deaths;
-            case "totalDamageDealt":
-                return participant.totalDamageDealtToChampions;
-            case "totalDamageTaken":
-                return participant.totalDamageTaken;
-            case "goldEarned":
-                return participant.goldEarned;
-            case "visionScore":
-                return participant.visionScore;
-            case "wardsPlaced":
-                return participant.wardsPlaced;
-            case "cs":
-                return participant.totalMinionsKilled + participant.neutralMinionsKilled;
-            default:
-                return 0;
-        }
-    };    
-
-    const handleSort = (field: string) => {
-        if (field === "player") {
-            setSortBy(null);
-            setSortOrder("desc");
-        } else {
-            const sortField = field as SortField;
-            if (sortBy === sortField) {
-                setSortOrder(sortOrder === "desc" ? "asc" : "desc");
-            } else {
-                setSortBy(sortField);
-                setSortOrder("desc");
+ 
+    useEffect(() => {
+        const fetchChampions = async () => {
+            try {
+                const response = await fetch(`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/data/en_US/championFull.json`);
+                const data = await response.json();
+                setChampions(Object.values(data.data));
+            } catch (error) {
+                console.error(error);
             }
-        }
-    };
-    
-    const sortedParticipants = useMemo(() => {
-        let sorted = [...info.participants];
-        if (sortBy) {
-            sorted.sort((a, b) => {
-                const aVal = getSortValue(a, sortBy);
-                const bVal = getSortValue(b, sortBy);
-                return sortOrder === "desc" ? bVal - aVal : aVal - bVal;
-            });
-        }
-        return sorted;
-    }, [info.participants, sortBy, sortOrder]);
-
-    const champ = champions.find(c => c.id === selectedPlayer.championName);
-    if (!champ) return <div>Champion not found</div>;
-    const { spells,  } = champ;
-
-    const centerPing = { icon: genericPing, count: selectedPlayer.commandPings };
-    const edgePings = [
-        { icon: getBackPing,     count: selectedPlayer.getBackPings },
-        { icon: pushPing,        count: selectedPlayer.pushPings },
-        { icon: onMyWayPing,     count: selectedPlayer.onMyWayPings },
-        { icon: allInPing,       count: selectedPlayer.allInPings },
-        { icon: assistMePing,    count: selectedPlayer.assistMePings },
-        { icon: needVisionPing,  count: selectedPlayer.needVisionPings },
-        { icon: enemyMissingPing,count: selectedPlayer.enemyMissingPings },
-        { icon: enemyVisionPing, count: selectedPlayer.enemyVisionPings },
-    ];
+        };
+        fetchChampions();
+    }, [DD_VERSION]);
 
     return (
         <>
@@ -379,7 +826,8 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                     <img src={arrowdownlight} alt="arrow-down-light" className={`h-10 transform transition-transform ${showDetailsDiv ? "rotate-180" : ""}`} />
                 </div>
             </div>
-            <div className={`bg-neutral-800 overflow-hidden transition-all duration-300 ease-in-out ${showDetailsDiv ? "max-h-[1000px] pt-2" : "max-h-0 pt-0"}`}>
+            {/* <div className={`bg-neutral-800 overflow-hidden transition-all duration-300 ease-in-out ${showDetailsDiv ? "max-h-[1000px] pt-2" : "max-h-0 pt-0"}`}> */}
+            <div className={`bg-neutral-800 ${showDetailsDiv ? "block py-2" : "hidden"}`}>
                 <div className="flex justify-around">
                     <p onClick={() => setChooseTab("General")} className={`${chooseTab === "General" ? "bg-neutral-600" : ""} text-xl px-4 py-2 rounded-xl cursor-pointer transition-all hover:text-neutral-300`}>General</p>
                     <p onClick={() => setChooseTab("Performance")} className={`${chooseTab === "Performance" ? "bg-neutral-600" : ""} text-xl px-4 py-2 rounded-xl cursor-pointer transition-all hover:text-neutral-300`}>Performance</p>
@@ -389,451 +837,30 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                 </div>
                 {chooseTab === "General" && (
                     <div className="mt-2 mb-1">
-                        <div>
-                            <div className="flex gap-3 items-center">
-                                {blueSideWon ? 
-                                    <p className="text-blue-500 font-bold text-lg">Victory</p> 
-                                : 
-                                    <p className="text-red-500 font-bold text-lg">Defeat</p>
-                                }
-                                <p className="text-neutral-400 text-lg">(Blue Side)</p>
-                                <div className="flex gap-2 font-normal text-2xl text-neutral-200 py-2">
-                                    <p>Voidgrubs: {blueTeamKills.grubs}</p>
-                                    <p>Drakes: {blueTeamKills.dragon}</p>
-                                    <p>Herald: {blueTeamKills.herald}</p>
-                                    <p>Barons: {blueTeamKills.baron}</p>
-                                    <p>Atakhan: {blueTeamKills.atakhan}</p>
-                                    <p>Turrets: {blueTeamKills.turret}</p>
-                                    <p>Inhibitors: {blueTeamKills.inhibitor}</p>
-                                </div>
-                            </div>
-                            <div className={`${blueSideWon ? "bg-[#28344E]" : "bg-[#59343B]"} flex flex-col gap-2 text-sm p-2`}>
-                                {info.participants.filter(participant => participant.teamId === 100).map(participant => (
-                                    <div key={participant.puuid} className="grid grid-cols-[40%_10%_10%_10%_30%] items-center gap-2">
-                                        <div className="flex gap-2 items-center">
-                                            <div className="relative">
-                                                <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-12" />
-                                                <p className="absolute text-sm right-0 bottom-0 transform translate-x-[2px] translate-y-[2px] bg-neutral-800 border border-neutral-400 px-0.5">{participant.champLevel}</p>
-                                            </div>
-                                            <div className="flex flex-col gap-1">
-                                                <SummonerSpellImage spellId={participant.summoner1Id} classes="h-6" />
-                                                <SummonerSpellImage spellId={participant.summoner2Id} classes="h-6" />
-                                            </div>
-                                            {participant.perks.styles[0].style ? (
-                                                <div className="flex flex-col gap-1">
-                                                    <RuneImage runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="h-6" />
-                                                    <RuneImage runeTypeId={participant.perks.styles[1].style} classes="h-6" />
-                                                </div>
-                                            ) : (
-                                                <></>
-                                            )}
-                                            <div>
-                                                <Link to={`/lol/profile/${region}/${participant.riotIdGameName}-${participant.riotIdTagline}`} className={`cursor-pointer hover:underline ${participant.puuid === puuid ? "text-purple-400" : ""}`}>
-                                                    {participant.riotIdGameName}
-                                                </Link>
-                                                <div className="text-neutral-300 flex items-center gap-1">
-                                                    <img src={`https://static.bigbrain.gg/assets/lol/ranks/s13/mini/${participant.entry.tier.toLowerCase()}.svg`} alt={participant.entry.tier.toLowerCase()} className="h-5" />
-                                                    <p className="capitalize">{participant.entry.tier.toLowerCase()} {participant.entry.rank} {participant.entry.leaguePoints} LP</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center">
-                                            <p className="font-bold text-lg">{participant.kills}</p>
-                                            <p className="text-neutral-400 px-2 text-lg">/</p> 
-                                            <p className="text-red-500 font-bold text-lg">{participant.deaths}</p> 
-                                            <p className="text-neutral-400 px-2 text-lg">/</p> 
-                                            <p className="font-bold text-lg">{participant.assists}</p>
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="text-xl font-normal">{blueSideTotalKills === 0 ? 100 : killParticipation = Math.round(((participant.kills + participant.assists) / blueSideTotalKills) * 100)}%</p>
-                                            <p className="text-neutral-400">KP</p>
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="text-xl text-yellow-200">{((participant.totalMinionsKilled + participant.neutralMinionsKilled)/(info.gameDuration/60)).toFixed(1)}</p>
-                                            <p className="text-neutral-400">CS/min</p>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <ItemImage itemId={participant.item0} matchWon={participant.win} classes="h-8" />
-                                            <ItemImage itemId={participant.item1} matchWon={participant.win} classes="h-8" />
-                                            <ItemImage itemId={participant.item2} matchWon={participant.win} classes="h-8" />
-                                            <ItemImage itemId={participant.item3} matchWon={participant.win} classes="h-8" />
-                                            <ItemImage itemId={participant.item4} matchWon={participant.win} classes="h-8" />
-                                            <ItemImage itemId={participant.item5} matchWon={participant.win} classes="h-8" />
-                                            <ItemImage itemId={participant.item6} matchWon={participant.win} classes="h-8" />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div>
-                            <div className="flex gap-3 items-center">
-                                {!blueSideWon ? 
-                                    <p className="text-blue-500 font-bold text-lg">Victory</p> 
-                                : 
-                                    <p className="text-red-500 font-bold text-lg">Defeat</p>
-                                }
-                                <p className="text-neutral-400 text-lg">(Blue Side)</p>
-                                <div className="flex gap-2 font-normal text-2xl text-neutral-200 py-2">
-                                    <p>Voidgrubs: {redTeamKills.grubs}</p>
-                                    <p>Drakes: {redTeamKills.dragon}</p>
-                                    <p>Herald: {redTeamKills.herald}</p>
-                                    <p>Barons: {redTeamKills.baron}</p>
-                                    <p>Atakhan: {redTeamKills.atakhan}</p>
-                                    <p>Turrets: {redTeamKills.turret}</p>
-                                    <p>Inhibitors: {redTeamKills.inhibitor}</p>
-                                </div>
-                            </div>
-                            <div className={`${!blueSideWon ? "bg-[#28344E]" : "bg-[#59343B]"} flex flex-col gap-2 text-sm p-2`}>
-                                {info.participants.filter(participant => participant.teamId === 200).map(participant => (
-                                    <div key={participant.puuid} className="grid grid-cols-[40%_10%_10%_10%_30%] items-center gap-2">
-                                        <div className="flex gap-2 items-center">
-                                            <div className="relative">
-                                                <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-12" />
-                                                <p className="absolute text-sm right-0 bottom-0 transform translate-x-[2px] translate-y-[2px] bg-neutral-800 border border-neutral-400 px-0.5">{participant.champLevel}</p>
-                                            </div>
-                                            <div className="flex flex-col gap-1">
-                                                <SummonerSpellImage spellId={participant.summoner1Id} classes="h-6" />
-                                                <SummonerSpellImage spellId={participant.summoner2Id} classes="h-6" />
-                                            </div>
-                                            {participant.perks.styles[0].style ? (
-                                                <div className="flex flex-col gap-1">
-                                                    <RuneImage runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="h-6" />
-                                                    <RuneImage runeTypeId={participant.perks.styles[1].style} classes="h-6" />
-                                                </div>
-                                            ) : (
-                                                <></>
-                                            )}
-                                            <div>
-                                                <Link to={`/lol/profile/${region}/${participant.riotIdGameName}-${participant.riotIdTagline}`} className={`cursor-pointer hover:underline ${participant.puuid === puuid ? "text-purple-400" : ""}`}>
-                                                    {participant.riotIdGameName}
-                                                </Link>
-                                                <div className="text-neutral-300 flex items-center gap-1">
-                                                    <img src={`https://static.bigbrain.gg/assets/lol/ranks/s13/mini/${participant.entry.tier.toLowerCase()}.svg`} alt={participant.entry.tier.toLowerCase()} className="h-5" />
-                                                    <p className="capitalize">{participant.entry.tier.toLowerCase()} {participant.entry.rank} {participant.entry.leaguePoints} LP</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center">
-                                            <p className="font-bold text-lg">{participant.kills}</p>
-                                            <p className="text-neutral-400 px-2 text-lg">/</p> 
-                                            <p className="text-red-500 font-bold text-lg">{participant.deaths}</p> 
-                                            <p className="text-neutral-400 px-2 text-lg">/</p> 
-                                            <p className="font-bold text-lg">{participant.assists}</p>
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="text-xl font-normal">{redSideTotalKills === 0 ? 100 : killParticipation = Math.round(((participant.kills + participant.assists) / redSideTotalKills) * 100)}%</p>
-                                            <p className="text-neutral-400">KP</p>
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="text-xl text-yellow-200">{((participant.totalMinionsKilled + participant.neutralMinionsKilled)/(info.gameDuration/60)).toFixed(1)}</p>
-                                            <p className="text-neutral-400">CS/min</p>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <ItemImage itemId={participant.item0} matchWon={participant.win} classes="h-8" />
-                                            <ItemImage itemId={participant.item1} matchWon={participant.win} classes="h-8" />
-                                            <ItemImage itemId={participant.item2} matchWon={participant.win} classes="h-8" />
-                                            <ItemImage itemId={participant.item3} matchWon={participant.win} classes="h-8" />
-                                            <ItemImage itemId={participant.item4} matchWon={participant.win} classes="h-8" />
-                                            <ItemImage itemId={participant.item5} matchWon={participant.win} classes="h-8" />
-                                            <ItemImage itemId={participant.item6} matchWon={participant.win} classes="h-8" />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                        <MatchGeneral info={info} puuid={puuid} region={region} />
                     </div>
                 )}
                 {chooseTab === "Performance" && (
                     <div className="mt-2 mb-1">
-                        <div className="grid grid-cols-[19%_6%_6%_6%_13%_13%_13%_13%_10%] text-center text-lg py-2 mt-2">
-                            <p onClick={() => handleSort("player")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy === null ? "text-white font-bold" : ""}`}>Player</p>
-                            <p onClick={() => handleSort("kills")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "kills" ? "text-white font-bold" : ""}`}>Kills</p>
-                            <p onClick={() => handleSort("deaths")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "deaths" ? "text-white font-bold" : ""}`}>Deaths</p>
-                            <p onClick={() => handleSort("kda")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "kda" ? "text-white font-bold" : ""}`}>KDA</p>
-                            <p onClick={() => handleSort("totalDamageDealt")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "totalDamageDealt" ? "text-white font-bold" : ""}`}>Damage dealt</p>
-                            <p onClick={() => handleSort("totalDamageTaken")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "totalDamageTaken" ? "text-white font-bold" : ""}`}>Damage taken</p>
-                            <p onClick={() => handleSort("goldEarned")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "goldEarned" ? "text-white font-bold" : ""}`}>Gold</p>
-                            <p onClick={() => handleSort("visionScore")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "visionScore" ? "text-white font-bold" : ""}`}>Vision score</p>
-                            <p onClick={() => handleSort("cs")} className={`cursor-pointer transition-all duration-150 hover:text-white hover:font-bold ${sortBy as string === "cs" ? "text-white font-bold" : ""}`}>CS</p>
-                        </div>
-                        <div>
-                            {sortedParticipants.map((participant, index: number) => (
-                                <div key={index} className={`grid grid-cols-[19%_6%_6%_6%_13%_13%_13%_13%_10%] items-center mt-2 ${participant.win ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
-                                    <div className={`flex items-center text-center gap-0.5 p-2 ${participant.puuid === puuid ? "text-purple-600" : ""}`}>
-                                        <div className="relative inline-block">
-                                            <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-12" />
-                                            <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform translate-x-1/8 translate-y-1/8" />
-                                        </div>
-                                        <p>{participant.riotIdGameName}</p>
-                                    </div>
-                                    <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "kills" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
-                                        <p>{participant.kills}</p>
-                                    </div>
-                                    <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "deaths" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
-                                        <p>{participant.deaths}</p>
-                                    </div>
-                                    <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "kda" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
-                                        <p>{((participant.kills + participant.assists) / participant.deaths).toFixed(2)}</p>
-                                    </div>
-                                    <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "totalDamageDealt" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
-                                        <p>{participant.totalDamageDealtToChampions}</p>
-                                    </div>
-                                    <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "totalDamageTaken" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
-                                        <p>{participant.totalDamageTaken}</p>
-                                    </div>
-                                    <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "goldEarned" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
-                                        <p>{participant.goldEarned}</p>
-                                    </div>
-                                    <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "visionScore" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
-                                        <p>{participant.visionScore}</p>
-                                    </div>
-                                    <div className={`flex items-center justify-center h-full text-center ${sortBy as string === "cs" ? `text-white font-bold ${participant.win ? "bg-[#2F436E]" : "bg-[#703C47]"}` : ""}`}>
-                                        <p>{participant.totalMinionsKilled + participant.neutralMinionsKilled}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        <MatchPerformance info={info} puuid={puuid} />
                     </div>
                 )}
                 {chooseTab === "Details" && (
-                    <div className="mt-2">
-                        <div className="flex items-center justify-between">
-                            <div className="flex gap-3">
-                                {info.participants.filter(participant => participant.teamId === 100).map(participant => (
-                                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
-                                        <ChampionImage championId={participant.championId} teamId={100} isTeamIdSame={false} classes="h-13" />
-                                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
-                                    </div>
-                                ))}
-                            </div>
-                            <div>
-                                <p className="text-neutral-400 text-2xl font-bold gap-1">VS</p>
-                            </div>
-                            <div className="flex gap-3">
-                                {info.participants.filter(participant => participant.teamId === 200).map(participant => (
-                                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
-                                        <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={false} classes="h-13" />
-                                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div>
-                            <div className="flex justify-between gap-2 my-2">
-                                <div className="w-[33%] bg-neutral-700 p-2">
-                                    <h1 className="text-xl text-neutral-300 mb-2">LANING PHASE (AT 15)</h1>
-                                    <div className="flex justify-between">
-                                        <div className="w-[25%] text-center">
-                                            <p>TODO</p>
-                                            <p className="text-neutral-400">cs diff</p>
-                                        </div>
-                                        <div className="w-[25%] text-center">
-                                            <p>TODO</p>
-                                            <p className="text-neutral-400">gold diff</p>
-                                        </div>
-                                        <div className="w-[25%] text-center">
-                                            <p>TODO</p>
-                                            <p className="text-neutral-400">xp diff</p>
-                                        </div>
-                                        <div className="w-[25%] text-center">
-                                            <p>TODO</p>
-                                            <p className="text-neutral-400">first lvl 2</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="w-[33%] bg-neutral-700 p-2">
-                                    <h1 className="text-xl text-neutral-300 mb-2">WARDS</h1>
-                                    <div className="flex justify-between">
-                                        <div className="w-[33%] text-center">
-                                            <p>{selectedPlayer.wardsPlaced-selectedPlayer.detectorWardsPlaced}</p>
-                                            <p className="text-neutral-400">placed</p>
-                                        </div>
-                                        <div className="w-[33%] text-center">
-                                            <p>{selectedPlayer.wardsKilled}</p>
-                                            <p className="text-neutral-400">killed</p>
-                                        </div>
-                                        <div className="w-[33%] text-center">
-                                            <p>{selectedPlayer.detectorWardsPlaced}</p>
-                                            <p className="text-neutral-400">control</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="w-[33%] bg-neutral-700 p-2">
-                                    <h1 className="text-xl text-neutral-300 mb-2">GLOBAL STATS</h1>
-                                    <div className="flex justify-between">
-                                        <div className="w-[25%] text-center">
-                                            <p>{((selectedPlayer.totalMinionsKilled+selectedPlayer.neutralMinionsKilled)/(info.gameDuration/60)).toFixed(1)}</p>
-                                            <p className="text-neutral-400">CS/min</p>
-                                        </div>
-                                        <div className="w-[25%] text-center">
-                                            <p>{(selectedPlayer.visionScore/(info.gameDuration/60)).toFixed(1)}</p>
-                                            <p className="text-neutral-400">VS/min</p>
-                                        </div>
-                                        <div className="w-[25%] text-center">
-                                            <p>{(selectedPlayer.totalDamageDealtToChampions/(info.gameDuration/60)).toFixed(1)}</p>
-                                            <p className="text-neutral-400">DMG/min</p>
-                                        </div>
-                                        <div className="w-[25%] text-center">
-                                            <p>{(selectedPlayer.goldEarned/(info.gameDuration/60)).toFixed(1)}</p>
-                                            <p className="text-neutral-400">gold/min</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="bg-neutral-700 my-2 p-2">
-                            <h1 className="text-xl text-neutral-300 mb-2">BUILD ORDER</h1>
-                            <div>
-                                TODO
-                            </div>
-                        </div>
-                        <div className="bg-neutral-700 my-2 p-2">
-                            <h1 className="text-xl text-neutral-300 mb-2">SKILL ORDER</h1>
-                            <div>
-                                TODO
-                            </div>
-                        </div>
-                        <div className="flex my-1 gap-2 items-stretch">
-                            <div className="flex-1 flex flex-col gap-2">
-                                <div className="bg-neutral-700 p-2 pb-7">
-                                    <h1 className="text-xl text-neutral-300 mb-4">SPELLS CASTED</h1>
-                                    <div className="flex justify-around">
-                                        <div>
-                                            <div className="relative">
-                                                <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[0].image.full}`} alt="" />
-                                                <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">Q</p>
-                                            </div>
-                                            <div className="text-center mt-4">
-                                                <p className="font-bold">{selectedPlayer.spell1Casts}</p>
-                                                <p className="text-neutral-400">times</p>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="relative">
-                                                <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[1].image.full}`} alt="" />
-                                                <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">W</p>
-                                            </div>
-                                            <div className="text-center mt-4">
-                                                <p className="font-bold">{selectedPlayer.spell2Casts}</p>
-                                                <p className="text-neutral-400">times</p>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="relative">
-                                                <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[2].image.full}`} alt="" />
-                                                <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">E</p>
-                                            </div>
-                                            <div className="text-center mt-4">
-                                                <p className="font-bold">{selectedPlayer.spell3Casts}</p>
-                                                <p className="text-neutral-400">times</p>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="relative">
-                                                <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[3].image.full}`} alt="" />
-                                                <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">R</p>
-                                            </div>
-                                            <div className="text-center mt-4">
-                                                <p className="font-bold">{selectedPlayer.spell4Casts}</p>
-                                                <p className="text-neutral-400">times</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="bg-neutral-700 p-2 pb-6">
-                                    <h1 className="text-xl text-neutral-300 mb-4">SUMMONERS CASTED</h1>
-                                    <div className="flex justify-evenly">
-                                        <div>
-                                            <SummonerSpellImage spellId={selectedPlayer.summoner1Id} />
-                                            <div className="text-center mt-4">
-                                                <p className="font-bold">{selectedPlayer.summoner1Casts}</p>
-                                                <p className="text-neutral-400">times</p>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <SummonerSpellImage spellId={selectedPlayer.summoner2Id} />
-                                            <div className="text-center mt-4">
-                                                <p className="font-bold">{selectedPlayer.summoner2Casts}</p>
-                                                <p className="text-neutral-400">times</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex-1 flex flex-col bg-neutral-700 p-2 pb-4">
-                                <h1 className="text-xl text-neutral-300 mb-2">PINGS</h1>
-                                <div className="relative w-90 h-90 mx-auto">
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <div className="w-20 h-20 rounded-full flex flex-col items-center justify-center">
-                                            <img src={centerPing.icon} alt="generic ping" className="w-14 mb-1" />
-                                            <span className="text-lg text-neutral-200">{centerPing.count}</span>
-                                        </div>
-                                    </div>
-
-                                    {edgePings.map((p, i) => {
-                                        const angle = (i / edgePings.length) * 360;
-                                        return (
-                                            <div key={i} className="absolute top-1/2 left-1/2 flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
-                                            style={{transform: `rotate(${angle}deg) translateY(-9rem) rotate(-${angle}deg)`}}>
-                                                <img src={p.icon} alt="" className="w-14 mb-1" />
-                                                <span className="text-lg text-neutral-200">{p.count}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </div>
+                    <div className="mt-2 mb-1">
+                        <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} />
+                        <MatchDetails info={info} selectedPlayer={selectedPlayer} champions={champions} />
                     </div>
                 )}
                 {chooseTab === "Runes" && (
-                    <div className="mt-2">
-                        <div className="flex items-center justify-between">
-                            <div className="flex gap-3">
-                                {info.participants.filter(participant => participant.teamId === 100).map(participant => (
-                                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
-                                        <ChampionImage championId={participant.championId} teamId={100} isTeamIdSame={false} classes="h-13" />
-                                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
-                                    </div>
-                                ))}
-                            </div>
-                            <div>
-                                <p className="text-neutral-400 text-2xl font-bold gap-1">VS</p>
-                            </div>
-                            <div className="flex gap-3">
-                                {info.participants.filter(participant => participant.teamId === 200).map(participant => (
-                                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
-                                        <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={false} classes="h-13" />
-                                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                    <div className="mt-2 mb-1">
+                        <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} />
                         <MatchRunes statPerks={selectedPlayer.perks.statPerks} styles={selectedPlayer.perks.styles} />
                     </div>
                 )}
                 {chooseTab === "Timeline" && (
-                    <div className="mt-2">
-                        <div className="flex items-center justify-between">
-                            <div className="flex gap-3">
-                                {info.participants.filter(participant => participant.teamId === 100).map(participant => (
-                                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
-                                        <ChampionImage championId={participant.championId} teamId={100} isTeamIdSame={false} classes="h-13" />
-                                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
-                                    </div>
-                                ))}
-                            </div>
-                            <div>
-                                <p className="text-neutral-400 text-2xl font-bold gap-1">VS</p>
-                            </div>
-                            <div className="flex gap-3">
-                                {info.participants.filter(participant => participant.teamId === 200).map(participant => (
-                                    <div key={participant.championId} onClick={() => setChoosePlayerDetails(participant.championName)} className={`relative p-2 transition hover:bg-neutral-700 ${choosePlayerDetails === participant.championName ? "bg-neutral-700" : ""}`}>
-                                        <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={false} classes="h-13" />
-                                        <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform -translate-x-1/3 -translate-y-1/3" />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                    <div className="mt-2 mb-1">
+                        <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} />
+                        <MatchTimeline info={info} selectedPlayer={selectedPlayer} />
                     </div>
                 )}
             </div>
