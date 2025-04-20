@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using backend.Services;
 
@@ -11,9 +12,11 @@ using backend.Services;
 namespace backend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250419180401_RemovedChallengesDataFromPlayer")]
+    partial class RemovedChallengesDataFromPlayer
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -72,6 +75,10 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("PlayerData")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Puuid")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -121,32 +128,6 @@ namespace backend.Migrations
                     b.ToTable("Players");
                 });
 
-            modelBuilder.Entity("backend.Models.PlayerMatch", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("MatchIndex")
-                        .HasColumnType("int");
-
-                    b.Property<string>("MatchJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("PlayerId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PlayerId", "MatchIndex")
-                        .HasDatabaseName("IX_PlayerMatches_PlayerId_MatchIndex");
-
-                    b.ToTable("PlayerMatches");
-                });
-
             modelBuilder.Entity("backend.Models.Race", b =>
                 {
                     b.Property<int>("Id")
@@ -180,17 +161,6 @@ namespace backend.Migrations
                         .HasForeignKey("RacesId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("backend.Models.PlayerMatch", b =>
-                {
-                    b.HasOne("backend.Models.Player", "Player")
-                        .WithMany()
-                        .HasForeignKey("PlayerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Player");
                 });
 #pragma warning restore 612, 618
         }

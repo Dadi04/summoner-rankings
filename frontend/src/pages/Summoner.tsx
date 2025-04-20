@@ -22,6 +22,7 @@ import MatchPerks from "../interfaces/MatchPerks";
 import IconImage from "../components/IconImage";
 import RuneSlot from "../components/RuneSlot";
 import ShardSlot from "../components/ShardSlot";
+// import SummonerInfo from "../interfaces/SummonerInfo";
 
 import queueJson from "../assets/json/queues.json";
 import runesJson from "../assets/json/runes.json";
@@ -39,6 +40,20 @@ import loadingAnimation from "../assets/animations/loading.lottie";
 import arrowdownlight from "../assets/arrow-down-light.png";
 import noneicon from "../assets/none.jpg";
 import map from "../assets/map11.png";
+import grubsicon from "../assets/monsters/grubs.png";
+import drakeicon from "../assets/monsters/dragon.png";
+import air_drakeicon from "../assets/monsters/dragon_cloud.png";
+import earth_drakeicon from "../assets/monsters/dragon_mountain.png";
+import fire_drakeicon from "../assets/monsters/dragon_infernal.png";
+import water_drakeicon from "../assets/monsters/dragon_ocean.png";
+import chemtech_drakeicon from "../assets/monsters/dragon_chemtech.png";
+import hextech_drakeicon from "../assets/monsters/dragon_hextech.png";
+import elder_drakeicon from "../assets/monsters/dragon_elder.png";
+import heraldicon from "../assets/monsters/riftherald.png";
+import baronicon from "../assets/monsters/baron.png";
+import atakhanicon from "../assets/monsters/atakhan.png";
+import turreticon from "../assets/monsters/tower.png";
+import inhibitoricon from "../assets/monsters/inhibitor.png";
 import allInPing from "../assets/pings/allInPing.webp";
 import assistMePing from "../assets/pings/assistMePing.webp";
 import enemyMissingPing from "../assets/pings/enemyMissingPing.webp";
@@ -50,15 +65,24 @@ import onMyWayPing from "../assets/pings/onMyWayPing.webp";
 import pushPing from "../assets/pings/pushPing.webp";
 
 type SortField = 
-  | "kills"
-  | "deaths"
-  | "kda"
-  | "totalDamageDealt"
-  | "totalDamageTaken"
-  | "goldEarned"
-  | "visionScore"
-  | "wardsPlaced"
-  | "cs";
+    | "kills"
+    | "deaths"
+    | "kda"
+    | "totalDamageDealt"
+    | "totalDamageTaken"
+    | "goldEarned"
+    | "visionScore"
+    | "wardsPlaced"
+    | "cs";
+
+type Role = "TOP" | "JUNGLE" | "MIDDLE" | "BOTTOM" | "UTILITY";  
+const roleLabels: { role: Role; label: string }[] = [
+    { role: "TOP", label: "Top" },
+    { role: "JUNGLE", label: "Jungle" },
+    { role: "MIDDLE", label: "Middle" },
+    { role: "BOTTOM", label: "Bottom" },
+    { role: "UTILITY", label: "Support" },
+];  
 
 const ItemImage: React.FC<{itemId: number; matchWon: boolean; classes: string}> = ({itemId, matchWon, classes}) => {
     if (itemId === 0) {
@@ -72,18 +96,51 @@ const ItemImage: React.FC<{itemId: number; matchWon: boolean; classes: string}> 
     );
 }
 
-const MatchGeneral: React.FC<{info: MatchInfo, puuid: string, region: string}> = ({info, puuid, region}) => {
+const MatchGeneral: React.FC<{info: MatchInfo, timeline: string; puuid: string, region: string}> = ({info, timeline, puuid, region}) => {
     const blueSideWon = info.participants.find(p => p.teamId === 100)?.win;
 
     const blueTeamObjectives = info.teams.find(team => team.teamId === 100)?.objectives;
     const redTeamObjectives = info.teams.find(team => team.teamId === 200)?.objectives;
+    let teamThatKilledAtakhan = null;
+
+    const dragonTypes = ['AIR_DRAGON', 'EARTH_DRAGON', 'FIRE_DRAGON', 'WATER_DRAGON', 'CHEMTECH_DRAGON', 'HEXTECH_DRAGON', 'ELDER_DRAGON'];
+    const dragonKills = {
+        blue: Object.fromEntries(dragonTypes.map(type => [type.toLowerCase(), [] as any[]])),
+        red: Object.fromEntries(dragonTypes.map(type => [type.toLowerCase(), [] as any[]]))
+    };
+
+    for (const frame of JSON.parse(timeline).info.frames) {
+        if (!frame.events) continue;
+
+        const atakhanKillEvent = frame.events.find((event: any) => event.type === "ELITE_MONSTER_KILL" && event.monsterType === "ATAKHAN");
+        if (atakhanKillEvent) {
+            teamThatKilledAtakhan = atakhanKillEvent.killerTeamId;
+        }
+
+        for (const event of frame.events) {
+            if (event.type === "ELITE_MONSTER_KILL" && event.monsterType === "DRAGON") {
+                const team = event.killerTeamId === 100 ? 'blue' : (event.killerTeamId === 200 ? 'red' : null);
+                if (team && dragonTypes.includes(event.monsterSubType)) {
+                    const dragonType = event.monsterSubType.toLowerCase();
+                    dragonKills[team][dragonType].push(event);
+                }
+            }
+        }
+    }
 
     const blueTeamKills = {
         grubs: blueTeamObjectives?.horde.kills,
         dragon: blueTeamObjectives?.dragon.kills,
+        air_dragon: dragonKills.blue.air_dragon.length,
+        earth_dragon: dragonKills.blue.earth_dragon.length,
+        fire_dragon: dragonKills.blue.fire_dragon.length,
+        water_dragon: dragonKills.blue.water_dragon.length,
+        chemtech_dragon: dragonKills.blue.chemtech_dragon.length,
+        hextech_dragon: dragonKills.blue.hextech_dragon.length,
+        elder_dragon: dragonKills.blue.elder_dragon.length,
         herald: blueTeamObjectives?.riftHerald.kills,
         baron: blueTeamObjectives?.baron.kills,
-        atakhan: 999, // /lol/match/v5/matches/{matchId}/timeline
+        atakhan: teamThatKilledAtakhan ? (teamThatKilledAtakhan === 100 ? 1 : 0) : 0,
         turret: blueTeamObjectives?.tower.kills,
         inhibitor: blueTeamObjectives?.inhibitor.kills
     };
@@ -91,9 +148,16 @@ const MatchGeneral: React.FC<{info: MatchInfo, puuid: string, region: string}> =
     const redTeamKills = {
         grubs: redTeamObjectives?.horde.kills,
         dragon: redTeamObjectives?.dragon.kills,
+        air_dragon: dragonKills.red.air_dragon.length,
+        earth_dragon: dragonKills.red.earth_dragon.length,
+        fire_dragon: dragonKills.red.fire_dragon.length,
+        water_dragon: dragonKills.red.water_dragon.length,
+        chemtech_dragon: dragonKills.red.chemtech_dragon.length,
+        hextech_dragon: dragonKills.red.hextech_dragon.length,
+        elder_dragon: dragonKills.red.elder_dragon.length,
         herald: redTeamObjectives?.riftHerald.kills,
         baron: redTeamObjectives?.baron.kills,
-        atakhan: 999, // /lol/match/v5/matches/{matchId}/timeline
+        atakhan: teamThatKilledAtakhan ? (teamThatKilledAtakhan === 100 ? 0 : 1) : 0,
         turret: redTeamObjectives?.tower.kills,
         inhibitor: redTeamObjectives?.inhibitor.kills
     };
@@ -111,14 +175,63 @@ const MatchGeneral: React.FC<{info: MatchInfo, puuid: string, region: string}> =
                         <p className="text-red-500 font-bold text-lg">Defeat</p>
                     }
                     <p className="text-neutral-400 text-lg">(Blue Side)</p>
-                    <div className="flex gap-2 font-normal text-2xl text-neutral-200 py-2">
-                        <p>Voidgrubs: {blueTeamKills.grubs}</p>
-                        <p>Drakes: {blueTeamKills.dragon}</p>
-                        <p>Herald: {blueTeamKills.herald}</p>
-                        <p>Barons: {blueTeamKills.baron}</p>
-                        <p>Atakhan: {blueTeamKills.atakhan}</p>
-                        <p>Turrets: {blueTeamKills.turret}</p>
-                        <p>Inhibitors: {blueTeamKills.inhibitor}</p>
+                    <div className="flex gap-3 font-normal text-2xl text-neutral-200 py-2">
+                        <div className="flex items-center">
+                            <img src={grubsicon} alt="grubsicon" className="h-10" />
+                            <p>{blueTeamKills.grubs}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={drakeicon} alt="drakeicon" className="h-10" />
+                            <p>{blueTeamKills.dragon}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={air_drakeicon} alt="air_drakeicon" className="h-6" />
+                            <p className="text-xl">{blueTeamKills.air_dragon}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={earth_drakeicon} alt="earth_drakeicon" className="h-6" />
+                            <p className="text-xl">{blueTeamKills.earth_dragon}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={fire_drakeicon} alt="fire_drakeicon" className="h-6" />
+                            <p className="text-xl">{blueTeamKills.fire_dragon}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={water_drakeicon} alt="water_drakeicon" className="h-6" />
+                            <p className="text-xl">{blueTeamKills.water_dragon}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={chemtech_drakeicon} alt="chemtech_drakeicon" className="h-6" />
+                            <p className="text-xl">{blueTeamKills.chemtech_dragon}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={hextech_drakeicon} alt="hextech_drakeicon" className="h-6" />
+                            <p className="text-xl">{blueTeamKills.hextech_dragon}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={elder_drakeicon} alt="elder_drakeicon" className="h-10" />
+                            <p>{blueTeamKills.elder_dragon}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={heraldicon} alt="heraldicon" className="h-10" />
+                            <p>{blueTeamKills.herald}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={baronicon} alt="baronicon" className="h-10" />
+                            <p>{blueTeamKills.baron}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={atakhanicon} alt="atakhanicon" className="h-10" />
+                            <p>{blueTeamKills.atakhan}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={turreticon} alt="turreticon" className="h-10" />
+                            <p>{blueTeamKills.turret}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={inhibitoricon} alt="inhibitoricon" className="h-10" />
+                            <p>{blueTeamKills.inhibitor}</p>
+                        </div>
                     </div>
                 </div>
                 <div className={`${blueSideWon ? "bg-[#28344E]" : "bg-[#59343B]"} flex flex-col gap-2 text-sm p-2`}>
@@ -146,8 +259,9 @@ const MatchGeneral: React.FC<{info: MatchInfo, puuid: string, region: string}> =
                                         {participant.riotIdGameName}
                                     </Link>
                                     <div className="text-neutral-300 flex items-center gap-1">
-                                        <img src={`https://static.bigbrain.gg/assets/lol/ranks/s13/mini/${participant.entry.tier.toLowerCase()}.svg`} alt={participant.entry.tier.toLowerCase()} className="h-5" />
-                                        <p className="capitalize">{participant.entry.tier.toLowerCase()} {participant.entry.rank} {participant.entry.leaguePoints} LP</p>
+                                        {/* <img src={`https://static.bigbrain.gg/assets/lol/ranks/s13/mini/${participant.entry.tier.toLowerCase()}.svg`} alt={participant.entry.tier.toLowerCase()} className="h-5" /> */}
+                                        {/* <p className="capitalize">{participant.entry.tier.toLowerCase()} {participant.entry.rank} {participant.entry.leaguePoints} LP</p> */}
+                                        <p className="capitalize">Level {participant.summonerLevel} (TODO RANK (CANCER))</p>
                                     </div>
                                 </div>
                             </div>
@@ -187,14 +301,63 @@ const MatchGeneral: React.FC<{info: MatchInfo, puuid: string, region: string}> =
                         <p className="text-red-500 font-bold text-lg">Defeat</p>
                     }
                     <p className="text-neutral-400 text-lg">(Blue Side)</p>
-                    <div className="flex gap-2 font-normal text-2xl text-neutral-200 py-2">
-                        <p>Voidgrubs: {redTeamKills.grubs}</p>
-                        <p>Drakes: {redTeamKills.dragon}</p>
-                        <p>Herald: {redTeamKills.herald}</p>
-                        <p>Barons: {redTeamKills.baron}</p>
-                        <p>Atakhan: {redTeamKills.atakhan}</p>
-                        <p>Turrets: {redTeamKills.turret}</p>
-                        <p>Inhibitors: {redTeamKills.inhibitor}</p>
+                    <div className="flex gap-3 font-normal text-2xl text-neutral-200 py-2">
+                        <div className="flex items-center">
+                            <img src={grubsicon} alt="grubsicon" className="h-10" />
+                            <p>{redTeamKills.grubs}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={drakeicon} alt="drakeicon" className="h-10" />
+                            <p>{redTeamKills.dragon}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={air_drakeicon} alt="air_drakeicon" className="h-6" />
+                            <p className="text-xl">{redTeamKills.air_dragon}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={earth_drakeicon} alt="earth_drakeicon" className="h-6" />
+                            <p className="text-xl">{redTeamKills.earth_dragon}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={fire_drakeicon} alt="fire_drakeicon" className="h-6" />
+                            <p className="text-xl">{redTeamKills.fire_dragon}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={water_drakeicon} alt="water_drakeicon" className="h-6" />
+                            <p className="text-xl">{redTeamKills.water_dragon}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={chemtech_drakeicon} alt="chemtech_drakeicon" className="h-6" />
+                            <p className="text-xl">{redTeamKills.chemtech_dragon}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={hextech_drakeicon} alt="hextech_drakeicon" className="h-6" />
+                            <p className="text-xl">{redTeamKills.hextech_dragon}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={elder_drakeicon} alt="elder_drakeicon" className="h-10" />
+                            <p>{redTeamKills.elder_dragon}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={heraldicon} alt="heraldicon" className="h-10" />
+                            <p>{redTeamKills.herald}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={baronicon} alt="baronicon" className="h-10" />
+                            <p>{redTeamKills.baron}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={atakhanicon} alt="atakhanicon" className="h-10" />
+                            <p>{redTeamKills.atakhan}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={turreticon} alt="turreticon" className="h-10" />
+                            <p>{redTeamKills.turret}</p>
+                        </div>
+                        <div className="flex items-center">
+                            <img src={inhibitoricon} alt="inhibitoricon" className="h-10" />
+                            <p>{redTeamKills.inhibitor}</p>
+                        </div>
                     </div>
                 </div>
                 <div className={`${!blueSideWon ? "bg-[#28344E]" : "bg-[#59343B]"} flex flex-col gap-2 text-sm p-2`}>
@@ -222,8 +385,9 @@ const MatchGeneral: React.FC<{info: MatchInfo, puuid: string, region: string}> =
                                         {participant.riotIdGameName}
                                     </Link>
                                     <div className="text-neutral-300 flex items-center gap-1">
-                                        <img src={`https://static.bigbrain.gg/assets/lol/ranks/s13/mini/${participant.entry.tier.toLowerCase()}.svg`} alt={participant.entry.tier.toLowerCase()} className="h-5" />
-                                        <p className="capitalize">{participant.entry.tier.toLowerCase()} {participant.entry.rank} {participant.entry.leaguePoints} LP</p>
+                                        {/* <img src={`https://static.bigbrain.gg/assets/lol/ranks/s13/mini/${participant.entry.tier.toLowerCase()}.svg`} alt={participant.entry.tier.toLowerCase()} className="h-5" /> */}
+                                        {/* <p className="capitalize">{participant.entry.tier.toLowerCase()} {participant.entry.rank} {participant.entry.leaguePoints} LP</p> */}
+                                        <p className="capitalize">Level {participant.summonerLevel} (TODO RANK (CANCER))</p>
                                     </div>
                                 </div>
                             </div>
@@ -644,8 +808,8 @@ const MatchRunes: React.FC<MatchPerks> = ({ statPerks, styles }) => {
     );
 };
 
-const MatchTimeline: React.FC<{info: MatchInfo; selectedPlayer: MatchParticipant}> = ({info, selectedPlayer}) => {
-    console.log(info, selectedPlayer)
+const MatchTimeline: React.FC<{timeline: string; info: MatchInfo; selectedPlayer: MatchParticipant}> = ({timeline, info, selectedPlayer}) => {
+    console.log(JSON.parse(timeline))
     return (
         <>  
             <div className="flex justify-center gap-4">
@@ -664,7 +828,7 @@ const MatchTimeline: React.FC<{info: MatchInfo; selectedPlayer: MatchParticipant
             </div>
             <div className="flex">
                 <div className="flex-1">
-                    info
+                    timeline
                 </div>
                 <div className="flex-1">
                     <img src={map} alt="summonersrift" />
@@ -674,7 +838,7 @@ const MatchTimeline: React.FC<{info: MatchInfo; selectedPlayer: MatchParticipant
     );
 }
 
-const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({info, puuid, region}) => {
+const MatchRow: React.FC<{info: MatchInfo; timeline: string; puuid: string; region: string;}> = ({info, timeline, puuid, region}) => {
     const [showDetailsDiv, setShowDetailsDiv] = useState<boolean>(false);
     const [chooseTab, setChooseTab] = useState<string>("General");
     const [champions, setChampions] = useState<any[]>([]);
@@ -837,7 +1001,7 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                 </div>
                 {chooseTab === "General" && (
                     <div className="mt-2 mb-1">
-                        <MatchGeneral info={info} puuid={puuid} region={region} />
+                        <MatchGeneral info={info} timeline={timeline} puuid={puuid} region={region} />
                     </div>
                 )}
                 {chooseTab === "Performance" && (
@@ -860,7 +1024,7 @@ const MatchRow: React.FC<{info: MatchInfo; puuid: string; region: string;}> = ({
                 {chooseTab === "Timeline" && (
                     <div className="mt-2 mb-1">
                         <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} />
-                        <MatchTimeline info={info} selectedPlayer={selectedPlayer} />
+                        <MatchTimeline timeline={timeline} info={info} selectedPlayer={selectedPlayer} />
                     </div>
                 )}
             </div>
@@ -891,6 +1055,7 @@ const Summoner: React.FC = () => {
     const [showPatch, setShowPatch] = useState<boolean>(false);
     const [champions, setChampions] = useState<any[]>([]);
     const [showSelectChampions, setShowSelectChampions] = useState<boolean>(false);
+    const [paginatorPage, setPaginatorPage] = useState<number>(1);
     const inputRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -948,23 +1113,22 @@ const Summoner: React.FC = () => {
         return <div className="w-full flex justify-center mt-[125px] mb-[195px]"><DotLottieReact src={loadingAnimation} className="w-[600px] bg-transparent" loop autoplay /></div>
     }
 
-    const summonerData = JSON.parse(apiData.summonerData);
-    const entriesData = JSON.parse(apiData.entriesData);
-    const topMasteriesData = JSON.parse(apiData.topMasteriesData);
-    // const allMatchIds = JSON.parse(apiData.allMatchIds);
-    const allMatchesData = JSON.parse(apiData.allMatchesData) as Match[];
-    // const challengesData = JSON.parse(apiData.challengesData);
-    const spectatorData = JSON.parse(apiData.spectatorData);
-    // const clashData = JSON.parse(apiData.clashData);
-    const championStatsSoloDuoData = Object.values(JSON.parse(apiData.rankedSoloChampionStatsData)) as ChampionStats[];
-    const championStatsFlexData = Object.values(JSON.parse(apiData.rankedFlexChampionStatsData)) as ChampionStats[];
-    const preferredSoloDuoRoleData = Object.values(JSON.parse(apiData.rankedSoloRoleStatsData)) as PreferredRole[];
-    const preferredFlexRoleData = Object.values(JSON.parse(apiData.rankedFlexRoleStatsData)) as PreferredRole[];
-    // const allGamesChampionStatsData = Object.values(JSON.parse(apiData.allGamesChampionStatsData)) as ChampionStats[];
-    // const allGamesRoleStatsData = Object.values(JSON.parse(apiData.allGamesRoleStatsData)) as PreferredRole[];
+    console.log("apiData", apiData);
 
-    championStatsSoloDuoData.sort((a: ChampionStats, b: ChampionStats) => b.Games - a.Games || b.WinRate - a.WinRate);
-    championStatsFlexData.sort((a: ChampionStats, b: ChampionStats) => b.Games - a.Games || b.WinRate - a.WinRate);
+    // const clashData = apiData.clashData;
+    const championStatsSoloDuoData = Object.values(apiData.rankedSoloChampionStatsData);
+    const championStatsFlexData = Object.values(apiData.rankedFlexChampionStatsData);
+    const preferredSoloDuoRoleData = Object.values(apiData.rankedSoloRoleStatsData);
+    const preferredFlexRoleData = Object.values(apiData.rankedFlexRoleStatsData);
+    // const summonerData: SummonerInfo = apiData.summonerData;
+    const entriesData: Entry[] = apiData.entriesData;
+    const topMasteriesData: Mastery[] = apiData.topMasteriesData;
+    // const allMatchIds: string[] = apiData.allMatchIds;
+    const allMatchesData: Match[] = apiData.allMatchesData;
+    const spectatorData = apiData.spectatorData;
+    
+    championStatsSoloDuoData.sort((a: ChampionStats, b: ChampionStats) => b.games - a.games || b.winRate - a.winRate);
+    championStatsFlexData.sort((a: ChampionStats, b: ChampionStats) => b.games - a.games || b.winRate - a.winRate);
 
     const championsStatsData = selectedChampionPerformanceMode === "soloduo" ? championStatsSoloDuoData : championStatsFlexData;
     const preferredRoleData = selectedRolePerformanceMode === "soloduo" ? preferredSoloDuoRoleData : preferredFlexRoleData;
@@ -987,6 +1151,47 @@ const Summoner: React.FC = () => {
     if (rankedFlexEntry) {
         rankedFlexWinrate = Math.round(rankedFlexEntry.wins / (rankedFlexEntry.wins + rankedFlexEntry.losses) * 100);
     }
+    
+    const allKills = allMatchesData.reduce((sum, match) => {
+        const player = match.details.info.participants.find(p => p.puuid === apiData.puuid);
+        return sum + (player?.kills ?? 0)
+    }, 0);
+    const allDeaths = allMatchesData.reduce((sum, match) => {
+        const player = match.details.info.participants.find(p => p.puuid === apiData.puuid);
+        return sum + (player?.deaths ?? 0)
+    }, 0);
+    const allAssists = allMatchesData.reduce((sum, match) => {
+        const player = match.details.info.participants.find(p => p.puuid === apiData.puuid);
+        return sum + (player?.assists ?? 0)
+    }, 0);
+    const avgKDA = allDeaths > 0 ? ((allKills + allAssists) / allDeaths).toFixed(2) : "Perfect";
+
+    const allWins = allMatchesData.reduce((sum, match) => {
+        const player = match.details.info.participants.find(p => p.puuid === apiData.puuid);
+        return sum + (player?.win ? 1 : 0)
+    }, 0);
+
+    const roleCounts = roleLabels.reduce((acc, { role }) => {
+        acc[role] = 0;
+        return acc;
+    }, {} as Record<Role, number>);
+
+    allMatchesData.forEach(match => {
+        const player = match.details.info.participants.find(p => p.puuid === apiData.puuid);
+        if (player) {
+            roleCounts[player.teamPosition as Role]++;
+        }
+    });
+    const totalGames = allMatchesData.length;  
+
+    const rolePercents: Record<Role, number> = {} as any;
+    (roleLabels as typeof roleLabels).forEach(({ role }) => {rolePercents[role] = totalGames > 0 ? Math.round((roleCounts[role] / totalGames) * 100) : 0;});
+
+    const totalPages = Math.round(apiData.totalMatches / apiData.pageSize);
+    const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+    const winratePercent = Math.round(allWins / totalGames * 100);
+    const winAngle = winratePercent * 1.8;
 
     function getWinrateColor(winrate: number, games: number) {
         if (games == 0) return "";
@@ -1140,7 +1345,7 @@ const Summoner: React.FC = () => {
                             )}
                         </div>
                         <div className="bg-neutral-800">
-                            <div className="flex justify-between p-2">
+                            <div className="flex justify-between p-2 items-center">
                                 <div className="flex items-center gap-1">
                                     <img src={performance} alt="performance" className="h-7" />
                                     <h1>Champion Performance</h1>
@@ -1166,27 +1371,27 @@ const Summoner: React.FC = () => {
                             )}
                             <div>
                                 {championsStatsData.slice(0, 5).map((championStat: ChampionStats, index: number) => (
-                                    <React.Fragment key={championStat.ChampionId}>
+                                    <React.Fragment key={championStat.championId}>
                                         { index !== 0 && <hr /> }
                                         <div className="grid grid-cols-[28%_26%_26%_20%] pr-5 mb-1 mt-1 items-center text-center">
                                             <div className="flex justify-center">
-                                                <ChampionImage championId={championStat.ChampionId} isTeamIdSame={true} classes="h-15" />
+                                                <ChampionImage championId={championStat.championId} isTeamIdSame={true} classes="h-15" />
                                             </div>
                                             <div>
-                                                <p className={`${getKDAColor(Math.round(championStat.AverageKDA*100)/100)}`}>
-                                                    {Math.round(championStat.AverageKDA*100)/100}:1
+                                                <p className={`${getKDAColor(Math.round(championStat.averageKDA*100)/100)}`}>
+                                                    {Math.round(championStat.averageKDA*100)/100}:1
                                                 </p>
                                                 <p>
-                                                    {Math.round(championStat.TotalKills/championStat.Games*10)/10}/
-                                                    {Math.round(championStat.TotalDeaths/championStat.Games*10)/10}/
-                                                    {Math.round(championStat.TotalAssists/championStat.Games*10)/10}
+                                                    {Math.round(championStat.totalKills/championStat.games*10)/10}/
+                                                    {Math.round(championStat.totalDeaths/championStat.games*10)/10}/
+                                                    {Math.round(championStat.totalAssists/championStat.games*10)/10}
                                                 </p>
                                             </div>
                                             <div>
-                                                {championStat.Games}
+                                                {championStat.games}
                                             </div>
-                                            <div className={`${getWinrateColor(Math.round(championStat.WinRate), championStat.Games)}`}>
-                                                <p>{Math.round(championStat.WinRate)}%</p> 
+                                            <div className={`${getWinrateColor(Math.round(championStat.winRate), championStat.games)}`}>
+                                                <p>{Math.round(championStat.winRate)}%</p> 
                                                 {/* <p>({championStat.Wins}W-{championStat.Games-championStat.Wins}L)</p> */}
                                             </div>
                                         </div>
@@ -1198,7 +1403,7 @@ const Summoner: React.FC = () => {
                             </div>
                         </div>
                         <div className="bg-neutral-800 pb-2">
-                            <div className="flex justify-between mb-1 p-2">
+                            <div className="flex justify-between mb-1 p-2 items-center">
                                 <div className="flex items-center gap-1">
                                     <img src={performance} alt="performance" className="h-7" />
                                     <h1>Role Performance</h1>
@@ -1218,19 +1423,19 @@ const Summoner: React.FC = () => {
                                 <p></p>
                             </div>
                             <div>
-                                {preferredRoleData.sort((a: PreferredRole, b: PreferredRole) => b.Games - a.Games).map((role: PreferredRole) => (
+                                {preferredRoleData.sort((a: PreferredRole, b: PreferredRole) => b.games - a.games).map((role: PreferredRole) => (
                                     <div className="grid grid-cols-[20%_23%_23%_23%_10%] mb-1 items-center text-center">
                                         <div className="flex justify-end">
-                                            <img src={`https://dpm.lol/position/${role.RoleName}.svg`} alt={role.RoleName} className="h-[35px]" />
+                                            <img src={`https://dpm.lol/position/${role.roleName}.svg`} alt={role.roleName} className="h-[35px]" />
                                         </div>
                                         <div>
-                                            <p>{role.RoleName}</p>
+                                            <p>{role.roleName}</p>
                                         </div>
                                         <div>
-                                            <p>{role.Games}</p>
+                                            <p>{role.games}</p>
                                         </div>
-                                        <div className={getWinrateColor(Math.round(role.WinRate), role.Games)}>
-                                            <p>{Math.round(role.WinRate)}%</p>
+                                        <div className={getWinrateColor(Math.round(role.winRate), role.games)}>
+                                            <p>{Math.round(role.winRate)}%</p>
                                             {/* <p>({role.Wins}W-{role.Games-role.Wins}L)</p> */}
                                         </div>
                                     </div>
@@ -1257,11 +1462,12 @@ const Summoner: React.FC = () => {
                                     }
                                     return (
                                         <div key={mastery.championId} className="flex flex-col items-center">
-                                            <div className="relative mb-2">
+                                            <div className="relative">
                                                 <img src={`https://opgg-static.akamaized.net/images/champion_mastery/renew_v2/mastery-${mastery.championLevel > 10 ? 10 : mastery.championLevel}.png`} alt={`${mastery.championLevel}`} className="h-15" />
                                                 {mastery.championLevel > 10 && (
                                                     <p className="text-sm bg-neutral-900 pl-2 pr-2 absolute transform bottom-0 left-1/2 -translate-x-1/2">{mastery.championLevel}</p>
                                                 )}
+                                                <p className="text-center text-sm">{mastery.championPoints}</p>
                                             </div>
                                             <div className="relative">
                                                 <img src={medalSrc} alt={medalAlt} className="h-8 absolute transform bottom-0 left-1/2 translate-y-1/2 -translate-x-1/2" />
@@ -1277,22 +1483,58 @@ const Summoner: React.FC = () => {
                         </div>
                     </div>
                     <div className="w-[75%] flex flex-col">
-                        <div className="bg-neutral-800 text-center p-2 mb-2">
+                        <div className="bg-neutral-800 text-center p-2 pb-4 mb-2 border-b-6 border-purple-600 rounded-b-lg shadow-xl">
                             <div className="p-2">
                                 <h1>Last 20 Games Pefrormance TODO</h1>
                             </div>
                             <div className="grid grid-cols-[25%_25%_25%_25%]">
-                                <div>
-                                    Winrate TODO (DPM.LOL)
+                                <div className="flex flex-col items-center justify-center space-y-10 relative">
+                                    <div className="relative w-52 h-52 rounded-full" style={{ background: `conic-gradient( #ef4444 0deg ${winAngle}deg, #3b82f6 ${winAngle}deg 360deg)`}}>
+                                        <div className="absolute inset-0 m-auto w-40 h-40 bg-neutral-800 rounded-full flex items-center justify-center">
+                                            <div className="flex flex-col items-center justify-center">
+                                                <p className={`text-xl font-semibold m-0 ${getWinrateColor(winratePercent, totalGames)}`}>
+                                                    {winratePercent}%
+                                                </p>
+                                                <p className="text-neutral-400 text-lg mb-2">Winrate</p>
+                                                <p className="text-xl text-neutral-300 font-semibold">
+                                                    {allWins}W - {totalGames - allWins}L
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div>
                                     Champions TODO (DPM.LOL)
                                 </div>
                                 <div>
-                                    KDA TODO (DPM.LOL)
+                                    <p className="text-neutral-400 text-lg">KDA</p>
+                                    <p className="text-6xl text-purple-400 font-semibold mt-12 mb-5">{avgKDA}</p>
+                                    <div className="flex items-center justify-center">
+                                        <p className="text-xl">{(allKills/apiData.pageSize).toFixed(1)}</p>
+                                        <p className="text-md text-neutral-600 px-2">/</p>
+                                        <p className="text-xl text-purple-300">{(allDeaths/apiData.pageSize).toFixed(1)}</p>
+                                        <p className="text-md text-neutral-600 px-2">/</p>
+                                        <p className="text-xl">{(allAssists/apiData.pageSize).toFixed(1)}</p>
+                                    </div>
                                 </div>
                                 <div>
-                                    Preferred Roles TODO (OP.GG)
+                                    <p className="text-neutral-400 text-lg">Preferred Roles</p>
+                                    <div className="space-y-2 p-2">
+                                        {roleLabels.map(({ role, }) => {
+                                            const percent = rolePercents[role];
+                                            return (
+                                                <div key={role}>
+                                                    <div className="flex justify-between mb-1 text-sm text-neutral-300 items-center">
+                                                        <img src={`https://dpm.lol/position/${role}.svg`} alt="" />
+                                                        <span>{percent}%</span>
+                                                    </div>
+                                                    <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
+                                                        <div className="h-full rounded-full bg-purple-500" style={{ width: `${percent}%` }} />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1369,27 +1611,39 @@ const Summoner: React.FC = () => {
                         <div className="bg-neutral-800">
                             <div className="flex flex-col gap-1 p-2">
                                 {allMatchesData.map((match: Match) => (
-                                    <MatchRow info={match.details.info} puuid={apiData.puuid} region={regionCode} />
+                                    <MatchRow info={match.details.info} timeline={match.timelineJson} puuid={apiData.puuid} region={regionCode} />
                                 ))}
+                            </div>
+                            <div className="flex justify-center">
+                                <ul className="flex items-center h-10 text-base">
+                                    <li>
+                                        <span onClick={() => setPaginatorPage((prev) => Math.max(prev - 1, 1))} className="flex items-center justify-center px-4 h-10 leading-tight border cursor-pointer transition-all border-gray-300 rounded-s-lg hover:bg-neutral-900 hover:text-neutral-100">
+                                            <span className="sr-only">Previous</span>
+                                            <svg className="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
+                                            </svg>
+                                        </span>
+                                    </li>
+                                    {pageNumbers.map((page: number) => (
+                                        <li key={page} onClick={() => setPaginatorPage(page)}>
+                                            <span className={`flex items-center justify-center px-4 h-10 leading-tight border-y border-r cursor-pointer transition-all ${paginatorPage === page ? "text-purple-600 border-purple-300 bg-purple-100 hover:bg-purple-200 hover:text-purple-700" : "border-gray-300 hover:bg-neutral-900 hover:text-neutral-100"}`}>
+                                                {page}
+                                            </span>
+                                        </li>
+                                    ))}
+                                    <li>
+                                        <span onClick={() => setPaginatorPage((prev) => Math.min(prev + 1, totalPages))} className="flex items-center justify-center px-4 h-10 leading-tight border-y border-r cursor-pointer transition-all border-gray-300 rounded-e-lg hover:bg-neutral-900 hover:text-neutral-100">
+                                            <span className="sr-only">Next</span>
+                                            <svg className="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+                                            </svg>
+                                        </span>
+                                    </li>
+                                </ul>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div className="bg-neutral-800 mt-2">
-                    <pre>{JSON.stringify(summonerData, null, 2)}</pre>
-                {/*     <pre>{JSON.stringify(entriesData, null, 2)}</pre>
-                    <pre>{JSON.stringify(championStatsSoloDuoData, null, 2)}</pre>
-                    <pre>{JSON.stringify(championStatsFlexData, null, 2)}</pre>
-                    <pre>{JSON.stringify(preferredSoloDuoRoleData, null, 2)}</pre>
-                    <pre>{JSON.stringify(preferredFlexRoleData, null, 2)}</pre>
-                    <pre>{JSON.stringify(topMasteriesData, null, 2)}</pre>
-                    <pre>{JSON.stringify(allGamesChampionStatsData, null, 2)}</pre>
-                    <pre>{JSON.stringify(allGamesRoleStatsData, null, 2)}</pre>
-                    <pre>{JSON.stringify(allMatchesDetailsData, null, 2)}</pre>
-                    <pre>{JSON.stringify(spectatorData, null, 2)}</pre>
-                    <pre>{JSON.stringify(clashData, null, 2)}</pre>
-                    <pre>{JSON.stringify(challengesData, null, 2)}</pre>*/}
-                </div> 
             </div>
         </div>
     );

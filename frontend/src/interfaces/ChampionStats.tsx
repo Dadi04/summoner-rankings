@@ -1,13 +1,13 @@
 interface ChampionStats {
-    ChampionId: number;
-    ChampionName: string;
-    Games: number;
-    Wins: number;
-    TotalKills: number;
-    TotalDeaths: number;
-    TotalAssists: number;
-    WinRate: number;
-    AverageKDA: number;
+    championId: number;
+    championName: string;
+    games: number;
+    wins: number;
+    totalKills: number;
+    totalDeaths: number;
+    totalAssists: number;
+    winRate: number;
+    averageKDA: number;
 }
 
 export default ChampionStats;

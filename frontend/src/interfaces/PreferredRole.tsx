@@ -1,12 +1,12 @@
 interface PreferredRole {
-    RoleName: string;
-    Games: number;
-    Wins: number;
-    TotalKills: number;
-    TotalDeaths: number;
-    TotalAssists: number;
-    WinRate: number;
-    AverageKDA: number;
+    roleName: string;
+    games: number;
+    wins: number;
+    totalKills: number;
+    totalDeaths: number;
+    totalAssists: number;
+    winRate: number;
+    averageKDA: number;
 }
 
 export default PreferredRole;

@@ -25,6 +25,11 @@ builder.Services.AddCors(options => {
                         .AllowAnyMethod());
 });
 
+builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
+    policy.AllowAnyOrigin()
+          .AllowAnyMethod()
+          .AllowAnyHeader()));
+
 builder.Services.AddDbContext<ApplicationDbContext>(options => {
     string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
     options.UseSqlServer(connectionString);
@@ -42,7 +47,7 @@ if (app.Environment.IsDevelopment()) {
 
 app.UseHttpsRedirection();
 app.UseRouting();
-app.UseCors("AllowReactApp");
+app.UseCors();
 
 string apiKey = Environment.GetEnvironmentVariable("RIOT_API_KEY") ?? "";
     
@@ -232,16 +237,82 @@ var regionMapping = new Dictionary<string, string> {
     {"me1", "europe"},
 };
 
-app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (string region, string summonerName, string summonerTag, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext) => {
+app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (string region, string summonerName, string summonerTag, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext, int page = 0, int pageSize = 20) => {
     if (!regionMapping.TryGetValue(region, out var continent)) {
         return Results.Problem("Invalid region specified.");
     }
-
-    var existingPlayer = await dbContext.Players.FirstOrDefaultAsync(p => p.SummonerName == summonerName
-                                                                    && p.SummonerTag == summonerTag
-                                                                    && p.Region == region);
+    Console.WriteLine($"[Debug] Input: Name='{summonerName}', Tag='{summonerTag}', Region='{region}'");
+    var existingPlayer = await dbContext.Players
+        .AsNoTracking()
+        .Select(p => new  {
+            p.Id,
+            p.SummonerName,
+            p.SummonerTag,
+            p.Region,
+            p.Puuid,
+            p.SummonerData,
+            p.EntriesData,
+            p.TopMasteriesData,
+            p.AllMatchIds,
+            // p.AllMatchesData is deliberately omitted here
+            p.AllGamesChampionStatsData,
+            p.AllGamesRoleStatsData,
+            p.RankedSoloChampionStatsData,
+            p.RankedSoloRoleStatsData,
+            p.RankedFlexChampionStatsData,
+            p.RankedFlexRoleStatsData,
+            p.SpectatorData,
+            p.ClashData,
+            p.AddedAt
+        })
+        .FirstOrDefaultAsync(p => p.SummonerName == summonerName
+                            && p.SummonerTag == summonerTag
+                            && p.Region == region);
+    Console.WriteLine(existingPlayer?.Puuid);
     if (existingPlayer != null) {
-        return Results.Ok(existingPlayer); 
+        var totalMatches = await dbContext.PlayerMatches
+            .Where(pm => pm.PlayerId == existingPlayer.Id)
+            .CountAsync();
+        Console.WriteLine(totalMatches);
+        var pageMatches = await dbContext.PlayerMatches
+            .AsNoTracking()
+            .Where(pm => pm.PlayerId == existingPlayer.Id)
+            .OrderBy(pm => pm.MatchIndex)
+            .Skip(page * pageSize)
+            .Take(pageSize)
+            .Select(pm => JsonSerializer.Deserialize<LeagueMatchDto>(
+                              pm.MatchJson,
+                              new JsonSerializerOptions {
+                                  PropertyNameCaseInsensitive = true
+                              })!)
+            .ToListAsync();
+        Console.WriteLine(pageMatches[0]);
+        var dto = new PlayerDto {
+            Id = existingPlayer.Id,
+            SummonerName = existingPlayer.SummonerName,
+            SummonerTag = existingPlayer.SummonerTag,
+            Region = existingPlayer.Region,
+            Puuid = existingPlayer.Puuid,
+            SummonerData = JsonSerializer.Deserialize<RiotSummonerDto>(existingPlayer.SummonerData)!,
+            EntriesData = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(existingPlayer.EntriesData)!,
+            TopMasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(existingPlayer.TopMasteriesData)!,
+            AllMatchIds = JsonSerializer.Deserialize<List<string>>(existingPlayer.AllMatchIds)!,
+            AllMatchesData = pageMatches,
+            TotalMatches = totalMatches,
+            AllGamesChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(existingPlayer.AllGamesChampionStatsData)!,
+            AllGamesRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRole>>(existingPlayer.AllGamesRoleStatsData)!,
+            RankedSoloChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(existingPlayer.RankedSoloChampionStatsData)!,
+            RankedSoloRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRole>>(existingPlayer.RankedSoloRoleStatsData)!,
+            RankedFlexChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(existingPlayer.RankedFlexChampionStatsData)!,
+            RankedFlexRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRole>>(existingPlayer.RankedFlexRoleStatsData)!,
+            SpectatorData = JsonSerializer.Deserialize<object>(existingPlayer.SpectatorData),
+            ClashData = JsonSerializer.Deserialize<object>(existingPlayer.ClashData),
+            AddedAt = existingPlayer.AddedAt,
+            CurrentPage = page,
+            PageSize = pageSize
+        };
+
+        return Results.Ok(dto);
     }
 
     var client = httpClientFactory.CreateClient();
@@ -280,8 +351,8 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         return Results.Problem($"Error calling Riot API: {accountResponse.ReasonPhrase}. Response: {errorContent}");
     }
 
-    using var accountStream = await accountResponse.Content.ReadAsStreamAsync();
-    var riotAccount = JsonSerializer.Deserialize<RiotPlayerDto>(accountStream, new JsonSerializerOptions {
+    var accountJson = await accountResponse.Content.ReadAsStreamAsync();
+    var riotAccount = JsonSerializer.Deserialize<RiotPlayerDto>(accountJson, new JsonSerializerOptions {
         PropertyNameCaseInsensitive = true
     });
     if (riotAccount is null) {
@@ -292,10 +363,15 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
 
     string entriesUrl = $"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}?api_key={apiKey}";
     var entriesResponse = await GetAsyncWithRetry(entriesUrl);
-    var entriesJson = await entriesResponse.Content.ReadAsStreamAsync();
-    var entries = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(entriesJson, new JsonSerializerOptions {
-        PropertyNameCaseInsensitive = true
-    });
+    List<LeagueEntriesDto> entries;
+    if (!entriesResponse.IsSuccessStatusCode) {
+        entries = new List<LeagueEntriesDto>();
+    } else {
+        await using var entriesJson = await entriesResponse.Content.ReadAsStreamAsync();
+        entries = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(entriesJson,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+        ) ?? new List<LeagueEntriesDto>();
+    }
 
     var allMatchIds = new List<string>();
     int totalMatchesToFetch = 1000; // ???
@@ -334,14 +410,10 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
             var timelineResp = await retryPolicyResponse.ExecuteAsync(() => client.GetAsync(timelineUrl));
             if (!timelineResp.IsSuccessStatusCode) return null;
             var timelineJson = await timelineResp.Content.ReadAsStringAsync();
-            var timelineDto = JsonSerializer.Deserialize<LeagueMatchTimelineDto>(
-                                timelineJson,
-                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                                ) ?? new LeagueMatchTimelineDto();
 
             return new LeagueMatchDto {
                 details = detailsDto,
-                timeline = timelineDto
+                timelineJson = timelineJson
             };
         }
         finally {
@@ -354,49 +426,52 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         .ToList();
 
     var allMatchesDataList = (await Task.WhenAll(fetchTasks))
-        .Where(m => m != null && m.details?.info?.participants != null)
-        .ToList()!;
-
-    var allPuuids = allMatchesDataList
-        .Where(m => m?.details?.info?.participants != null)
-        .SelectMany(m => m!.details?.info!.participants!)
-        .Select(p => p.puuid)
-        .Distinct()
+        .Where(m => m != null)
+        .Cast<LeagueMatchDto>()
         .ToList();
 
-    var entryCache = new Dictionary<string, LeagueMatchSoloDuoEntryDto>();
+    // odavde
+    // var allPuuids = allMatchesDataList
+    //     .Where(m => m?.details?.info?.participants != null)
+    //     .SelectMany(m => m!.details?.info!.participants!)
+    //     .Select(p => p.puuid)
+    //     .Distinct()
+    //     .ToList();
+    // Console.WriteLine($"allMatchesDataList has {allMatchesDataList.Count} matches, while allPuuids has {allPuuids.Count} puuids");
+    // var entryCache = new Dictionary<string, LeagueEntriesDto>();
 
-    foreach (var playerUuid in allPuuids) {
-        string entrySoloDuoUrl = $"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{playerUuid}?api_key={apiKey}";
-        var resp = await GetAsyncWithRetry(entrySoloDuoUrl);
-        if (!resp.IsSuccessStatusCode) continue;
+    // foreach (var playerUuid in allPuuids) {
+    //     string entrySoloDuoUrl = $"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{playerUuid}?api_key={apiKey}";
+    //     var resp = await GetAsyncWithRetry(entrySoloDuoUrl);
+    //     if (!resp.IsSuccessStatusCode) continue;
 
-        var list = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(
-            await resp.Content.ReadAsStringAsync(),
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-        );
-        var solo = list?.FirstOrDefault(e => e.queueType == "RANKED_SOLO_5x5");
-        if (solo != null) {
-            entryCache[playerUuid] = new LeagueMatchSoloDuoEntryDto {
-                freshBlood = solo.freshBlood,
-                inactive = solo.inactive,
-                veteran = solo.veteran,
-                hotStreak = solo.hotStreak,
-                tier = solo.tier,
-                rank = solo.rank,
-                leaguePoints = solo.leaguePoints,
-                puuid = solo.puuid
-            };
-        }
-    }
+    //     var list = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(
+    //         await resp.Content.ReadAsStringAsync(),
+    //         new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+    //     );
+    //     var solo = list?.FirstOrDefault(e => e.queueType == "RANKED_SOLO_5x5");
+    //     if (solo != null) {
+    //         entryCache[playerUuid] = new LeagueEntriesDto {
+    //             freshBlood = solo.freshBlood,
+    //             inactive = solo.inactive,
+    //             veteran = solo.veteran,
+    //             hotStreak = solo.hotStreak,
+    //             tier = solo.tier,
+    //             rank = solo.rank,
+    //             leaguePoints = solo.leaguePoints,
+    //             puuid = solo.puuid
+    //         };
+    //     }
+    // }
 
-    foreach (var match in allMatchesDataList) {
-        if (match == null || match.details.info == null || match.details.info.participants == null) continue;
+    // foreach (var match in allMatchesDataList) {
+    //     if (match == null || match.details.info == null || match.details.info.participants == null) continue;
 
-        foreach (var participant in match.details.info.participants) {
-            if (entryCache.TryGetValue(participant.puuid, out var dto)) participant.entry = dto;
-        }
-    }
+    //     foreach (var participant in match.details.info.participants) {
+    //         if (entryCache.TryGetValue(participant.puuid, out var dto)) participant.entry = dto;
+    //     }
+    // }
+    // dovde
 
     int rankedSoloQueueId = 420;
     int rankedFlexQueueId = 440;
@@ -598,17 +673,15 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
 
     string summonerUrl = $"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={apiKey}";
     string topMasteriesUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}/top?count=3&api_key={apiKey}";
-    string challengesUrl = $"https://{region}.api.riotgames.com/lol/challenges/v1/player-data/{puuid}?api_key={apiKey}";
     string clashUrl = $"https://{region}.api.riotgames.com/lol/clash/v1/players/by-puuid/{puuid}?api_key={apiKey}"; // ukoliko nisi u clashu vraca [] i vraca 200
 
     var summonerTask = GetStringAsyncWithRetry(summonerUrl);
     var topMasteriesTask = GetStringAsyncWithRetry(topMasteriesUrl);
-    var challengesTask = GetStringAsyncWithRetry(challengesUrl);
     var clashTask = GetStringAsyncWithRetry(clashUrl);
 
-    await Task.WhenAll(summonerTask, topMasteriesTask, challengesTask, clashTask);
+    await Task.WhenAll(summonerTask, topMasteriesTask, clashTask);
 
-    var player  = new Player {
+    var player = new Player {
         SummonerName = summonerName,
         SummonerTag = summonerTag,
         Region = region,
@@ -617,7 +690,6 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         SummonerData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await summonerTask)),
         EntriesData = JsonSerializer.Serialize(entries),
         TopMasteriesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await topMasteriesTask)),
-        ChallengesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await challengesTask)),
         SpectatorData = spectatorData is string s ? s : JsonSerializer.Serialize(spectatorData),
         ClashData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await clashTask)),
 
@@ -633,12 +705,51 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         AddedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
     };
     dbContext.Players.Add(player);
-    await dbContext.SaveChangesAsync();
+    await dbContext.SaveChangesAsync();  
 
-    return Results.Ok(player);
+    for (int i = 0; i < allMatchesDataList.Count; i++) {
+        dbContext.PlayerMatches.Add(new PlayerMatch {
+            PlayerId   = player.Id,
+            MatchIndex = i,
+            MatchJson  = JsonSerializer.Serialize(allMatchesDataList[i])
+        });
+    }
+    await dbContext.SaveChangesAsync();   
+
+    var initialPage = allMatchesDataList
+        .Skip(page * pageSize)
+        .Take(pageSize)
+        .ToList();
+    
+    var playerDto = new PlayerDto {
+        Id = player.Id,
+        SummonerName = player.SummonerName,
+        SummonerTag = player.SummonerTag,
+        Region = player.Region,
+        Puuid = player.Puuid,
+        SummonerData = JsonSerializer.Deserialize<RiotSummonerDto>(player.SummonerData)!,
+        EntriesData = entries!,
+        TopMasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(player.TopMasteriesData)!,
+        AllMatchIds = allMatchIds,
+        AllMatchesData = initialPage,
+        TotalMatches = allMatchesDataList.Count,
+        AllGamesChampionStatsData = allGamesChampionStats,
+        AllGamesRoleStatsData = allGamesRoleStats,
+        RankedSoloChampionStatsData = championStatsByQueue[rankedSoloQueueId],
+        RankedSoloRoleStatsData = roleStatsByQueue[rankedSoloQueueId],
+        RankedFlexChampionStatsData = championStatsByQueue[rankedFlexQueueId],
+        RankedFlexRoleStatsData = roleStatsByQueue[rankedFlexQueueId],
+        SpectatorData = JsonSerializer.Deserialize<object>(player.SpectatorData),
+        ClashData = JsonSerializer.Deserialize<object>(player.ClashData),
+        AddedAt = player.AddedAt,
+        CurrentPage = page,
+        PageSize = pageSize
+    };
+
+    return Results.Ok(playerDto);
 });
 
-app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", async (string region, string summonerName, string summonerTag, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext) => {
+app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", async (string region, string summonerName, string summonerTag, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext, int page = 0, int pageSize = 20) => {
     if (!regionMapping.TryGetValue(region, out var continent)) {
         return Results.Problem("Invalid region specified.");
     }
@@ -682,7 +793,8 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
     string accountUrl = $"https://{continent}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{summonerName}/{summonerTag}?api_key={apiKey}";
     var accountResponse = await GetAsyncWithRetry(accountUrl);
     if (!accountResponse.IsSuccessStatusCode) {
-        return Results.Problem($"Error calling Riot API: {accountResponse.ReasonPhrase}");
+        var errorContent = await accountResponse.Content.ReadAsStringAsync();
+        return Results.Problem($"Error calling Riot API: {accountResponse.ReasonPhrase}. Response: {errorContent}");
     }
 
     var accountJson = await accountResponse.Content.ReadAsStreamAsync();
@@ -737,15 +849,11 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
             var tlUrl  = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/{matchId}/timeline?api_key={apiKey}";
             var tlResp = await retryPolicyResponse.ExecuteAsync(() => client.GetAsync(tlUrl));
             if (!tlResp.IsSuccessStatusCode) return null;
-            var tlJson = await tlResp.Content.ReadAsStringAsync();
-            var timelineDto = JsonSerializer.Deserialize<LeagueMatchTimelineDto>(
-                tlJson,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-            )!;
+            var timelineJson = await tlResp.Content.ReadAsStringAsync();
 
             return new LeagueMatchDto {
-                details = detailsDto,
-                timeline = timelineDto
+               details = detailsDto,
+               timelineJson = timelineJson
             };
         }
         finally {
@@ -927,45 +1035,47 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         .OrderByDescending(m => m?.details.info.gameStartTimestamp)
         .ToList();
 
-    var allPuuids = mergedMatchList
-        .SelectMany(m => m?.details.info.participants!)
-        .Select(p => p.puuid)
-        .Distinct()
-        .ToList();
+    // odavde
+    // var allPuuids = mergedMatchList
+    //     .SelectMany(m => m?.details.info.participants!)
+    //     .Select(p => p.puuid)
+    //     .Distinct()
+    //     .ToList();
         
-    var entryCache = new Dictionary<string, LeagueMatchSoloDuoEntryDto>();
-    foreach (var playerUuid in allPuuids) {
-        string entrySoloDuoUrl = $"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{playerUuid}?api_key={apiKey}";
-        var resp = await GetAsyncWithRetry(entrySoloDuoUrl);
-        if (!resp.IsSuccessStatusCode) continue;
+    // var entryCache = new Dictionary<string, LeagueEntriesDto>();
+    // foreach (var playerUuid in allPuuids) {
+    //     string entrySoloDuoUrl = $"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{playerUuid}?api_key={apiKey}";
+    //     var resp = await GetAsyncWithRetry(entrySoloDuoUrl);
+    //     if (!resp.IsSuccessStatusCode) continue;
 
-        var list = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(
-            await resp.Content.ReadAsStringAsync(),
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-        );
+    //     var list = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(
+    //         await resp.Content.ReadAsStringAsync(),
+    //         new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+    //     );
 
-        var solo = list?.FirstOrDefault(e => e.queueType == "RANKED_SOLO_5x5");
-        if (solo != null)  {
-            entryCache[playerUuid] = new LeagueMatchSoloDuoEntryDto {
-                freshBlood = solo.freshBlood,
-                inactive = solo.inactive,
-                veteran = solo.veteran,
-                hotStreak = solo.hotStreak,
-                tier = solo.tier,
-                rank = solo.rank,
-                leaguePoints = solo.leaguePoints,
-                puuid = solo.puuid
-            };
-        }
-    }
+    //     var solo = list?.FirstOrDefault(e => e.queueType == "RANKED_SOLO_5x5");
+    //     if (solo != null)  {
+    //         entryCache[playerUuid] = new LeagueEntriesDto {
+    //             freshBlood = solo.freshBlood,
+    //             inactive = solo.inactive,
+    //             veteran = solo.veteran,
+    //             hotStreak = solo.hotStreak,
+    //             tier = solo.tier,
+    //             rank = solo.rank,
+    //             leaguePoints = solo.leaguePoints,
+    //             puuid = solo.puuid
+    //         };
+    //     }
+    // }
 
-    foreach (var match in mergedMatchList) {
-        if (match == null || match.details.info == null || match.details.info.participants == null) continue;
+    // foreach (var match in mergedMatchList) {
+    //     if (match == null || match.details.info == null || match.details.info.participants == null) continue;
 
-        foreach (var participant in match.details.info.participants) {
-            if (entryCache.TryGetValue(participant.puuid, out var dto)) participant.entry = dto;
-        }
-    }
+    //     foreach (var participant in match.details.info.participants) {
+    //         if (entryCache.TryGetValue(participant.puuid, out var dto)) participant.entry = dto;
+    //     }
+    // }
+    // dovde
 
     List<string> existingMatchIdsList = new List<string>();
     if (!string.IsNullOrEmpty(existingPlayer.AllMatchIds)) {
@@ -1089,21 +1199,18 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
 
     string summonerUrl = $"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={apiKey}";
     string topMasteriesUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}/top?count=3&api_key={apiKey}";
-    string challengesUrl = $"https://{region}.api.riotgames.com/lol/challenges/v1/player-data/{puuid}?api_key={apiKey}";
     string clashUrl = $"https://{region}.api.riotgames.com/lol/clash/v1/players/by-puuid/{puuid}?api_key={apiKey}"; // ukoliko nisi u clashu vraca [] i vraca 200
 
     var summonerTask = GetStringAsyncWithRetry(summonerUrl);
     var topMasteriesTask = GetStringAsyncWithRetry(topMasteriesUrl);
-    var challengesTask = GetStringAsyncWithRetry(challengesUrl);
     var clashTask = GetStringAsyncWithRetry(clashUrl);
 
-    await Task.WhenAll(summonerTask, topMasteriesTask, challengesTask, clashTask);
+    await Task.WhenAll(summonerTask, topMasteriesTask, clashTask);
 
     existingPlayer.Puuid = puuid;
     existingPlayer.SummonerData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await summonerTask));
     existingPlayer.EntriesData = JsonSerializer.Serialize(entries);
     existingPlayer.TopMasteriesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await topMasteriesTask));
-    existingPlayer.ChallengesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await challengesTask));
     existingPlayer.SpectatorData = spectatorData is string s ? s : JsonSerializer.Serialize(spectatorData);
     existingPlayer.ClashData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await clashTask));
 
@@ -1119,20 +1226,83 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
     existingPlayer.AddedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
     await dbContext.SaveChangesAsync();
-    return Results.Ok(existingPlayer);
+    
+    var allMatchesData = JsonSerializer.Deserialize<List<LeagueMatchDto>>(existingPlayer.AllMatchesData)!;
+    var paginatedMatches = allMatchesData
+        .Skip(page * pageSize)
+        .Take(pageSize)
+        .ToList();
+        
+    var playerDto = new PlayerDto {
+        Id = existingPlayer.Id,
+        SummonerName = existingPlayer.SummonerName,
+        SummonerTag = existingPlayer.SummonerTag,
+        Region = existingPlayer.Region,
+        Puuid = existingPlayer.Puuid,
+        SummonerData = JsonSerializer.Deserialize<RiotSummonerDto>(existingPlayer.SummonerData)!,
+        EntriesData = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(existingPlayer.EntriesData)!,
+        TopMasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(existingPlayer.TopMasteriesData)!,
+        AllMatchIds = JsonSerializer.Deserialize<List<string>>(existingPlayer.AllMatchIds)!,
+        AllMatchesData = paginatedMatches,
+        TotalMatches = allMatchesData.Count,
+        AllGamesChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(existingPlayer.AllGamesChampionStatsData)!,
+        AllGamesRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRole>>(existingPlayer.AllGamesRoleStatsData)!,
+        RankedSoloChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(existingPlayer.RankedSoloChampionStatsData)!,
+        RankedSoloRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRole>>(existingPlayer.RankedSoloRoleStatsData)!,
+        RankedFlexChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(existingPlayer.RankedFlexChampionStatsData)!,
+        RankedFlexRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRole>>(existingPlayer.RankedFlexRoleStatsData)!,
+        SpectatorData = JsonSerializer.Deserialize<object>(existingPlayer.SpectatorData),
+        ClashData = JsonSerializer.Deserialize<object>(existingPlayer.ClashData),
+        AddedAt = existingPlayer.AddedAt,
+        CurrentPage = page,
+        PageSize = pageSize
+    };
+    
+    return Results.Ok(playerDto);
 });
 
-app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/livegame", async (string region, string puuid, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext) => {
+app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/livegame", async (string region, string puuid, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext, int page = 0, int pageSize = 20) => {
     if (!regionMapping.TryGetValue(region, out var continent)) {
         return Results.Problem("Invalid region specified.");
     }
 
-    var player = await dbContext.Players.FirstOrDefaultAsync(p => p.Puuid == puuid);
+    var player = await dbContext.Players.AsNoTracking().FirstOrDefaultAsync(p => p.Puuid == puuid);
     if (player == null) {
         return Results.NotFound("Player not found.");
     }
-
-    return Results.Ok(player);
+    
+    var allMatchesData = JsonSerializer.Deserialize<List<LeagueMatchDto>>(player.AllMatchesData)!;
+    var paginatedMatches = allMatchesData
+        .Skip(page * pageSize)
+        .Take(pageSize)
+        .ToList();
+        
+    var dto = new PlayerDto {
+        Id = player.Id,
+        SummonerName = player.SummonerName,
+        SummonerTag = player.SummonerTag,
+        Region = player.Region,
+        Puuid = player.Puuid,
+        SummonerData = JsonSerializer.Deserialize<RiotSummonerDto>(player.SummonerData)!,
+        EntriesData = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(player.EntriesData)!,
+        TopMasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(player.TopMasteriesData)!,
+        AllMatchIds = JsonSerializer.Deserialize<List<string>>(player.AllMatchIds)!,
+        AllMatchesData = paginatedMatches,
+        TotalMatches = allMatchesData.Count,
+        AllGamesChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(player.AllGamesChampionStatsData)!,
+        AllGamesRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRole>>(player.AllGamesRoleStatsData)!,
+        RankedSoloChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(player.RankedSoloChampionStatsData)!,
+        RankedSoloRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRole>>(player.RankedSoloRoleStatsData)!,
+        RankedFlexChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(player.RankedFlexChampionStatsData)!,
+        RankedFlexRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRole>>(player.RankedFlexRoleStatsData)!,
+        SpectatorData = JsonSerializer.Deserialize<object>(player.SpectatorData),
+        ClashData = JsonSerializer.Deserialize<object>(player.ClashData),
+        AddedAt = player.AddedAt,
+        CurrentPage = page,
+        PageSize = pageSize
+    };
+    
+    return Results.Ok(dto);
 });
 
 async Task<Dictionary<int, string>> BuildChampionRoleMappingAsync(HttpClient client) {
@@ -1229,7 +1399,7 @@ public class LeagueEntriesDto {
 
 public class LeagueMatchDto {
     public LeagueMatchDetailsDto details { get; set; } = new LeagueMatchDetailsDto();
-    public LeagueMatchTimelineDto timeline { get; set; } = new LeagueMatchTimelineDto();
+    public string timelineJson { get; set; } = string.Empty;
 }
 
 public class LeagueMatchDetailsDto {
@@ -1302,7 +1472,7 @@ public class ParticipantDto {
     public int assists { get; set; }
     public bool firstBloodKill { get; set; }
     public bool firstBloodAssist { get; set; }
-    public LeagueMatchSoloDuoEntryDto entry { get; set; } = new LeagueMatchSoloDuoEntryDto();
+    public LeagueEntriesDto entry { get; set; } = new LeagueEntriesDto();
 
     // Progression and timing
     public bool eligibleForProgression { get; set; }
@@ -1449,17 +1619,6 @@ public class ParticipantDto {
     public int placement { get; set; }
 }
 
-public class LeagueMatchSoloDuoEntryDto {
-    public bool freshBlood   { get; set; }
-    public bool inactive     { get; set; }
-    public bool veteran      { get; set; }
-    public bool hotStreak    { get; set; }
-    public string tier       { get; set; } = string.Empty;
-    public string rank       { get; set; } = string.Empty;
-    public int leaguePoints { get; set; }
-    public string puuid      { get; set; } = string.Empty;
-}
-
 public class PerksDto {
     public StatPerksDto statPerks { get; set; } = new StatPerksDto();
     public List<PerkStyleDto> styles { get; set; } = new List<PerkStyleDto>();
@@ -1484,117 +1643,6 @@ public class PerkSelectionDto {
     public int var3 { get; set; }
 }
 
-public class LeagueMatchTimelineDto {
-    public LeagueMatchTimelineMetadataDto metadata { get; set; } = new LeagueMatchTimelineMetadataDto();
-    public LeagueMatchTimelineInfoDto info  { get; set; } = new LeagueMatchTimelineInfoDto();
-}
-
-public class LeagueMatchTimelineMetadataDto {
-    public string dataVersion { get; set; } = string.Empty;
-    public string matchId { get; set; } = string.Empty;
-    public List<string> participants { get; set; } = new List<string>();
-}
-
-public class LeagueMatchTimelineInfoDto {
-    public string endOfGameResult { get; set; }  = string.Empty;
-    public long frameInterval { get; set; }
-    public long gameId { get; set; }
-    public List<LeagueMatchTimelineParticipantDto> participants { get; set; } = new List<LeagueMatchTimelineParticipantDto>();
-    public List<LeagueMatchTimelineFramesDto> frames { get; set; } = new List<LeagueMatchTimelineFramesDto>();
-}
-
-public class LeagueMatchTimelineParticipantDto {
-    public int participantId { get; set; }
-    public string puuid { get; set; } = string.Empty;
-}
-
-public class LeagueMatchTimelineFramesDto {
-    public List<LeagueMatchTimelineEventsDto> events {get; set;} = new List<LeagueMatchTimelineEventsDto>();
-    public LeagueMatchTimelineParticipantFramesDto participantFrames {get; set;} = new LeagueMatchTimelineParticipantFramesDto();
-    public int timestamp {get; set;}
-}
-
-public class LeagueMatchTimelineEventsDto {
-    public long timestamp {get; set;}
-    public long realTimestamp {get; set;}
-    public string type {get; set;} = string.Empty;
-}
-
-public class LeagueMatchTimelineParticipantFramesDto {
-    [JsonPropertyName("1")] public LeagueMatchTimelineParticipantFrameDto P1 { get; set; } = new LeagueMatchTimelineParticipantFrameDto();
-    [JsonPropertyName("2")] public LeagueMatchTimelineParticipantFrameDto P2 { get; set; } = new LeagueMatchTimelineParticipantFrameDto();
-    [JsonPropertyName("3")] public LeagueMatchTimelineParticipantFrameDto P3 { get; set; } = new LeagueMatchTimelineParticipantFrameDto();
-    [JsonPropertyName("4")] public LeagueMatchTimelineParticipantFrameDto P4 { get; set; } = new LeagueMatchTimelineParticipantFrameDto();
-    [JsonPropertyName("5")] public LeagueMatchTimelineParticipantFrameDto P5 { get; set; } = new LeagueMatchTimelineParticipantFrameDto();
-    [JsonPropertyName("6")] public LeagueMatchTimelineParticipantFrameDto P6 { get; set; } = new LeagueMatchTimelineParticipantFrameDto();
-    [JsonPropertyName("7")] public LeagueMatchTimelineParticipantFrameDto P7 { get; set; } = new LeagueMatchTimelineParticipantFrameDto();
-    [JsonPropertyName("8")] public LeagueMatchTimelineParticipantFrameDto P8 { get; set; } = new LeagueMatchTimelineParticipantFrameDto();
-    [JsonPropertyName("9")] public LeagueMatchTimelineParticipantFrameDto P9 { get; set; } = new LeagueMatchTimelineParticipantFrameDto();
-}
-
-public class LeagueMatchTimelineParticipantFrameDto {
-    public LeagueMatchTimelineChampionStatsDto championStats { get; set; } = new LeagueMatchTimelineChampionStatsDto();
-    public int currentGold { get; set; }
-    public LeagueMatchTimelineDamageStatsDto damageStats { get; set; } = new LeagueMatchTimelineDamageStatsDto();
-    public int goldPerSecond { get; set; }
-    public int jungleMinionsKilled { get; set; }
-    public int level { get; set; }
-    public int minionsKilled { get; set; }
-    public int participantId { get; set; }
-    public LeagueMatchTimelinePositionDto position { get; set; } = new LeagueMatchTimelinePositionDto();
-    public int timeEnemySpentControlled { get; set; }
-    public int totalGold { get; set; }
-    public int xp { get; set; }
-}
-
-public class LeagueMatchTimelineChampionStatsDto {
-    public int abilityHaste { get; set; }
-    public int abilityPower { get; set; }
-    public int armor { get; set; }
-    public int armorPen { get; set; }
-    public float armorPenPercent { get; set; }
-    public int attackDamage { get; set; }
-    public float attackSpeed { get; set; }
-    public float bonusArmorPenPercent { get; set; }
-    public float bonusMagicPenPercent { get; set; }
-    public int ccReduction { get; set; }
-    public float cooldownReduction { get; set; }
-    public int health { get; set; }
-    public int healthMax { get; set; }
-    public float healthRegen { get; set; }
-    public float lifesteal { get; set; }
-    public int magicPen { get; set; }
-    public float magicPenPercent { get; set; }
-    public int magicResist { get; set; }
-    public float movementSpeed { get; set; }
-    public float omnivamp { get; set; }
-    public float physicalVamp { get; set; }
-    public int power { get; set; }
-    public int powerMax { get; set; }
-    public float powerRegen { get; set; }
-    public float spellVamp { get; set; }
-}
-
-public class LeagueMatchTimelineDamageStatsDto {
-    public int magicDamageDone { get; set; }
-    public int magicDamageDoneToChampions { get; set; }
-    public int magicDamageTaken { get; set; }
-    public int physicalDamageDone { get; set; }
-    public int physicalDamageDoneToChampions { get; set; }
-    public int physicalDamageTaken { get; set; }
-    public int totalDamageDone { get; set; }
-    public int totalDamageDoneToChampions { get; set; }
-    public int totalDamageTaken { get; set; }
-    public int trueDamageDone { get; set; }
-    public int trueDamageDoneToChampions { get; set; }
-    public int trueDamageTaken { get; set; }
-}
-
-public class LeagueMatchTimelinePositionDto {
-    public int x { get; set; }
-    public int y { get; set; }
-}
-
 public class ChampionStats {
     public int ChampionId { get; set; }
     public string ChampionName { get; set; } = string.Empty;
@@ -1616,4 +1664,54 @@ public class PreferredRole {
     public int TotalAssists { get; set; }
     public double WinRate => Games > 0 ? (double)Wins / Games * 100 : 0;
     public double AverageKDA => TotalDeaths > 0 ? (double)(TotalKills + TotalAssists) / TotalDeaths : (TotalKills + TotalAssists);
+}
+
+public class PlayerDto {
+    public int Id { get; set; }
+    public string SummonerName { get; set; } = string.Empty;
+    public string SummonerTag { get; set; } = string.Empty;
+    public string Region { get; set; } = string.Empty;
+    public string Puuid { get; set; } = string.Empty;
+    public RiotSummonerDto SummonerData { get; set; } = new();
+    public List<LeagueEntriesDto> EntriesData { get; set; } = new();
+    public List<ChampionMasteryDto> TopMasteriesData { get; set; } = new();
+    public List<string> AllMatchIds { get; set; } = new();
+    public List<LeagueMatchDto> AllMatchesData { get; set; } = new();
+    public Dictionary<int, ChampionStats> AllGamesChampionStatsData { get; set; } = new();
+    public Dictionary<string, PreferredRole> AllGamesRoleStatsData { get; set; } = new();
+    public Dictionary<int, ChampionStats> RankedSoloChampionStatsData { get; set; } = new();
+    public Dictionary<string, PreferredRole> RankedSoloRoleStatsData { get; set; } = new();
+    public Dictionary<int, ChampionStats> RankedFlexChampionStatsData { get; set; } = new();
+    public Dictionary<string, PreferredRole> RankedFlexRoleStatsData { get; set; } = new();
+    public object? SpectatorData { get; set; }
+    public object? ClashData { get; set; }
+    public long AddedAt { get; set; }
+    public int TotalMatches { get; set; }
+    public int CurrentPage { get; set; }
+    public int PageSize { get; set; }
+}
+
+public class RiotSummonerDto {
+    public string accountId { get; set; } = string.Empty;
+    public int profileIconId { get; set; }
+    public long revisionDate { get; set; }
+    public string id { get; set; } = string.Empty;
+    public string puuid { get; set; } = string.Empty;
+    public long summonerLevel { get; set; }
+}
+
+public class ChampionMasteryDto {
+    public string puuid { get; set; } = string.Empty;
+    public long championPointsUntilNextLevel { get; set; } 
+    public bool chestGranted { get; set; } 
+    public long championId  { get; set; } 
+    public long lastPlayTime { get; set; } 
+    public int championLevel { get; set; } 
+    public int championPoints { get; set; } 
+    public long championPointsSinceLastLevel { get; set; } 
+    public int markRequiredForNextLevel { get; set; } 
+    public int championSeasonMilestone { get; set; } 
+    public JsonElement nextSeasonMilestone { get; set; } 
+    public int tokensEarned { get; set; } 
+    public List<string> milestoneGrades { get; set; } = new List<string>();
 }

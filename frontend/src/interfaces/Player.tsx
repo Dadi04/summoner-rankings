@@ -1,3 +1,9 @@
+import PreferredRole from "./PreferredRole";
+import ChampionStats from "./ChampionStats";
+import Match from "./Match";
+import Entry from "./Entry";
+import Mastery from "./Mastery";
+import SummonerInfo from "./SummonerInfo";
 
 interface Player {
     summonerName: string;
@@ -5,21 +11,23 @@ interface Player {
     region: string;
     puuid: string;
     playerData: string;
-    summonerData: string;
-    entriesData: string;
-    topMasteriesData: string;
-    allMatchIds: string;
-    allMatchesData: string;
-    allGamesChampionStatsData: string;
-    allGamesRoleStatsData: string;
-    rankedSoloChampionStatsData: string;
-    rankedSoloRoleStatsData: string;
-    rankedFlexChampionStatsData: string;
-    rankedFlexRoleStatsData: string;
-    challengesData: string;
-    spectatorData: string;
-    clashData: string;
+    summonerData: SummonerInfo;
+    entriesData: Entry[];
+    topMasteriesData: Mastery[];
+    allMatchIds: string[];
+    allMatchesData: Match[];
+    allGamesChampionStatsData: ChampionStats[];
+    allGamesRoleStatsData: PreferredRole[];
+    rankedSoloChampionStatsData: ChampionStats[];
+    rankedSoloRoleStatsData: PreferredRole[];
+    rankedFlexChampionStatsData:ChampionStats[];
+    rankedFlexRoleStatsData: PreferredRole[];
+    spectatorData: any;
+    clashData: any;
     addedAt: number;
+    totalMatches: number;
+    currentPage: number;
+    pageSize: number;
 }
 
 export default Player;

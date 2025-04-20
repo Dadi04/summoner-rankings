@@ -10,7 +10,6 @@ namespace backend.Models {
         public string SummonerTag {get; set;} = string.Empty;
         public string Region {get; set;} = string.Empty;
         public string Puuid {get; set;} = string.Empty;
-        public string PlayerData {get; set;} = string.Empty;
         public string SummonerData { get; set; } = string.Empty;
         public string EntriesData { get; set; } = string.Empty;
         public string TopMasteriesData { get; set; } = string.Empty;
@@ -22,7 +21,6 @@ namespace backend.Models {
         public string RankedSoloRoleStatsData { get; set; } = string.Empty;
         public string RankedFlexChampionStatsData { get; set; } = string.Empty;
         public string RankedFlexRoleStatsData { get; set; } = string.Empty;
-        public string ChallengesData { get; set; } = string.Empty;
         public string SpectatorData { get; set; } = string.Empty;
         public string ClashData { get; set; } = string.Empty;
         public long AddedAt { get; set; }

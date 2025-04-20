@@ -6,7 +6,7 @@ import noneicon from "../assets/none.jpg";
 
 const getChampionData = (championId: number) =>
     Object.values(championJson.data).find(
-        (champion) => champion.key === championId.toString()
+      c => c.key === String(championId)
     );
 
 const ChampionImage: React.FC<{championId: number; teamId?: number; isTeamIdSame: boolean; classes?: string;}> = ({championId, teamId, isTeamIdSame, classes}) => {

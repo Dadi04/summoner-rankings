@@ -14,6 +14,9 @@ export default defineConfig({
       '/api/lol/profile': {
         target: 'http://localhost:5288',
       },
+      '/api/lol/profile/update': {
+        target: 'http://localhost:5288',
+      },
       '/api/lol/profile/livegame': {
         target: 'http://localhost:5288',
       }

@@ -10,6 +10,7 @@ namespace backend.Services {
         public ApplicationDbContext(DbContextOptions options) : base(options) {}
 
         public DbSet<Player> Players { get; set; } = null!;
+        public DbSet<PlayerMatch> PlayerMatches { get; set; }
         public DbSet<Race> Races { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
@@ -18,6 +19,9 @@ namespace backend.Services {
                 .WithMany(r => r.Players);
 
             base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<PlayerMatch>()
+                .HasIndex(pm => new { pm.PlayerId, pm.MatchIndex })
+                .HasDatabaseName("IX_PlayerMatches_PlayerId_MatchIndex");
         }
 
     }

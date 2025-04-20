@@ -1,4 +1,5 @@
 import MatchPerks from "./MatchPerks";
+import Entry from "./Entry";
 
 interface MatchParticipant {
     teamEarlySurrendered: boolean;
@@ -11,18 +12,7 @@ interface MatchParticipant {
     assists: number;
     firstBloodKill: number;
     firstBloodAssist: number;
-    entry: {
-        puuid: string;
-    
-        freshBlood: boolean;
-        inactive: boolean;
-        veteran: boolean;
-        hotStreak: boolean;
-    
-        tier: string;
-        rank: string;
-        leaguePoints: number;
-    };
+    entry: Entry;
 
     eligibleForProgression: boolean;
     timePlayed: number;

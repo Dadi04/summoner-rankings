@@ -7,8 +7,8 @@ import UpdateButton from "../components/UpdateButton";
 import Player from '../interfaces/Player';
 
 const SummonerProfileHeader: React.FC<{data: Player; regionCode: string; encodedSummoner: string; setData: React.Dispatch<React.SetStateAction<any>>;}> = ({data, regionCode, encodedSummoner, setData}) => {
-    const summonerData = JSON.parse(data.summonerData);
-    const spectatorData = JSON.parse(data.spectatorData);
+    const summonerData = data.summonerData;
+    const spectatorData = data.spectatorData;
 
     const [isFavorite, setIsFavorite] = useState(false);
 
@@ -44,7 +44,7 @@ const SummonerProfileHeader: React.FC<{data: Player; regionCode: string; encoded
         <div className="w-full bg-neutral-800 mt-1">
             <div className="flex border-b-1 pt-5 pb-5 pl-5">
                 <div className="relative p-3">
-                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/profileicon/${summonerData.profileIconId}.png`} alt={summonerData.profileIconId} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
+                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/profileicon/${summonerData.profileIconId}.png`} alt={`{summonerData.profileIconId}`} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
                     <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 -translate-y-[10px] z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{summonerData.summonerLevel}</span>
                 </div>
                 <div className="pt-3 pb-3">
