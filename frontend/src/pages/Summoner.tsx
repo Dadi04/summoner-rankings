@@ -40,6 +40,7 @@ import loadingAnimation from "../assets/animations/loading.lottie";
 import arrowdownlight from "../assets/arrow-down-light.png";
 import noneicon from "../assets/none.jpg";
 import map from "../assets/map11.png";
+import arrow_going_up from "../assets/arrow-going-up.png";
 import grubsicon from "../assets/monsters/grubs.png";
 import drakeicon from "../assets/monsters/dragon.png";
 import air_drakeicon from "../assets/monsters/dragon_cloud.png";
@@ -184,34 +185,48 @@ const MatchGeneral: React.FC<{info: MatchInfo, timeline: string; puuid: string, 
                             <img src={drakeicon} alt="drakeicon" className="h-10" />
                             <p>{blueTeamKills.dragon}</p>
                         </div>
-                        <div className="flex items-center">
-                            <img src={air_drakeicon} alt="air_drakeicon" className="h-6" />
-                            <p className="text-xl">{blueTeamKills.air_dragon}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={earth_drakeicon} alt="earth_drakeicon" className="h-6" />
-                            <p className="text-xl">{blueTeamKills.earth_dragon}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={fire_drakeicon} alt="fire_drakeicon" className="h-6" />
-                            <p className="text-xl">{blueTeamKills.fire_dragon}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={water_drakeicon} alt="water_drakeicon" className="h-6" />
-                            <p className="text-xl">{blueTeamKills.water_dragon}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={chemtech_drakeicon} alt="chemtech_drakeicon" className="h-6" />
-                            <p className="text-xl">{blueTeamKills.chemtech_dragon}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={hextech_drakeicon} alt="hextech_drakeicon" className="h-6" />
-                            <p className="text-xl">{blueTeamKills.hextech_dragon}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={elder_drakeicon} alt="elder_drakeicon" className="h-10" />
-                            <p>{blueTeamKills.elder_dragon}</p>
-                        </div>
+                        {blueTeamKills.air_dragon > 0 && (
+                            <div className="flex items-center">
+                                <img src={air_drakeicon} alt="air_drakeicon" className="h-6" />
+                                <p className="text-xl">{blueTeamKills.air_dragon}</p>
+                            </div>
+                        )}
+                        {blueTeamKills.earth_dragon > 0 && (
+                            <div className="flex items-center">
+                                <img src={earth_drakeicon} alt="earth_drakeicon" className="h-6" />
+                                <p className="text-xl">{blueTeamKills.earth_dragon}</p>
+                            </div>
+                        )}
+                        {blueTeamKills.fire_dragon > 0 && (
+                            <div className="flex items-center">
+                                <img src={fire_drakeicon} alt="fire_drakeicon" className="h-6" />
+                                <p className="text-xl">{blueTeamKills.fire_dragon}</p>
+                            </div>
+                        )}
+                        {blueTeamKills.water_dragon > 0 && (
+                            <div className="flex items-center">
+                                <img src={water_drakeicon} alt="water_drakeicon" className="h-6" />
+                                <p className="text-xl">{blueTeamKills.water_dragon}</p>
+                            </div>
+                        )}
+                        {blueTeamKills.chemtech_dragon > 0 && (
+                            <div className="flex items-center">
+                                <img src={chemtech_drakeicon} alt="chemtech_drakeicon" className="h-6" />
+                                <p className="text-xl">{blueTeamKills.chemtech_dragon}</p>
+                            </div>
+                        )}
+                        {blueTeamKills.hextech_dragon > 0 && (
+                            <div className="flex items-center">
+                                <img src={hextech_drakeicon} alt="hextech_drakeicon" className="h-6" />
+                                <p className="text-xl">{blueTeamKills.hextech_dragon}</p>
+                            </div>
+                        )}
+                        {((blueTeamKills.dragon ?? 0) + (redTeamKills.dragon ?? 0) > 3) && (
+                            <div className="flex items-center">
+                                <img src={elder_drakeicon} alt="elder_drakeicon" className="h-10" />
+                                <p>{blueTeamKills.elder_dragon}</p>
+                            </div>
+                        )}
                         <div className="flex items-center">
                             <img src={heraldicon} alt="heraldicon" className="h-10" />
                             <p>{blueTeamKills.herald}</p>
@@ -310,34 +325,48 @@ const MatchGeneral: React.FC<{info: MatchInfo, timeline: string; puuid: string, 
                             <img src={drakeicon} alt="drakeicon" className="h-10" />
                             <p>{redTeamKills.dragon}</p>
                         </div>
-                        <div className="flex items-center">
-                            <img src={air_drakeicon} alt="air_drakeicon" className="h-6" />
-                            <p className="text-xl">{redTeamKills.air_dragon}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={earth_drakeicon} alt="earth_drakeicon" className="h-6" />
-                            <p className="text-xl">{redTeamKills.earth_dragon}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={fire_drakeicon} alt="fire_drakeicon" className="h-6" />
-                            <p className="text-xl">{redTeamKills.fire_dragon}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={water_drakeicon} alt="water_drakeicon" className="h-6" />
-                            <p className="text-xl">{redTeamKills.water_dragon}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={chemtech_drakeicon} alt="chemtech_drakeicon" className="h-6" />
-                            <p className="text-xl">{redTeamKills.chemtech_dragon}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={hextech_drakeicon} alt="hextech_drakeicon" className="h-6" />
-                            <p className="text-xl">{redTeamKills.hextech_dragon}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={elder_drakeicon} alt="elder_drakeicon" className="h-10" />
-                            <p>{redTeamKills.elder_dragon}</p>
-                        </div>
+                        {redTeamKills.air_dragon > 0 && (
+                            <div className="flex items-center">
+                                <img src={air_drakeicon} alt="air_drakeicon" className="h-6" />
+                                <p className="text-xl">{redTeamKills.air_dragon}</p>
+                            </div>
+                        )}
+                        {redTeamKills.earth_dragon > 0 && (
+                            <div className="flex items-center">
+                                <img src={earth_drakeicon} alt="earth_drakeicon" className="h-6" />
+                                <p className="text-xl">{redTeamKills.earth_dragon}</p>
+                            </div>
+                        )}
+                        {redTeamKills.fire_dragon > 0 && (
+                            <div className="flex items-center">
+                                <img src={fire_drakeicon} alt="fire_drakeicon" className="h-6" />
+                                <p className="text-xl">{redTeamKills.fire_dragon}</p>
+                            </div>
+                        )}
+                        {redTeamKills.water_dragon > 0 && (
+                            <div className="flex items-center">
+                                <img src={water_drakeicon} alt="water_drakeicon" className="h-6" />
+                                <p className="text-xl">{redTeamKills.water_dragon}</p>
+                            </div>
+                        )}
+                        {redTeamKills.chemtech_dragon > 0 && (
+                            <div className="flex items-center">
+                                <img src={chemtech_drakeicon} alt="chemtech_drakeicon" className="h-6" />
+                                <p className="text-xl">{redTeamKills.chemtech_dragon}</p>
+                            </div>
+                        )}
+                        {redTeamKills.hextech_dragon > 0 && (
+                            <div className="flex items-center">
+                                <img src={hextech_drakeicon} alt="hextech_drakeicon" className="h-6" />
+                                <p className="text-xl">{redTeamKills.hextech_dragon}</p>
+                            </div>
+                        )}
+                        {((blueTeamKills.dragon ?? 0) + (redTeamKills.dragon ?? 0) > 3) && (
+                            <div className="flex items-center">
+                                <img src={elder_drakeicon} alt="elder_drakeicon" className="h-10" />
+                                <p>{redTeamKills.elder_dragon}</p>
+                            </div>
+                        )}
                         <div className="flex items-center">
                             <img src={heraldicon} alt="heraldicon" className="h-10" />
                             <p>{redTeamKills.herald}</p>
@@ -1152,24 +1181,67 @@ const Summoner: React.FC = () => {
         rankedFlexWinrate = Math.round(rankedFlexEntry.wins / (rankedFlexEntry.wins + rankedFlexEntry.losses) * 100);
     }
     
-    const allKills = allMatchesData.reduce((sum, match) => {
+    const totalPlayerKills = allMatchesData.reduce((sum, match) => {
         const player = match.details.info.participants.find(p => p.puuid === apiData.puuid);
         return sum + (player?.kills ?? 0)
     }, 0);
-    const allDeaths = allMatchesData.reduce((sum, match) => {
+    const totalPlayerDeaths = allMatchesData.reduce((sum, match) => {
         const player = match.details.info.participants.find(p => p.puuid === apiData.puuid);
         return sum + (player?.deaths ?? 0)
     }, 0);
-    const allAssists = allMatchesData.reduce((sum, match) => {
+    const totalPlayerAssists = allMatchesData.reduce((sum, match) => {
         const player = match.details.info.participants.find(p => p.puuid === apiData.puuid);
         return sum + (player?.assists ?? 0)
     }, 0);
-    const avgKDA = allDeaths > 0 ? ((allKills + allAssists) / allDeaths).toFixed(2) : "Perfect";
+    const avgKDA = totalPlayerDeaths > 0 ? ((totalPlayerKills + totalPlayerAssists) / totalPlayerDeaths).toFixed(2) : "Perfect";
 
-    const allWins = allMatchesData.reduce((sum, match) => {
+    const totalKills = allMatchesData.reduce((sum, match) => {
         const player = match.details.info.participants.find(p => p.puuid === apiData.puuid);
-        return sum + (player?.win ? 1 : 0)
+        if (player) {
+            const playerTeamId = player.teamId;
+            const teamKills = match.details.info.participants.filter(p => p.teamId === playerTeamId).reduce((teamSum, teammate) => teamSum + (teammate.kills || 0), 0);  
+            
+            return sum + teamKills;
+        }
+        return sum;
     }, 0);
+    const avgKP = Math.round((totalPlayerAssists+totalPlayerKills)/totalKills*100);
+
+    const champStats = new Map<number, ChampionStats>();
+    for (const match of allMatchesData) {
+        for (const p of match.details.info.participants) {
+            const id = p.championId;
+            const name = p.championName;
+
+            if (!champStats.has(id)) {
+                champStats.set(id, {
+                    championId: id,
+                    championName: name,
+                    games: 0,
+                    wins: 0,
+                    totalKills: 0,
+                    totalDeaths: 0,
+                    totalAssists: 0,
+                    winRate: 0,
+                    averageKDA: 0,
+                })
+            }
+
+            const entry = champStats.get(id)!;
+            entry.games += 1;
+            if (p.win) entry.wins += 1;
+            entry.totalKills   += p.kills;
+            entry.totalDeaths  += p.deaths;
+            entry.totalAssists += p.assists;
+        }
+    }
+
+    for (const entry of champStats.values()) {
+        entry.winRate = entry.wins / entry.games * 100;
+        entry.averageKDA = entry.totalDeaths > 0 ? (entry.totalKills + entry.totalAssists) / entry.totalDeaths : (entry.totalKills + entry.totalAssists);
+    }
+
+    const top3 = Array.from(champStats.values()).sort((a, b) => b.games - a.games).slice(0, 3);
 
     const roleCounts = roleLabels.reduce((acc, { role }) => {
         acc[role] = 0;
@@ -1190,6 +1262,10 @@ const Summoner: React.FC = () => {
     const totalPages = Math.round(apiData.totalMatches / apiData.pageSize);
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
+    const allWins = allMatchesData.reduce((sum, match) => {
+        const player = match.details.info.participants.find(p => p.puuid === apiData.puuid);
+        return sum + (player?.win ? 1 : 0)
+    }, 0);
     const winratePercent = Math.round(allWins / totalGames * 100);
     const winAngle = winratePercent * 1.8;
 
@@ -1358,7 +1434,7 @@ const Summoner: React.FC = () => {
                                 </div>
                             </div>
                             {championsStatsData.length > 0 ? (
-                                <div className="grid grid-cols-[28%_26%_26%_20%] mb-1 pr-5">
+                                <div className="grid grid-cols-[28%_26%_26%_20%] mb-1 pr-5 text-neutral-400 text-lg">
                                     <p></p>
                                     <h1 className="text-center">KDA</h1>
                                     <h1 className="text-center">Games</h1>
@@ -1381,11 +1457,13 @@ const Summoner: React.FC = () => {
                                                 <p className={`${getKDAColor(Math.round(championStat.averageKDA*100)/100)}`}>
                                                     {Math.round(championStat.averageKDA*100)/100}:1
                                                 </p>
-                                                <p>
-                                                    {Math.round(championStat.totalKills/championStat.games*10)/10}/
-                                                    {Math.round(championStat.totalDeaths/championStat.games*10)/10}/
-                                                    {Math.round(championStat.totalAssists/championStat.games*10)/10}
-                                                </p>
+                                                <div className="flex justify-center gap-1 items-center">
+                                                    <p className="text-neutral-200 text-md">{Math.round(championStat.totalKills/championStat.games*10)/10}</p>
+                                                    <p className="text-neutral-400 text-sm">/</p>
+                                                    <p className="text-neutral-200 text-md">{Math.round(championStat.totalDeaths/championStat.games*10)/10}</p>
+                                                    <p className="text-neutral-400 text-sm">/</p>
+                                                    <p className="text-neutral-200 text-md">{Math.round(championStat.totalAssists/championStat.games*10)/10}</p>
+                                                </div>
                                             </div>
                                             <div>
                                                 {championStat.games}
@@ -1415,7 +1493,7 @@ const Summoner: React.FC = () => {
                                     </select>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-[20%_23%_23%_23%_10%] mb-1 text-center">
+                            <div className="grid grid-cols-[20%_23%_23%_23%_10%] mb-1 text-center text-neutral-400 text-lg">
                                 <p></p>
                                 <p>Role</p>
                                 <p>Games</p>
@@ -1429,7 +1507,7 @@ const Summoner: React.FC = () => {
                                             <img src={`https://dpm.lol/position/${role.roleName}.svg`} alt={role.roleName} className="h-[35px]" />
                                         </div>
                                         <div>
-                                            <p>{role.roleName}</p>
+                                            <p className="capitalize">{role.roleName === "UTILITY" ? "support" : role.roleName.toLowerCase()}</p>
                                         </div>
                                         <div>
                                             <p>{role.games}</p>
@@ -1484,8 +1562,9 @@ const Summoner: React.FC = () => {
                     </div>
                     <div className="w-[75%] flex flex-col">
                         <div className="bg-neutral-800 text-center p-2 pb-4 mb-2 border-b-6 border-purple-600 rounded-b-lg shadow-xl">
-                            <div className="p-2">
-                                <h1>Last 20 Games Pefrormance TODO</h1>
+                            <div className="flex justify-center items-center gap-2 p-2">
+                                <img src={arrow_going_up} alt="arrow_going_up" className="h-8" />
+                                <h1 className="text-lg">Last 20 Games Pefrormance</h1>
                             </div>
                             <div className="grid grid-cols-[25%_25%_25%_25%]">
                                 <div className="flex flex-col items-center justify-center space-y-10 relative">
@@ -1503,19 +1582,33 @@ const Summoner: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <div>
-                                    Champions TODO (DPM.LOL)
+                                <div className="flex flex-col h-full justify-center gap-4">
+                                    {top3.map(champStats => (
+                                        <div className="flex items-center justify-center gap-4">
+                                            <ChampionImage championId={champStats.championId} teamId={200} isTeamIdSame={true} classes="h-13" />
+                                            <div className="flex flex-col text-lg">
+                                                <div className="flex gap-2">
+                                                    <p className={`${getWinrateColor(champStats.winRate, champStats.games)}`}>{Math.round(champStats.winRate)}%</p>
+                                                    <p className="text-neutral-400">{champStats.wins}W-{champStats.games-champStats.wins}L</p>
+                                                </div>
+                                                <div>
+                                                    <p className={`text-left ${getKDAColor(champStats.averageKDA)}`}>{champStats.averageKDA.toFixed(1)} KDA</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                                 <div>
                                     <p className="text-neutral-400 text-lg">KDA</p>
                                     <p className="text-6xl text-purple-400 font-semibold mt-12 mb-5">{avgKDA}</p>
                                     <div className="flex items-center justify-center">
-                                        <p className="text-xl">{(allKills/apiData.pageSize).toFixed(1)}</p>
+                                        <p className="text-xl">{(totalPlayerKills/apiData.pageSize).toFixed(1)}</p>
                                         <p className="text-md text-neutral-600 px-2">/</p>
-                                        <p className="text-xl text-purple-300">{(allDeaths/apiData.pageSize).toFixed(1)}</p>
+                                        <p className="text-xl text-purple-300">{(totalPlayerDeaths/apiData.pageSize).toFixed(1)}</p>
                                         <p className="text-md text-neutral-600 px-2">/</p>
-                                        <p className="text-xl">{(allAssists/apiData.pageSize).toFixed(1)}</p>
+                                        <p className="text-xl">{(totalPlayerAssists/apiData.pageSize).toFixed(1)}</p>
                                     </div>
+                                    <p className="text-neutral-400 mt-4">Average Kill Participation {avgKP}%</p>
                                 </div>
                                 <div>
                                     <p className="text-neutral-400 text-lg">Preferred Roles</p>

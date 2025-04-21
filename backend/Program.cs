@@ -241,7 +241,6 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
     if (!regionMapping.TryGetValue(region, out var continent)) {
         return Results.Problem("Invalid region specified.");
     }
-    Console.WriteLine($"[Debug] Input: Name='{summonerName}', Tag='{summonerTag}', Region='{region}'");
     var existingPlayer = await dbContext.Players
         .AsNoTracking()
         .Select(p => new  {
@@ -268,12 +267,10 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         .FirstOrDefaultAsync(p => p.SummonerName == summonerName
                             && p.SummonerTag == summonerTag
                             && p.Region == region);
-    Console.WriteLine(existingPlayer?.Puuid);
     if (existingPlayer != null) {
         var totalMatches = await dbContext.PlayerMatches
             .Where(pm => pm.PlayerId == existingPlayer.Id)
             .CountAsync();
-        Console.WriteLine(totalMatches);
         var pageMatches = await dbContext.PlayerMatches
             .AsNoTracking()
             .Where(pm => pm.PlayerId == existingPlayer.Id)
@@ -286,7 +283,6 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
                                   PropertyNameCaseInsensitive = true
                               })!)
             .ToListAsync();
-        Console.WriteLine(pageMatches[0]);
         var dto = new PlayerDto {
             Id = existingPlayer.Id,
             SummonerName = existingPlayer.SummonerName,
