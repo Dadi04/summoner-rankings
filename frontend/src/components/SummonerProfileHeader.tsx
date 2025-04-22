@@ -61,7 +61,7 @@ const SummonerProfileHeader: React.FC<{data: Player; regionCode: string; encoded
                         <div className="pt-2 pb-2 pl-1">
                             <p className="uppercase border-r-1 pr-2">{data.region}</p>
                         </div>
-                        <p className="p-2">Ladder Rank num </p>
+                        <p className="p-2">Ladder Rank TODO</p>
                     </div>
                     <div className="text-neutral-50">
                         <UpdateButton regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setData} />

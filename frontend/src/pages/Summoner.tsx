@@ -85,7 +85,7 @@ const roleLabels: { role: Role; label: string }[] = [
     { role: "UTILITY", label: "Support" },
 ];  
 
-const ItemImage: React.FC<{itemId: number; matchWon: boolean; classes: string}> = ({itemId, matchWon, classes}) => {
+const ItemImage: React.FC<{itemId: number; matchWon?: boolean; classes: string}> = ({itemId, matchWon, classes}) => {
     if (itemId === 0) {
         return (
             <div className={`h-8 w-8 ${matchWon ? "bg-[#2F436E]" : "bg-[#703C47]"} `}></div>
@@ -97,7 +97,7 @@ const ItemImage: React.FC<{itemId: number; matchWon: boolean; classes: string}> 
     );
 }
 
-const MatchGeneral: React.FC<{info: MatchInfo, timeline: string; puuid: string, region: string}> = ({info, timeline, puuid, region}) => {
+const MatchGeneral: React.FC<{info: MatchInfo, timeline: any; puuid: string, region: string}> = ({info, timeline, puuid, region}) => {
     const blueSideWon = info.participants.find(p => p.teamId === 100)?.win;
 
     const blueTeamObjectives = info.teams.find(team => team.teamId === 100)?.objectives;
@@ -110,7 +110,7 @@ const MatchGeneral: React.FC<{info: MatchInfo, timeline: string; puuid: string, 
         red: Object.fromEntries(dragonTypes.map(type => [type.toLowerCase(), [] as any[]]))
     };
 
-    for (const frame of JSON.parse(timeline).info.frames) {
+    for (const frame of timeline.info.frames) {
         if (!frame.events) continue;
 
         const atakhanKillEvent = frame.events.find((event: any) => event.type === "ELITE_MONSTER_KILL" && event.monsterType === "ATAKHAN");
@@ -276,7 +276,7 @@ const MatchGeneral: React.FC<{info: MatchInfo, timeline: string; puuid: string, 
                                     <div className="text-neutral-300 flex items-center gap-1">
                                         {/* <img src={`https://static.bigbrain.gg/assets/lol/ranks/s13/mini/${participant.entry.tier.toLowerCase()}.svg`} alt={participant.entry.tier.toLowerCase()} className="h-5" /> */}
                                         {/* <p className="capitalize">{participant.entry.tier.toLowerCase()} {participant.entry.rank} {participant.entry.leaguePoints} LP</p> */}
-                                        <p className="capitalize">Level {participant.summonerLevel} (TODO RANK (CANCER))</p>
+                                        <p className="capitalize">Level {participant.summonerLevel} (TODO RANK)</p>
                                     </div>
                                 </div>
                             </div>
@@ -567,9 +567,9 @@ const MatchPerformance: React.FC<{info: MatchInfo, puuid: string}> = ({info, puu
     );
 }
 
-const MatchDetails: React.FC<{info: MatchInfo, selectedPlayer: MatchParticipant, champions: any[]}> = ({info, selectedPlayer, champions}) => {
-
-    const champ = champions.find(c => c.id === selectedPlayer.championName);
+const MatchDetails: React.FC<{info: MatchInfo, timeline: any, selectedPlayer: MatchParticipant, champions: any[]}> = ({info, timeline, selectedPlayer, champions}) => {
+    console.log(timeline)
+    const champ = champions.find(c => c.id.toLowerCase() === selectedPlayer.championName.toLowerCase());
     if (!champ) return <div>Champion not found</div>;
     const { spells,  } = champ;
 
@@ -584,6 +584,96 @@ const MatchDetails: React.FC<{info: MatchInfo, selectedPlayer: MatchParticipant,
         { icon: enemyMissingPing,count: selectedPlayer.enemyMissingPings },
         { icon: enemyVisionPing, count: selectedPlayer.enemyVisionPings },
     ];
+    
+    const everyBuildOrder: Record<number, any[]> = {};
+    for (const frame of timeline.info.frames) {
+        if (!frame.events) continue;
+
+        for (const e of frame.events) {
+            if ((e.type === "ITEM_PURCHASED" || e.type === "ITEM_SOLD")) {
+                const playerId = e.participantId;
+
+                if (!everyBuildOrder[playerId]) {
+                    everyBuildOrder[playerId] = [];
+                }
+
+                everyBuildOrder[playerId].push(e);
+            }
+        }
+    }
+    const buildOrder = everyBuildOrder[selectedPlayer.participantId];
+
+    const buildOrderByMinute: Record<number, typeof buildOrder> = buildOrder.reduce((acc, e) => {
+            const minute = Math.floor(e.timestamp / 60_000);
+            if (!acc[minute]) acc[minute] = [];
+            acc[minute].push(e);
+            return acc;
+    }, {} as Record<number, typeof buildOrder>);
+    const minutes = Object.keys(buildOrderByMinute).map((m) => parseInt(m, 10)).sort((a, b) => a - b);
+
+    const everySkillOrder: Record<number, any[]> = {};
+    for (const frame of timeline.info.frames) {
+        if (!frame.events) continue;
+
+        for (const e of frame.events) {
+            if (e.type === "SKILL_LEVEL_UP") {
+                const playerId = e.participantId;
+
+                if (!everySkillOrder[playerId]) {
+                    everySkillOrder[playerId] = [];
+                }
+
+                everySkillOrder[playerId].push(e);
+            }
+        }
+    }
+    const skillOrder = everySkillOrder[selectedPlayer.participantId] ?? [];
+    skillOrder.forEach((evt, idx) => {evt.championLevel = idx + 1;});
+
+    const levelsBySlot: Record<number, number[]> = {};
+    skillOrder.forEach(evt => {
+        const slot = evt.skillSlot;
+        levelsBySlot[slot] ||= [];
+        levelsBySlot[slot].push(evt.championLevel);
+    });
+
+    const min15 = timeline.info.frames[15];
+    const csDiffs   = [] as number[];
+    const goldDiffs = [] as number[];
+    const xpDiffs   = [] as number[];
+    for (let i = 1; i <= 5; i++) {
+        const blueFrame = min15.participantFrames[i];
+        const redFrame  = min15.participantFrames[i + 5];
+        csDiffs.push((blueFrame.minionsKilled + blueFrame.jungleMinionsKilled) - (redFrame.minionsKilled + redFrame.jungleMinionsKilled));
+        goldDiffs.push(blueFrame.totalGold - redFrame.totalGold);
+        xpDiffs.push(blueFrame.xp - redFrame.xp);
+    }
+    
+    const firstTime: Record<number, number> = {};
+    for (const frame of timeline.info.frames) {
+        if (!frame.events) continue;
+
+        for (const e of frame.events) {
+            if (e.type === "LEVEL_UP" && e.level === 2) {
+                const playerId = e.participantId;
+                if (firstTime[playerId] === undefined || e.timestamp < firstTime[playerId]) {
+                    firstTime[playerId] = e.timestamp;
+                }
+            }
+        }
+    }
+    const firstLv2s = Array.from({ length: 5 }, (_, i) => {
+        const blueTime = firstTime[i + 1];
+        const redTime  = firstTime[i + 6];
+        return blueTime < redTime ? "Yes" : "No";
+    });
+
+    const rawIndex = (selectedPlayer.participantId - 1) % 5;
+    const sign = selectedPlayer.teamId === 100 ? 1 : -1;
+    const cs = csDiffs[rawIndex] * sign;
+    const gold = goldDiffs[rawIndex] * sign;
+    const xp = xpDiffs[rawIndex] * sign;
+    const firstLv2 = selectedPlayer.teamId === 100 ? firstLv2s[rawIndex] : (firstLv2s[rawIndex] === "Yes" ? "No" : "Yes");
 
     return (
         <>
@@ -593,19 +683,19 @@ const MatchDetails: React.FC<{info: MatchInfo, selectedPlayer: MatchParticipant,
                         <h1 className="text-xl text-neutral-300 mb-2">LANING PHASE (AT 15)</h1>
                         <div className="flex justify-between">
                             <div className="w-[25%] text-center">
-                                <p>TODO</p>
+                                <p className="font-semibold text-lg">{cs > 0 ? "+" : ""}{cs}</p>
                                 <p className="text-neutral-400">cs diff</p>
                             </div>
                             <div className="w-[25%] text-center">
-                                <p>TODO</p>
+                                <p className="font-semibold text-lg">{gold > 0 ? "+" : ""}{gold}</p>
                                 <p className="text-neutral-400">gold diff</p>
                             </div>
                             <div className="w-[25%] text-center">
-                                <p>TODO</p>
+                                <p className="font-semibold text-lg">{xp > 0 ? "+" : ""}{xp}</p>
                                 <p className="text-neutral-400">xp diff</p>
                             </div>
                             <div className="w-[25%] text-center">
-                                <p>TODO</p>
+                                <p className="font-semibold text-lg">{firstLv2}</p>
                                 <p className="text-neutral-400">first lvl 2</p>
                             </div>
                         </div>
@@ -614,15 +704,15 @@ const MatchDetails: React.FC<{info: MatchInfo, selectedPlayer: MatchParticipant,
                         <h1 className="text-xl text-neutral-300 mb-2">WARDS</h1>
                         <div className="flex justify-between">
                             <div className="w-[33%] text-center">
-                                <p>{selectedPlayer.wardsPlaced-selectedPlayer.detectorWardsPlaced}</p>
+                                <p className="font-semibold text-lg">{selectedPlayer.wardsPlaced-selectedPlayer.detectorWardsPlaced}</p>
                                 <p className="text-neutral-400">placed</p>
                             </div>
                             <div className="w-[33%] text-center">
-                                <p>{selectedPlayer.wardsKilled}</p>
+                                <p className="font-semibold text-lg">{selectedPlayer.wardsKilled}</p>
                                 <p className="text-neutral-400">killed</p>
                             </div>
                             <div className="w-[33%] text-center">
-                                <p>{selectedPlayer.detectorWardsPlaced}</p>
+                                <p className="font-semibold text-lg">{selectedPlayer.detectorWardsPlaced}</p>
                                 <p className="text-neutral-400">control</p>
                             </div>
                         </div>
@@ -631,19 +721,19 @@ const MatchDetails: React.FC<{info: MatchInfo, selectedPlayer: MatchParticipant,
                         <h1 className="text-xl text-neutral-300 mb-2">GLOBAL STATS</h1>
                         <div className="flex justify-between">
                             <div className="w-[25%] text-center">
-                                <p>{((selectedPlayer.totalMinionsKilled+selectedPlayer.neutralMinionsKilled)/(info.gameDuration/60)).toFixed(1)}</p>
+                                <p className="font-semibold text-lg">{((selectedPlayer.totalMinionsKilled+selectedPlayer.neutralMinionsKilled)/(info.gameDuration/60)).toFixed(1)}</p>
                                 <p className="text-neutral-400">CS/min</p>
                             </div>
                             <div className="w-[25%] text-center">
-                                <p>{(selectedPlayer.visionScore/(info.gameDuration/60)).toFixed(1)}</p>
+                                <p className="font-semibold text-lg">{(selectedPlayer.visionScore/(info.gameDuration/60)).toFixed(1)}</p>
                                 <p className="text-neutral-400">VS/min</p>
                             </div>
                             <div className="w-[25%] text-center">
-                                <p>{(selectedPlayer.totalDamageDealtToChampions/(info.gameDuration/60)).toFixed(1)}</p>
+                                <p className="font-semibold text-lg">{(selectedPlayer.totalDamageDealtToChampions/(info.gameDuration/60)).toFixed(1)}</p>
                                 <p className="text-neutral-400">DMG/min</p>
                             </div>
                             <div className="w-[25%] text-center">
-                                <p>{(selectedPlayer.goldEarned/(info.gameDuration/60)).toFixed(1)}</p>
+                                <p className="font-semibold text-lg">{(selectedPlayer.goldEarned/(info.gameDuration/60)).toFixed(1)}</p>
                                 <p className="text-neutral-400">gold/min</p>
                             </div>
                         </div>
@@ -652,14 +742,62 @@ const MatchDetails: React.FC<{info: MatchInfo, selectedPlayer: MatchParticipant,
             </div>
             <div className="bg-neutral-700 my-2 p-2">
                 <h1 className="text-xl text-neutral-300 mb-2">BUILD ORDER</h1>
-                <div>
-                    TODO
+                <div className="m-auto w-[90%] flex justify-center flex-wrap">
+                    {minutes.map((minute, index) => (
+                        <div className="flex gap-2">
+                            <div key={minute} className="flex flex-col items-center p-2 ml-2">
+                                <div className="flex items-center">
+                                    {buildOrderByMinute[minute].map(item => (
+                                        <div key={item.eventId} className="relative">
+                                            <ItemImage itemId={item.itemId} classes={item.type === 'ITEM_SOLD' ? 'h-10 filter grayscale brightness-70' : 'h-10'} />
+                                            {item.type === 'ITEM_SOLD' && (
+                                                <svg className="absolute bottom-0 left-0 h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <line x1="4" y1="4" x2="20" y2="20" stroke="red" strokeWidth="3" />
+                                                    <line x1="20" y1="4" x2="4" y2="20" stroke="red" strokeWidth="3" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                                <h3 className="font-semibold mb-1 text-neutral-300">{minute}m</h3>
+                            </div>
+                            {index < minutes.length - 1 && (
+                                <svg className="h-14 w-6 text-neutral-400" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <polyline points="8 4 16 12 8 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            )}
+                        </div>
+                    ))}
                 </div>
             </div>
-            <div className="bg-neutral-700 my-2 p-2">
+            <div className="bg-neutral-700 my-2 p-2 pb-4">
                 <h1 className="text-xl text-neutral-300 mb-2">SKILL ORDER</h1>
-                <div>
-                    TODO
+                <div className="w-full flex flex-col gap-2">
+                    {spells.map((spell: any, i: number) => {
+                        const slot = i + 1;
+                        const takenAtLevels = levelsBySlot[slot] || [];
+
+                        return (
+                            <div className="flex gap-2 justify-center">
+                                <div className="relative w-fit">
+                                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spell.image.full}`} alt={spell.image.full} className="h-12"/>
+                                    <p className="absolute bottom-0 right-0 transform px-1 text-md bg-black rounded-full">{['Q','W','E','R'][i]}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    {Array.from({ length: 18 }, (_, idx) => {
+                                        const level = idx + 1;
+                                        const isTakenHere = takenAtLevels.includes(level);
+
+                                        return (
+                                            <div key={idx} className={`h-12 w-12 ${isTakenHere ? 'bg-purple-600 text-white flex items-center justify-center' : 'bg-neutral-800'}`}>
+                                                {isTakenHere ? level : null}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )
+                    })}
                 </div>
             </div>
             <div className="flex my-1 gap-2 items-stretch">
@@ -669,7 +807,7 @@ const MatchDetails: React.FC<{info: MatchInfo, selectedPlayer: MatchParticipant,
                         <div className="flex justify-around">
                             <div>
                                 <div className="relative">
-                                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[0].image.full}`} alt="" />
+                                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[0].image.full}`} alt={spells[0].image.full} />
                                     <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">Q</p>
                                 </div>
                                 <div className="text-center mt-4">
@@ -679,7 +817,7 @@ const MatchDetails: React.FC<{info: MatchInfo, selectedPlayer: MatchParticipant,
                             </div>
                             <div>
                                 <div className="relative">
-                                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[1].image.full}`} alt="" />
+                                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[1].image.full}`} alt={spells[1].image.full} />
                                     <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">W</p>
                                 </div>
                                 <div className="text-center mt-4">
@@ -689,7 +827,7 @@ const MatchDetails: React.FC<{info: MatchInfo, selectedPlayer: MatchParticipant,
                             </div>
                             <div>
                                 <div className="relative">
-                                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[2].image.full}`} alt="" />
+                                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[2].image.full}`} alt={spells[2].image.full} />
                                     <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">E</p>
                                 </div>
                                 <div className="text-center mt-4">
@@ -699,7 +837,7 @@ const MatchDetails: React.FC<{info: MatchInfo, selectedPlayer: MatchParticipant,
                             </div>
                             <div>
                                 <div className="relative">
-                                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[3].image.full}`} alt="" />
+                                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[3].image.full}`} alt={spells[3].image.full} />
                                     <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">R</p>
                                 </div>
                                 <div className="text-center mt-4">
@@ -837,8 +975,7 @@ const MatchRunes: React.FC<MatchPerks> = ({ statPerks, styles }) => {
     );
 };
 
-const MatchTimeline: React.FC<{timeline: string; info: MatchInfo; selectedPlayer: MatchParticipant}> = ({timeline, info, selectedPlayer}) => {
-    console.log(JSON.parse(timeline))
+const MatchTimeline: React.FC<{timeline: any; info: MatchInfo; selectedPlayer: MatchParticipant}> = ({}) => {
     return (
         <>  
             <div className="flex justify-center gap-4">
@@ -867,7 +1004,7 @@ const MatchTimeline: React.FC<{timeline: string; info: MatchInfo; selectedPlayer
     );
 }
 
-const MatchRow: React.FC<{info: MatchInfo; timeline: string; puuid: string; region: string;}> = ({info, timeline, puuid, region}) => {
+const MatchRow: React.FC<{info: MatchInfo; timelineJson: string; puuid: string; region: string;}> = ({info, timelineJson, puuid, region}) => {
     const [showDetailsDiv, setShowDetailsDiv] = useState<boolean>(false);
     const [chooseTab, setChooseTab] = useState<string>("General");
     const [champions, setChampions] = useState<any[]>([]);
@@ -883,6 +1020,8 @@ const MatchRow: React.FC<{info: MatchInfo; timeline: string; puuid: string; regi
     const selectedPlayer = info.participants.find(participant => participant.championName === choosePlayerDetails);
     if (!selectedPlayer) return <div>Detail not found</div>;
       
+    const timeline = JSON.parse(timelineJson);
+
     let gameEnded = Math.round((Date.now() - info.gameEndTimestamp)/60000);
     let timeUnit = gameEnded === 1 ? "minute ago" : "minutes ago";
     if (gameEnded > 60) {
@@ -1029,31 +1168,71 @@ const MatchRow: React.FC<{info: MatchInfo; timeline: string; puuid: string; regi
                     <p onClick={() => setChooseTab("Timeline")} className={`${chooseTab === "Timeline" ? "bg-neutral-600" : ""} text-xl px-4 py-2 rounded-xl cursor-pointer transition-all hover:text-neutral-300`}>Timeline</p>
                 </div>
                 {chooseTab === "General" && (
-                    <div className="mt-2 mb-1">
-                        <MatchGeneral info={info} timeline={timeline} puuid={puuid} region={region} />
+                    <div>
+                        {(info.queueId > 400 && info.queueId < 500) ? (
+                            <div className="mt-2 mb-1">
+                                <MatchGeneral info={info} timeline={timeline} puuid={puuid} region={region} />
+                            </div>
+                        ) : (
+                            <div className="text-center text-2xl p-3">
+                                TODO
+                            </div>
+                        )}
                     </div>
                 )}
                 {chooseTab === "Performance" && (
-                    <div className="mt-2 mb-1">
-                        <MatchPerformance info={info} puuid={puuid} />
+                    <div>
+                        {(info.queueId > 400 && info.queueId < 500) ? (
+                            <div className="mt-2 mb-1">
+                                <MatchPerformance info={info} puuid={puuid} />
+                            </div>
+                        ) : (
+                            <div className="text-center text-2xl p-3">
+                                TODO
+                            </div>
+                        )}
                     </div>
                 )}
                 {chooseTab === "Details" && (
-                    <div className="mt-2 mb-1">
-                        <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} />
-                        <MatchDetails info={info} selectedPlayer={selectedPlayer} champions={champions} />
+                    <div>
+                        {(info.queueId > 400 && info.queueId < 500) ? (
+                            <div className="mt-2 mb-1">
+                                <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} />
+                                <MatchDetails info={info} timeline={timeline} selectedPlayer={selectedPlayer} champions={champions} />
+                            </div>
+                        ) : (
+                            <div className="text-center text-2xl p-3">
+                                TODO
+                            </div>
+                        )}
                     </div>
                 )}
                 {chooseTab === "Runes" && (
-                    <div className="mt-2 mb-1">
-                        <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} />
-                        <MatchRunes statPerks={selectedPlayer.perks.statPerks} styles={selectedPlayer.perks.styles} />
+                    <div>
+                        {(info.queueId > 400 && info.queueId < 500) ? (
+                            <div className="mt-2 mb-1">
+                                <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} />
+                                <MatchRunes statPerks={selectedPlayer.perks.statPerks} styles={selectedPlayer.perks.styles} />
+                            </div>
+                        ) : (
+                            <div className="text-center text-2xl p-3">
+                                TODO
+                            </div>
+                        )}
                     </div>
                 )}
                 {chooseTab === "Timeline" && (
-                    <div className="mt-2 mb-1">
-                        <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} />
-                        <MatchTimeline timeline={timeline} info={info} selectedPlayer={selectedPlayer} />
+                    <div>
+                        {(info.queueId > 400 && info.queueId < 500) ? (
+                            <div className="mt-2 mb-1">
+                                <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} />
+                                <MatchTimeline timeline={timeline} info={info} selectedPlayer={selectedPlayer} />
+                            </div>
+                        ) : (
+                            <div className="text-center text-2xl p-3">
+                                TODO
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -1209,39 +1388,45 @@ const Summoner: React.FC = () => {
 
     const champStats = new Map<number, ChampionStats>();
     for (const match of allMatchesData) {
-        for (const p of match.details.info.participants) {
-            const id = p.championId;
-            const name = p.championName;
+        const p = match.details.info.participants.find((player) => player.puuid === apiData.puuid);
+        if (!p) continue;
+        const { championId: id, championName: name, win, kills, deaths, assists } = p;
 
-            if (!champStats.has(id)) {
-                champStats.set(id, {
-                    championId: id,
-                    championName: name,
-                    games: 0,
-                    wins: 0,
-                    totalKills: 0,
-                    totalDeaths: 0,
-                    totalAssists: 0,
-                    winRate: 0,
-                    averageKDA: 0,
-                })
-            }
-
-            const entry = champStats.get(id)!;
-            entry.games += 1;
-            if (p.win) entry.wins += 1;
-            entry.totalKills   += p.kills;
-            entry.totalDeaths  += p.deaths;
-            entry.totalAssists += p.assists;
+        if (!champStats.has(id)) {
+            champStats.set(id, {
+              championId: id,
+              championName: name,
+              games: 0,
+              wins: 0,
+              totalKills: 0,
+              totalDeaths: 0,
+              totalAssists: 0,
+              winRate: 0,
+              averageKDA: 0,
+            });
         }
+        const entry = champStats.get(id)!;
+        entry.games += 1;
+        if (win) entry.wins += 1;
+        entry.totalKills   += kills;
+        entry.totalDeaths  += deaths;
+        entry.totalAssists += assists;
     }
 
-    for (const entry of champStats.values()) {
-        entry.winRate = entry.wins / entry.games * 100;
-        entry.averageKDA = entry.totalDeaths > 0 ? (entry.totalKills + entry.totalAssists) / entry.totalDeaths : (entry.totalKills + entry.totalAssists);
+    for (const entry of champStats.values()) { 
+        entry.winRate = (entry.wins / entry.games) * 100;
+        entry.averageKDA = entry.totalDeaths > 0 ? (entry.totalKills + entry.totalAssists) / entry.totalDeaths : entry.totalKills + entry.totalAssists;
     }
 
-    const top3 = Array.from(champStats.values()).sort((a, b) => b.games - a.games).slice(0, 3);
+    const top3 = Array.from(champStats.values()).sort((a, b) => {
+        if (b.games !== a.games) {
+          return b.games - a.games;
+        }
+        if (b.winRate !== a.winRate) {
+          return b.winRate - a.winRate;
+        }
+        return b.averageKDA - a.averageKDA;
+    }).slice(0, 3);
 
     const roleCounts = roleLabels.reduce((acc, { role }) => {
         acc[role] = 0;
@@ -1446,35 +1631,37 @@ const Summoner: React.FC = () => {
                                 </div>
                             )}
                             <div>
-                                {championsStatsData.slice(0, 5).map((championStat: ChampionStats, index: number) => (
-                                    <React.Fragment key={championStat.championId}>
-                                        { index !== 0 && <hr /> }
-                                        <div className="grid grid-cols-[28%_26%_26%_20%] pr-5 mb-1 mt-1 items-center text-center">
-                                            <div className="flex justify-center">
-                                                <ChampionImage championId={championStat.championId} isTeamIdSame={true} classes="h-15" />
-                                            </div>
-                                            <div>
-                                                <p className={`${getKDAColor(Math.round(championStat.averageKDA*100)/100)}`}>
-                                                    {Math.round(championStat.averageKDA*100)/100}:1
-                                                </p>
-                                                <div className="flex justify-center gap-1 items-center">
-                                                    <p className="text-neutral-200 text-md">{Math.round(championStat.totalKills/championStat.games*10)/10}</p>
-                                                    <p className="text-neutral-400 text-sm">/</p>
-                                                    <p className="text-neutral-200 text-md">{Math.round(championStat.totalDeaths/championStat.games*10)/10}</p>
-                                                    <p className="text-neutral-400 text-sm">/</p>
-                                                    <p className="text-neutral-200 text-md">{Math.round(championStat.totalAssists/championStat.games*10)/10}</p>
+                                {championsStatsData.slice(0, 5).map((championStat: ChampionStats, index: number) => {
+                                    return (
+                                        <div key={championStat.championId}>
+                                            { index !== 0 && <hr /> }
+                                            <div className="grid grid-cols-[28%_26%_26%_20%] pr-5 mb-1 mt-1 items-center text-center">
+                                                <div className="flex justify-center">
+                                                    <ChampionImage championId={championStat.championId} isTeamIdSame={true} classes="h-15" />
+                                                </div>
+                                                <div>
+                                                    <p className={`${getKDAColor(Math.round(championStat.averageKDA*100)/100)}`}>
+                                                        {Math.round(championStat.averageKDA*100)/100}:1
+                                                    </p>
+                                                    <div className="flex justify-center gap-1 items-center">
+                                                        <p className="text-neutral-200 text-md">{Math.round(championStat.totalKills/championStat.games*10)/10}</p>
+                                                        <p className="text-neutral-400 text-sm">/</p>
+                                                        <p className="text-neutral-200 text-md">{Math.round(championStat.totalDeaths/championStat.games*10)/10}</p>
+                                                        <p className="text-neutral-400 text-sm">/</p>
+                                                        <p className="text-neutral-200 text-md">{Math.round(championStat.totalAssists/championStat.games*10)/10}</p>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    {championStat.games}
+                                                </div>
+                                                <div className={`${getWinrateColor(Math.round(championStat.winRate), championStat.games)}`}>
+                                                    <p>{Math.round(championStat.winRate)}%</p> 
+                                                    {/* <p>({championStat.Wins}W-{championStat.Games-championStat.Wins}L)</p> */}
                                                 </div>
                                             </div>
-                                            <div>
-                                                {championStat.games}
-                                            </div>
-                                            <div className={`${getWinrateColor(Math.round(championStat.winRate), championStat.games)}`}>
-                                                <p>{Math.round(championStat.winRate)}%</p> 
-                                                {/* <p>({championStat.Wins}W-{championStat.Games-championStat.Wins}L)</p> */}
-                                            </div>
                                         </div>
-                                    </React.Fragment>
-                                ))}
+                                    )
+                                })}
                                 <Link to={`/lol/profile/${regionCode}/${encodedSummoner}/champions`} state={{apiData: apiData}} className="flex w-full text-xl justify-center p-2 bg-neutral-700 transition-all duration-150 ease-in hover:bg-neutral-600">
                                     See More Champions
                                 </Link>
@@ -1704,7 +1891,7 @@ const Summoner: React.FC = () => {
                         <div className="bg-neutral-800">
                             <div className="flex flex-col gap-1 p-2">
                                 {allMatchesData.map((match: Match) => (
-                                    <MatchRow info={match.details.info} timeline={match.timelineJson} puuid={apiData.puuid} region={regionCode} />
+                                    <MatchRow info={match.details.info} timelineJson={match.timelineJson} puuid={apiData.puuid} region={regionCode} />
                                 ))}
                             </div>
                             <div className="flex justify-center">
