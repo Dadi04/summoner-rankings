@@ -106,7 +106,7 @@ const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolea
     useEffect(() => {
         const championId = participant.championId;
       
-        const stats = championStats.find((cs: ChampionStats) => cs.ChampionId === championId);
+        const stats = championStats.find((cs: ChampionStats) => cs.championId === championId);
         
         if (stats) {
             setChampStats(stats);
@@ -118,7 +118,7 @@ const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolea
     const roleOrder = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
     const mostPlayedRoleData = preferredRole.reduce<RoleAccumulator>(
         (max, curr, index) => {
-            if (curr.Games > max.data.Games) {
+            if (curr.games > max.data.games) {
                 return { data: curr, roleName: roleOrder[index] };
             }
             return max;
@@ -217,17 +217,17 @@ const ParticipantRow: React.FC<{participant: Participant; isBeingWatched: boolea
             )}
             
             <div className="text-center">
-                <p className={getWinrateColor(champStats ? Math.round(champStats.WinRate) : -1)}>
-                    {champStats ? `${Math.round(champStats.WinRate)}%` : "-"}
+                <p className={getWinrateColor(champStats ? Math.round(champStats.winRate) : -1)}>
+                    {champStats ? `${Math.round(champStats.winRate)}%` : "-"}
                 </p>
-                <p>{champStats ? `(${champStats.Games} Played)` : ""}</p>
+                <p>{champStats ? `(${champStats.games} Played)` : ""}</p>
             </div>
             <div className="text-center">
-                <p className={getKDAColor(champStats ? Math.round(champStats.AverageKDA*100)/100 : -1)}>
-                    {champStats ? `${Math.round(champStats.AverageKDA*100)/100}:1 KDA` : "-"}
+                <p className={getKDAColor(champStats ? Math.round(champStats.averageKDA*100)/100 : -1)}>
+                    {champStats ? `${Math.round(champStats.averageKDA*100)/100}:1 KDA` : "-"}
                 </p>
                 <p>
-                    {champStats ? `(${Math.round(champStats.TotalKills/champStats.Games*10)/10} / ${Math.round(champStats.TotalDeaths/champStats.Games*10)/10} / ${Math.round(champStats.TotalAssists/champStats.Games*10)/10})` : ""}
+                    {champStats ? `(${Math.round(champStats.totalKills/champStats.games*10)/10} / ${Math.round(champStats.totalDeaths/champStats.games*10)/10} / ${Math.round(champStats.totalAssists/champStats.games*10)/10})` : ""}
                 </p>
             </div>
             {gridCols.includes("9%") && (

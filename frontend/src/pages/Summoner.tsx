@@ -975,29 +975,189 @@ const MatchRunes: React.FC<MatchPerks> = ({ statPerks, styles }) => {
     );
 };
 
-const MatchTimeline: React.FC<{timeline: any; info: MatchInfo; selectedPlayer: MatchParticipant}> = ({}) => {
+const MatchTimeline: React.FC<{timeline: any; info: MatchInfo; selectedPlayer: MatchParticipant}> = ({timeline, selectedPlayer}) => {
+    const everyTimeline: Record<number, any[]> = {};
+    for (const frame of timeline.info.frames) {
+        if (!frame.events) continue;
+
+        for (const e of frame.events) {
+            if (e.type === "ITEM_DESTROYED" || e.type === "ITEM_UNDO" || e.type === "LEVEL_UP" || e.type === "SKILL_LEVEL_UP") continue;
+
+            if (e.participantId) {
+                const participantId = e.participantId;
+
+                if (!everyTimeline[participantId]) {
+                    everyTimeline[participantId] = [];
+                }
+
+                everyTimeline[participantId].push(e);
+            }
+            else if (e.killerId) {
+                const killerId = e.killerId;
+
+                if (!everyTimeline[killerId]) {
+                    everyTimeline[killerId] = [];
+                }
+
+                everyTimeline[killerId].push(e);
+            } else if (e.creatorId) {
+                const creatorId = e.creatorId;
+
+                if (!everyTimeline[creatorId]) {
+                    everyTimeline[creatorId] = [];
+                }
+
+                everyTimeline[creatorId].push(e);
+            }
+        }
+    }
+    const playerTimeline = everyTimeline[selectedPlayer.participantId];
+    console.log(playerTimeline)
+
     return (
         <>  
-            <div className="flex justify-center gap-4">
-                <div>
-                    <input type="checkbox" />
-                    <span>Kills</span>
+            <div className="flex justify-center gap-5 mb-4 mt-2">
+                <div className="checkbox-wrapper-37">
+                    <input type="checkbox" name="checkbox" id="kills" />
+                    <label htmlFor="kills" className="terms-label">
+                        <svg className="checkbox-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <mask id="path-1-inside-1_476_5-37" fill="white">
+                                <rect width="200" height="200" />
+                            </mask>
+                            <rect width="200" height="200" className="checkbox-box" stroke-width="40" mask="url(#path-1-inside-1_476_5-37)" />
+                            <path className="checkbox-tick" d="M52 111.018L76.9867 136L149 64" stroke-width="15" />
+                        </svg>
+                        <span className="ml-1 text-lg">Kills</span>
+                    </label>
                 </div>
-                <div>
-                    <input type="checkbox" />
-                    <span>Objectives</span>
+                <div className="checkbox-wrapper-37">
+                    <input type="checkbox" name="checkbox" id="objectives" />
+                    <label htmlFor="objectives" className="terms-label">
+                        <svg className="checkbox-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <mask id="path-1-inside-1_476_5-37" fill="white">
+                                <rect width="200" height="200" />
+                            </mask>
+                            <rect width="200" height="200" className="checkbox-box" stroke-width="40" mask="url(#path-1-inside-1_476_5-37)" />
+                            <path className="checkbox-tick" d="M52 111.018L76.9867 136L149 64" stroke-width="15" />
+                        </svg>
+                        <span className="ml-1 text-lg">Objectives</span>
+                    </label>
                 </div>
-                <div>
-                    <input type="checkbox" />
-                    <span>Vision</span>
+                <div className="checkbox-wrapper-37">
+                    <input type="checkbox" name="checkbox" id="all-players" />
+                    <label htmlFor="all-players" className="terms-label">
+                        <svg className="checkbox-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <mask id="path-1-inside-1_476_5-37" fill="white">
+                                <rect width="200" height="200" />
+                            </mask>
+                            <rect width="200" height="200" className="checkbox-box" stroke-width="40" mask="url(#path-1-inside-1_476_5-37)" />
+                            <path className="checkbox-tick" d="M52 111.018L76.9867 136L149 64" stroke-width="15" />
+                        </svg>
+                        <span className="ml-1 text-lg">All Players</span>
+                    </label>
+                </div>
+                <div className="checkbox-wrapper-37">
+                    <input type="checkbox" name="checkbox" id="vision" />
+                    <label htmlFor="vision" className="terms-label">
+                        <svg className="checkbox-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <mask id="path-1-inside-1_476_5-37" fill="white">
+                                <rect width="200" height="200" />
+                            </mask>
+                            <rect width="200" height="200" className="checkbox-box" stroke-width="40" mask="url(#path-1-inside-1_476_5-37)" />
+                            <path className="checkbox-tick" d="M52 111.018L76.9867 136L149 64" stroke-width="15" />
+                        </svg>
+                        <span className="ml-1 text-lg">Vision</span>
+                    </label>
+                </div>
+                <div className="checkbox-wrapper-37">
+                    <input type="checkbox" name="checkbox" id="items" />
+                    <label htmlFor="items" className="terms-label">
+                        <svg className="checkbox-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <mask id="path-1-inside-1_476_5-37" fill="white">
+                                <rect width="200" height="200" />
+                            </mask>
+                            <rect width="200" height="200" className="checkbox-box" stroke-width="40" mask="url(#path-1-inside-1_476_5-37)" />
+                            <path className="checkbox-tick" d="M52 111.018L76.9867 136L149 64" stroke-width="15" />
+                        </svg>
+                        <span className="ml-1 text-lg">Items</span>
+                    </label>
                 </div>
             </div>
-            <div className="flex">
-                <div className="flex-1">
-                    timeline
+            <div className="flex gap-4 p-2">
+                <div className="flex-1 h-[500px] overflow-y-auto custom-scrollbar">
+                    {playerTimeline.map((event: any, i: number) => {
+                        const minutes = Math.round(event.timestamp / 60000);
+
+                        return (
+                            <div>
+                                {(event.type === "CHAMPION_KILL") && (
+                                    <div key={i} className={`flex items-center mb-1 gap-2`}>
+                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                        <div className={`flex w-full gap-2 p-2 ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                            {/* <img src={killerChamp.icon} alt={killerChamp.name} className="w-6 h-6 rounded-full" /> */}
+                                            <p className="text-sm text-gray-200">Participant {event.killerId}</p>
+                                            <p className="text-sm text-white">killed</p>
+                                            {/* <img src={victimChamp.icon} alt={victimChamp.name} className="w-6 h-6 rounded-full" /> */}
+                                            <p className="text-sm text-gray-200">Participant {event.victimId}</p>
+                                        </div>
+                                    </div>
+                                )}
+                                {event.type === "ITEM_PURCHASED" && (
+                                    <div key={i} className={`flex items-center mb-1 gap-2`}>
+                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                        <div className={`flex w-full gap-2 p-2 ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                            <p className="text-sm text-gray-200">Participant {event.participantId}</p>
+                                            <p className="text-sm text-white">purchased</p>
+                                            <p className="text-sm text-gray-200">Item {event.itemId}</p>
+                                        </div>
+                                    </div>
+                                )}
+                                {event.type === "WARD_PLACED" && (
+                                    <div key={i} className={`flex items-center mb-1 gap-2`}>
+                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                        <div className={`flex w-full gap-2 p-2 ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                            <p className="text-sm text-gray-200">Participant {event.creatorId}</p>
+                                            <p className="text-sm text-white">placed</p>
+                                            <p className="text-sm text-gray-200">{event.wardType}</p>
+                                        </div>
+                                    </div>
+                                )}
+                                {event.type === "BUILDING_KILL" && (
+                                    <div key={i} className={`flex items-center mb-1 gap-2`}>
+                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                        <div className={`flex w-full gap-2 p-2 ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                            <p className="text-sm text-gray-200">Participant {event.killerId}</p>
+                                            <p className="text-sm text-white">destroyed</p>
+                                            <p className="text-sm text-gray-200">{event.buildingType}, type {event.towerType} on lane {event.laneType}</p>
+                                        </div>
+                                    </div>
+                                )}
+                                {event.type === "ELITE_MONSTER_KILL" && (
+                                    <div key={i} className={`flex items-center mb-1 gap-2`}>
+                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                        <div className={`flex w-full gap-2 p-2 ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                            <p className="text-sm text-gray-200">Participant {event.killerId}</p>
+                                            <p className="text-sm text-white">killed</p>
+                                            <p className="text-sm text-gray-200">{event.monsterType} {event.monsterSubType ? `subtype ${event.monsterSubType}` : ""}</p>
+                                        </div>
+                                    </div>
+                                )}
+                                {event.type === "CHAMPION_SPECIAL_KILL" && (
+                                    <div key={i} className={`flex items-center mb-1 gap-2`}>
+                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                        <div className={`flex w-full gap-2 p-2 ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                            <p className="text-sm text-gray-200">Participant {event.killerId}</p>
+                                            <p className="text-sm text-white">killed</p>
+                                            <p className="text-sm text-gray-200">{event.multiKillLength} players</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
-                <div className="flex-1">
-                    <img src={map} alt="summonersrift" />
+                <div>
+                    <img src={map} alt="summonersrift" className="h-[500px] object-contain" />
                 </div>
             </div>
         </>
@@ -1732,7 +1892,7 @@ const Summoner: React.FC = () => {
                                                 {mastery.championLevel > 10 && (
                                                     <p className="text-sm bg-neutral-900 pl-2 pr-2 absolute transform bottom-0 left-1/2 -translate-x-1/2">{mastery.championLevel}</p>
                                                 )}
-                                                <p className="text-center text-sm">{mastery.championPoints}</p>
+                                                {/* <p className="text-center text-sm">{mastery.championPoints}</p> */}
                                             </div>
                                             <div className="relative">
                                                 <img src={medalSrc} alt={medalAlt} className="h-8 absolute transform bottom-0 left-1/2 translate-y-1/2 -translate-x-1/2" />
