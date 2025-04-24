@@ -8,6 +8,9 @@ import ChampionImage from "../components/ChampionImage";
 import SummonerSpellImage from "../components/SummonerSpellImage";
 import RuneImage from "../components/RuneImage";
 import SummonerProfileHeader from "../components/SummonerProfileHeader";
+import IconImage from "../components/IconImage";
+import RuneSlot from "../components/RuneSlot";
+import ShardSlot from "../components/ShardSlot";
 
 import Participant from "../interfaces/Participant";
 import Entry from "../interfaces/Entry";
@@ -19,9 +22,6 @@ import Match from "../interfaces/Match";
 import MatchInfo from "../interfaces/MatchInfo";
 import MatchParticipant from "../interfaces/MatchParticipant";
 import MatchPerks from "../interfaces/MatchPerks";
-import IconImage from "../components/IconImage";
-import RuneSlot from "../components/RuneSlot";
-import ShardSlot from "../components/ShardSlot";
 // import SummonerInfo from "../interfaces/SummonerInfo";
 
 import queueJson from "../assets/json/queues.json";
@@ -41,20 +41,37 @@ import arrowdownlight from "../assets/arrow-down-light.png";
 import noneicon from "../assets/none.jpg";
 import map from "../assets/map11.png";
 import arrow_going_up from "../assets/arrow-going-up.png";
-import grubsicon from "../assets/monsters/grubs.png";
-import drakeicon from "../assets/monsters/dragon.png";
-import air_drakeicon from "../assets/monsters/dragon_cloud.png";
-import earth_drakeicon from "../assets/monsters/dragon_mountain.png";
-import fire_drakeicon from "../assets/monsters/dragon_infernal.png";
-import water_drakeicon from "../assets/monsters/dragon_ocean.png";
-import chemtech_drakeicon from "../assets/monsters/dragon_chemtech.png";
-import hextech_drakeicon from "../assets/monsters/dragon_hextech.png";
-import elder_drakeicon from "../assets/monsters/dragon_elder.png";
-import heraldicon from "../assets/monsters/riftherald.png";
-import baronicon from "../assets/monsters/baron.png";
-import atakhanicon from "../assets/monsters/atakhan.png";
-import turreticon from "../assets/monsters/tower.png";
-import inhibitoricon from "../assets/monsters/inhibitor.png";
+import grubsicon from "../assets/monsters/icons/grubs.png";
+import drakeicon from "../assets/monsters/icons/dragon.png";
+import air_drakeicon from "../assets/monsters/icons/dragon_cloud.png";
+import earth_drakeicon from "../assets/monsters/icons/dragon_mountain.png";
+import fire_drakeicon from "../assets/monsters/icons/dragon_infernal.png";
+import water_drakeicon from "../assets/monsters/icons/dragon_ocean.png";
+import chemtech_drakeicon from "../assets/monsters/icons/dragon_chemtech.png";
+import hextech_drakeicon from "../assets/monsters/icons/dragon_hextech.png";
+import elder_drakeicon from "../assets/monsters/icons/dragon_elder.png";
+import heraldicon from "../assets/monsters/icons/riftherald.png";
+import baronicon from "../assets/monsters/icons/baron.png";
+import atakhanicon from "../assets/monsters/icons/atakhan.png";
+import turreticon from "../assets/monsters/icons/tower.png";
+import inhibitoricon from "../assets/monsters/icons/inhibitor.png";
+import grubsimg from "../assets/monsters/imgs/grubs.webp";
+import air_drakeimg from "../assets/monsters/imgs/dragon_cloud.webp";
+import earth_drakeimg from "../assets/monsters/imgs/dragon_mountain.webp";
+import fire_drakeimg from "../assets/monsters/imgs/dragon_infernal.webp";
+import water_drakeimg from "../assets/monsters/imgs/dragon_ocean.webp";
+import chemtech_drakeimg from "../assets/monsters/imgs/dragon_chemtech.webp";
+import hextech_drakeimg from "../assets/monsters/imgs/dragon_hextech.webp";
+import elder_drakeimg from "../assets/monsters/imgs/dragon_elder.webp";
+import heraldimg from "../assets/monsters/imgs/riftherald.png";
+import baronimg from "../assets/monsters/imgs/baron.webp";
+import atakhanimg from "../assets/monsters/imgs/atakhan.webp";
+import red_turretimg from "../assets/monsters/imgs/red_tower.webp";
+import blue_turretimg from "../assets/monsters/imgs/blue_tower.webp";
+import red_nexusimg from "../assets/monsters/imgs/red_nexus.webp";
+import blue_nexusimg from "../assets/monsters/imgs/blue_nexus.webp";
+import red_inhibitorimg from "../assets/monsters/imgs/red_inhibitor.png";
+import blue_inhibitorimg from "../assets/monsters/imgs/blue_inhibitor.webp";
 import allInPing from "../assets/pings/allInPing.webp";
 import assistMePing from "../assets/pings/assistMePing.webp";
 import enemyMissingPing from "../assets/pings/enemyMissingPing.webp";
@@ -568,7 +585,7 @@ const MatchPerformance: React.FC<{info: MatchInfo, puuid: string}> = ({info, puu
 }
 
 const MatchDetails: React.FC<{info: MatchInfo, timeline: any, selectedPlayer: MatchParticipant, champions: any[]}> = ({info, timeline, selectedPlayer, champions}) => {
-    console.log(timeline)
+    console.log(timeline, info)
     const champ = champions.find(c => c.id.toLowerCase() === selectedPlayer.championName.toLowerCase());
     if (!champ) return <div>Champion not found</div>;
     const { spells,  } = champ;
@@ -975,40 +992,29 @@ const MatchRunes: React.FC<MatchPerks> = ({ statPerks, styles }) => {
     );
 };
 
-const MatchTimeline: React.FC<{timeline: any; info: MatchInfo; selectedPlayer: MatchParticipant}> = ({timeline, selectedPlayer}) => {
+const MatchTimeline: React.FC<{timeline: any; info: MatchInfo; selectedPlayer: MatchParticipant; items: any;}> = ({timeline, info, selectedPlayer, items}) => {
+    const CHECKBOXES = [
+        { id: 'kills', label: 'Kills' },
+        { id: 'objectives', label: 'Objectives' },
+        { id: 'all-players', label: 'All Players' },
+        { id: 'vision', label: 'Vision' },
+        { id: 'items', label: 'Items' },
+    ];
+
+    const getPlayerId = (event: any) => event.participantId ?? event.killerId ?? event.creatorId;
+
     const everyTimeline: Record<number, any[]> = {};
     for (const frame of timeline.info.frames) {
         if (!frame.events) continue;
-
-        for (const e of frame.events) {
-            if (e.type === "ITEM_DESTROYED" || e.type === "ITEM_UNDO" || e.type === "LEVEL_UP" || e.type === "SKILL_LEVEL_UP") continue;
-
-            if (e.participantId) {
-                const participantId = e.participantId;
-
-                if (!everyTimeline[participantId]) {
-                    everyTimeline[participantId] = [];
-                }
-
-                everyTimeline[participantId].push(e);
-            }
-            else if (e.killerId) {
-                const killerId = e.killerId;
-
-                if (!everyTimeline[killerId]) {
-                    everyTimeline[killerId] = [];
-                }
-
-                everyTimeline[killerId].push(e);
-            } else if (e.creatorId) {
-                const creatorId = e.creatorId;
-
-                if (!everyTimeline[creatorId]) {
-                    everyTimeline[creatorId] = [];
-                }
-
-                everyTimeline[creatorId].push(e);
-            }
+    
+        for (const event of frame.events) {
+          if (['ITEM_DESTROYED', 'ITEM_UNDO', 'LEVEL_UP', 'SKILL_LEVEL_UP'].includes(event.type)) continue;
+    
+          const playerId = getPlayerId(event);
+          if (!playerId) continue;
+    
+          if (!everyTimeline[playerId]) everyTimeline[playerId] = [];
+          everyTimeline[playerId].push(event);
         }
     }
     const playerTimeline = everyTimeline[selectedPlayer.participantId];
@@ -1017,71 +1023,21 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchInfo; selectedPlayer: M
     return (
         <>  
             <div className="flex justify-center gap-5 mb-4 mt-2">
-                <div className="checkbox-wrapper-37">
-                    <input type="checkbox" name="checkbox" id="kills" />
-                    <label htmlFor="kills" className="terms-label">
-                        <svg className="checkbox-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <mask id="path-1-inside-1_476_5-37" fill="white">
-                                <rect width="200" height="200" />
-                            </mask>
-                            <rect width="200" height="200" className="checkbox-box" stroke-width="40" mask="url(#path-1-inside-1_476_5-37)" />
-                            <path className="checkbox-tick" d="M52 111.018L76.9867 136L149 64" stroke-width="15" />
-                        </svg>
-                        <span className="ml-1 text-lg">Kills</span>
-                    </label>
-                </div>
-                <div className="checkbox-wrapper-37">
-                    <input type="checkbox" name="checkbox" id="objectives" />
-                    <label htmlFor="objectives" className="terms-label">
-                        <svg className="checkbox-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <mask id="path-1-inside-1_476_5-37" fill="white">
-                                <rect width="200" height="200" />
-                            </mask>
-                            <rect width="200" height="200" className="checkbox-box" stroke-width="40" mask="url(#path-1-inside-1_476_5-37)" />
-                            <path className="checkbox-tick" d="M52 111.018L76.9867 136L149 64" stroke-width="15" />
-                        </svg>
-                        <span className="ml-1 text-lg">Objectives</span>
-                    </label>
-                </div>
-                <div className="checkbox-wrapper-37">
-                    <input type="checkbox" name="checkbox" id="all-players" />
-                    <label htmlFor="all-players" className="terms-label">
-                        <svg className="checkbox-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <mask id="path-1-inside-1_476_5-37" fill="white">
-                                <rect width="200" height="200" />
-                            </mask>
-                            <rect width="200" height="200" className="checkbox-box" stroke-width="40" mask="url(#path-1-inside-1_476_5-37)" />
-                            <path className="checkbox-tick" d="M52 111.018L76.9867 136L149 64" stroke-width="15" />
-                        </svg>
-                        <span className="ml-1 text-lg">All Players</span>
-                    </label>
-                </div>
-                <div className="checkbox-wrapper-37">
-                    <input type="checkbox" name="checkbox" id="vision" />
-                    <label htmlFor="vision" className="terms-label">
-                        <svg className="checkbox-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <mask id="path-1-inside-1_476_5-37" fill="white">
-                                <rect width="200" height="200" />
-                            </mask>
-                            <rect width="200" height="200" className="checkbox-box" stroke-width="40" mask="url(#path-1-inside-1_476_5-37)" />
-                            <path className="checkbox-tick" d="M52 111.018L76.9867 136L149 64" stroke-width="15" />
-                        </svg>
-                        <span className="ml-1 text-lg">Vision</span>
-                    </label>
-                </div>
-                <div className="checkbox-wrapper-37">
-                    <input type="checkbox" name="checkbox" id="items" />
-                    <label htmlFor="items" className="terms-label">
-                        <svg className="checkbox-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <mask id="path-1-inside-1_476_5-37" fill="white">
-                                <rect width="200" height="200" />
-                            </mask>
-                            <rect width="200" height="200" className="checkbox-box" stroke-width="40" mask="url(#path-1-inside-1_476_5-37)" />
-                            <path className="checkbox-tick" d="M52 111.018L76.9867 136L149 64" stroke-width="15" />
-                        </svg>
-                        <span className="ml-1 text-lg">Items</span>
-                    </label>
-                </div>
+                {CHECKBOXES.map(({ id, label }) => (
+                    <div key={id} className="checkbox-wrapper-37">
+                        <input type="checkbox" id={id} />
+                        <label htmlFor={id} className="terms-label">
+                            <svg className="checkbox-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <mask id="mask" fill="white">
+                                    <rect width="200" height="200" />
+                                </mask>
+                                <rect width="200" height="200" className="checkbox-box" strokeWidth="40" mask="url(#mask)" />
+                                <path className="checkbox-tick" d="M52 111.018L76.9867 136L149 64" strokeWidth="15" />
+                            </svg>
+                            <span className="ml-1 text-lg">{label}</span>
+                        </label>
+                    </div>
+                ))}
             </div>
             <div className="flex gap-4 p-2">
                 <div className="flex-1 h-[500px] overflow-y-auto custom-scrollbar">
@@ -1093,62 +1049,338 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchInfo; selectedPlayer: M
                                 {(event.type === "CHAMPION_KILL") && (
                                     <div key={i} className={`flex items-center mb-1 gap-2`}>
                                         <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
-                                        <div className={`flex w-full gap-2 p-2 ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
-                                            {/* <img src={killerChamp.icon} alt={killerChamp.name} className="w-6 h-6 rounded-full" /> */}
-                                            <p className="text-sm text-gray-200">Participant {event.killerId}</p>
+                                        <div className={`flex w-full p-2 gap-2 items-center ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                            <div className="flex gap-1 items-center">
+                                                <ChampionImage championId={selectedPlayer.championId} teamId={selectedPlayer.teamId} isTeamIdSame={false} classes="h-10" />
+                                                <p className="text-sm text-gray-200">{selectedPlayer.riotIdGameName}</p>
+                                            </div>
                                             <p className="text-sm text-white">killed</p>
-                                            {/* <img src={victimChamp.icon} alt={victimChamp.name} className="w-6 h-6 rounded-full" /> */}
-                                            <p className="text-sm text-gray-200">Participant {event.victimId}</p>
+                                            <div className="flex gap-1 items-center">
+                                                <ChampionImage championId={info.participants[event.victimId-1].championId} teamId={info.participants[event.victimId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                <p className="text-sm text-gray-200">{info.participants[event.victimId-1].riotIdGameName}</p>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
                                 {event.type === "ITEM_PURCHASED" && (
                                     <div key={i} className={`flex items-center mb-1 gap-2`}>
                                         <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
-                                        <div className={`flex w-full gap-2 p-2 ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
-                                            <p className="text-sm text-gray-200">Participant {event.participantId}</p>
+                                        <div className={`flex w-full p-2 gap-2 items-center ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                            <div className="flex gap-1 items-center">
+                                                <ChampionImage championId={selectedPlayer.championId} teamId={selectedPlayer.teamId} isTeamIdSame={false} classes="h-10" />
+                                                <p className="text-sm text-gray-200">{selectedPlayer.riotIdGameName}</p>
+                                            </div>
                                             <p className="text-sm text-white">purchased</p>
-                                            <p className="text-sm text-gray-200">Item {event.itemId}</p>
+                                            <ItemImage itemId={event.itemId} matchWon={selectedPlayer.win} classes="h-10" />
+                                            <p className="text-sm text-gray-200">{items[event.itemId]?.name || "Unknown Item"}</p>
+                                        </div>
+                                    </div>
+                                )}
+                                {event.type === "ITEM_SOLD" && (
+                                    <div key={i} className={`flex items-center mb-1 gap-2`}>
+                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                        <div className={`flex w-full p-2 gap-2 items-center ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                            <div className="flex gap-1 items-center">
+                                                <ChampionImage championId={selectedPlayer.championId} teamId={selectedPlayer.teamId} isTeamIdSame={false} classes="h-10" />
+                                                <p className="text-sm text-gray-200">{selectedPlayer.riotIdGameName}</p>
+                                            </div>
+                                            <p className="text-sm text-white">sold</p>
+                                            <div className="relative">
+                                                <ItemImage itemId={event.itemId} matchWon={selectedPlayer.win} classes="h-10 filter grayscale brightness-70" />
+                                                <svg className="absolute bottom-0 left-0 h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <line x1="4" y1="4" x2="20" y2="20" stroke="red" strokeWidth="3" />
+                                                    <line x1="20" y1="4" x2="4" y2="20" stroke="red" strokeWidth="3" />
+                                                </svg>
+                                            </div>
+                                            <p className="text-sm text-gray-200">{items[event.itemId]?.name || "Unknown Item"}</p>
                                         </div>
                                     </div>
                                 )}
                                 {event.type === "WARD_PLACED" && (
                                     <div key={i} className={`flex items-center mb-1 gap-2`}>
                                         <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
-                                        <div className={`flex w-full gap-2 p-2 ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
-                                            <p className="text-sm text-gray-200">Participant {event.creatorId}</p>
+                                        <div className={`flex w-full gap-2 p-2 items-center ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                            <div className="flex gap-1 items-center">
+                                                <ChampionImage championId={selectedPlayer.championId} teamId={selectedPlayer.teamId} isTeamIdSame={false} classes="h-10" />
+                                                <p className="text-sm text-gray-200">{selectedPlayer.riotIdGameName}</p>
+                                            </div>
                                             <p className="text-sm text-white">placed</p>
-                                            <p className="text-sm text-gray-200">{event.wardType}</p>
+                                            {event.wardType === "YELLOW_TRINKET" && (
+                                                <>
+                                                    <ItemImage itemId={3340} matchWon={selectedPlayer.win} classes="h-10" />
+                                                    <p className="text-sm text-gray-200">Stealth Ward</p>
+                                                </>
+                                            )}
+                                            {event.wardType === "CONTROL_WARD" && (
+                                                <>
+                                                    <ItemImage itemId={2055} matchWon={selectedPlayer.win} classes="h-10" />
+                                                    <p className="text-sm text-gray-200">Control Ward</p>
+                                                </>
+                                            )}
+                                            {event.wardType === "BLUE_TRINKET" && (
+                                                <>
+                                                    <ItemImage itemId={3363} matchWon={selectedPlayer.win} classes="h-10" />
+                                                    <p className="text-sm text-gray-200">Farsight Alteration</p>
+                                                </>
+                                            )}
+                                            {/* wtf fix ward trinket support item */}
+                                            {event.wardType === "SIGHT_WARD" && (
+                                                <>
+                                                    <ItemImage itemId={3340} matchWon={selectedPlayer.win} classes="h-10" />
+                                                    <p className="text-sm text-gray-200">{event.wardType}</p>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                                {event.type === "WARD_KILL" && (
+                                    <div key={i} className={`flex items-center mb-1 gap-2`}>
+                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                        <div className={`flex w-full gap-2 p-2 items-center ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                            <div className="flex gap-1 items-center">
+                                                <ChampionImage championId={selectedPlayer.championId} teamId={selectedPlayer.teamId} isTeamIdSame={false} classes="h-10" />
+                                                <p className="text-sm text-gray-200">{selectedPlayer.riotIdGameName}</p>
+                                            </div>
+                                            <p className="text-sm text-white">destroyed</p>
+                                            {event.wardType === "YELLOW_TRINKET" && (
+                                                <>
+                                                    <ItemImage itemId={3340} matchWon={selectedPlayer.win} classes="h-10" />
+                                                    <p className="text-sm text-gray-200">Stealth Ward</p>
+                                                </>
+                                            )}
+                                            {event.wardType === "CONTROL_WARD" && (
+                                                <>
+                                                    <ItemImage itemId={2055} matchWon={selectedPlayer.win} classes="h-10" />
+                                                    <p className="text-sm text-gray-200">Control Ward</p>
+                                                </>
+                                            )}
+                                            {event.wardType === "BLUE_TRINKET" && (
+                                                <>
+                                                    <ItemImage itemId={3363} matchWon={selectedPlayer.win} classes="h-10" />
+                                                    <p className="text-sm text-gray-200">Farsight Alteration</p>
+                                                </>
+                                            )}
+                                            {/* wtf fix ward trinket support item */}
+                                            {event.wardType === "SIGHT_WARD" && (
+                                                <>
+                                                    <ItemImage itemId={3340} matchWon={selectedPlayer.win} classes="h-10" />
+                                                    <p className="text-sm text-gray-200">{event.wardType}</p>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 )}
                                 {event.type === "BUILDING_KILL" && (
                                     <div key={i} className={`flex items-center mb-1 gap-2`}>
                                         <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
-                                        <div className={`flex w-full gap-2 p-2 ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
-                                            <p className="text-sm text-gray-200">Participant {event.killerId}</p>
+                                        <div className={`flex w-full gap-2 p-2 items-center ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                            <div className="flex gap-1 items-center">
+                                                <ChampionImage championId={selectedPlayer.championId} teamId={selectedPlayer.teamId} isTeamIdSame={false} classes="h-10" />
+                                                <p className="text-sm text-gray-200">{selectedPlayer.riotIdGameName}</p>
+                                            </div>
                                             <p className="text-sm text-white">destroyed</p>
-                                            <p className="text-sm text-gray-200">{event.buildingType}, type {event.towerType} on lane {event.laneType}</p>
+                                            {event.buildingType === "TOWER_BUILDING" && (
+                                                <>
+                                                    {event.teamId === 200 ? (
+                                                        <img src={red_turretimg} alt="red_turretimg" className="h-10" />
+                                                    ) : (
+                                                        <img src={blue_turretimg} alt="blue_turretimg" className="h-10" />
+                                                    )}
+                                                </>
+                                            )}
+                                            {event.buildingType === "INHIBITOR_BUILDING" && (
+                                                <>
+                                                    {event.teamId === 200 ? (
+                                                        <img src={red_inhibitorimg} alt="red_inhibitorimg" className="h-10" />
+                                                    ) : (
+                                                        <img src={blue_inhibitorimg} alt="blue_inhibitorimg" className="h-10" />
+                                                    )}
+                                                    <p className="text-sm text-gray-200">Inhibitor</p>
+                                                </>
+                                            )}
+                                            {event.buildingType === "NEXUS_BUILDING" && (
+                                                <>
+                                                    {event.teamId === 200 ? (
+                                                        <img src={red_nexusimg} alt="red_nexusimg" className="h-10" />
+                                                    ) : (
+                                                        <img src={blue_nexusimg} alt="blue_nexusimg" className="h-10" />
+                                                    )}
+                                                    <p className="text-sm text-gray-200">Nexus</p>
+                                                </>
+                                            )}
+                                            {event.towerType === "OUTER_TURRET" && (
+                                                <p className="text-sm text-gray-200">Outer Tower</p>
+                                            )}
+                                            {event.towerType === "INNER_TURRET" && (
+                                                <p className="text-sm text-gray-200">Inner Tower</p>
+                                            )}
+                                            {event.towerType === "BASE_TURRET" && (
+                                                <p className="text-sm text-gray-200">Inhibitor Tower</p>
+                                            )}
+                                            {event.towerType === "NEXUS_TURRET" && (
+                                                <p className="text-sm text-gray-200">Nexus Tower</p>
+                                            )}
+                                            {event.laneType === "TOP_LANE" && (
+                                                <>
+                                                    <p className="text-sm text-gray-200">on</p>
+                                                    <img src={`https://dpm.lol/position/TOP.svg`} alt="TOP" className="h-10" />
+                                                    <p className="text-sm text-gray-200">lane</p>
+                                                </>
+                                            )}
+                                            {event.laneType === "MID_LANE" && (
+                                                <>
+                                                    <p className="text-sm text-gray-200">on</p>
+                                                    <img src={`https://dpm.lol/position/MIDDLE.svg`} alt="MIDDLE" className="h-10" />
+                                                    <p className="text-sm text-gray-200">lane</p>
+                                                </>
+                                            )}
+                                            {event.laneType === "BOT_LANE" && (
+                                                <>
+                                                    <p className="text-sm text-gray-200">on</p>
+                                                    <img src={`https://dpm.lol/position/BOTTOM.svg`} alt="BOTTOM" className="h-10" />
+                                                    <p className="text-sm text-gray-200">lane</p>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                                {event.type === "TURRET_PLATE_DESTROYED" && (
+                                    <div key={i} className={`flex items-center mb-1 gap-2`}>
+                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                        <div className={`flex w-full gap-2 p-2 items-center ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                            <div className="flex gap-1 items-center">
+                                                <ChampionImage championId={selectedPlayer.championId} teamId={selectedPlayer.teamId} isTeamIdSame={false} classes="h-10" />
+                                                <p className="text-sm text-gray-200">{selectedPlayer.riotIdGameName}</p>
+                                            </div>
+                                            <p className="text-sm text-white">destroyed a plate on</p>
+                                            {event.laneType === "TOP_LANE" && (
+                                                <>
+                                                    <img src={`https://dpm.lol/position/TOP.svg`} alt="TOP" className="h-10" />
+                                                    <p className="text-sm text-gray-200">lane</p>
+                                                </>
+                                            )}
+                                            {event.laneType === "MID_LANE" && (
+                                                <>
+                                                    <img src={`https://dpm.lol/position/MIDDLE.svg`} alt="MIDDLE" className="h-10" />
+                                                    <p className="text-sm text-gray-200">lane</p>
+                                                </>
+                                            )}
+                                            {event.laneType === "BOT_LANE" && (
+                                                <>
+                                                    <img src={`https://dpm.lol/position/BOTTOM.svg`} alt="BOTTOM" className="h-10" />
+                                                    <p className="text-sm text-gray-200">lane</p>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 )}
                                 {event.type === "ELITE_MONSTER_KILL" && (
                                     <div key={i} className={`flex items-center mb-1 gap-2`}>
                                         <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
-                                        <div className={`flex w-full gap-2 p-2 ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
-                                            <p className="text-sm text-gray-200">Participant {event.killerId}</p>
+                                        <div className={`flex w-full gap-2 p-2 items-center ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                            <div className="flex gap-1 items-center">
+                                                <ChampionImage championId={selectedPlayer.championId} teamId={selectedPlayer.teamId} isTeamIdSame={false} classes="h-10" />
+                                                <p className="text-sm text-gray-200">{selectedPlayer.riotIdGameName}</p>
+                                            </div>
                                             <p className="text-sm text-white">killed</p>
-                                            <p className="text-sm text-gray-200">{event.monsterType} {event.monsterSubType ? `subtype ${event.monsterSubType}` : ""}</p>
+                                            {event.monsterType === "HORDE" && (
+                                                <>
+                                                    <img src={grubsimg} alt="grubsimg" className="h-10" />
+                                                    <p className="text-sm text-gray-200">Void Grub</p>
+                                                </>
+                                            )}
+                                            {(event.monsterType === "DRAGON" && event.monsterSubType === "AIR_DRAGON") && (
+                                                <>
+                                                    <img src={air_drakeimg} alt="air_drakeimg" className="h-10" />
+                                                    <p className="text-sm text-gray-200">Cloud Drake</p>
+                                                </>
+                                            )}
+                                            {(event.monsterType === "DRAGON" && event.monsterSubType === "EARTH_DRAGON") && (
+                                                <>
+                                                    <img src={earth_drakeimg} alt="earth_drakeimg" className="h-10" />
+                                                    <p className="text-sm text-gray-200">Moutain Drake</p>
+                                                </>
+                                            )}
+                                            {(event.monsterType === "DRAGON" && event.monsterSubType === "FIRE_DRAGON") && (
+                                                <>
+                                                    <img src={fire_drakeimg} alt="fire_drakeimg" className="h-10" />
+                                                    <p className="text-sm text-gray-200">Infernal Drake</p>
+                                                </>
+                                            )}
+                                            {(event.monsterType === "DRAGON" && event.monsterSubType === "WATER_DRAGON") && (
+                                                <>
+                                                    <img src={water_drakeimg} alt="water_drakeimg" className="h-10" />
+                                                    <p className="text-sm text-gray-200">Ocean Drake</p>
+                                                </>
+                                            )}
+                                            {(event.monsterType === "DRAGON" && event.monsterSubType === "HEXTECH_DRAGON") && (
+                                                <>
+                                                    <img src={hextech_drakeimg} alt="hextech_drakeimg" className="h-10" />
+                                                    <p className="text-sm text-gray-200">Hextech Drake</p>
+                                                </>
+                                            )}
+                                            {(event.monsterType === "DRAGON" && event.monsterSubType === "CHEMTECH_DRAGON") && (
+                                                <>
+                                                    <img src={chemtech_drakeimg} alt="chemtech_drakeimg" className="h-10" />
+                                                    <p className="text-sm text-gray-200">Chemtech Drake</p>
+                                                </>
+                                            )}
+                                            {(event.monsterType === "DRAGON" && event.monsterSubType === "ELDER_DRAGON") && (
+                                                <>
+                                                    <img src={elder_drakeimg} alt="elder_drakeimg" className="h-10" />
+                                                    <p className="text-sm text-gray-200">Elder Drake</p>
+                                                </>
+                                            )}
+                                            {event.monsterType === "RIFTHERALD" && (
+                                                <>
+                                                    <img src={heraldimg} alt="heraldimg" className="h-10" />
+                                                    <p className="text-sm text-gray-200">Rift Herald</p>
+                                                </>
+                                            )}
+                                            {event.monsterType === "BARON_NASHOR" && (
+                                                <>
+                                                    <img src={baronimg} alt="baronimg" className="h-10" />
+                                                    <p className="text-sm text-gray-200">Baron Nashor</p>
+                                                </>
+                                            )}
+                                            {event.monsterType === "ATAKHAN" && (
+                                                <>
+                                                    <img src={atakhanimg} alt="atakhanimg" className="h-10" />
+                                                    <p className="text-sm text-gray-200">Atakhan</p>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 )}
                                 {event.type === "CHAMPION_SPECIAL_KILL" && (
                                     <div key={i} className={`flex items-center mb-1 gap-2`}>
                                         <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
-                                        <div className={`flex w-full gap-2 p-2 ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
-                                            <p className="text-sm text-gray-200">Participant {event.killerId}</p>
-                                            <p className="text-sm text-white">killed</p>
-                                            <p className="text-sm text-gray-200">{event.multiKillLength} players</p>
+                                        <div className={`flex w-full gap-2 p-2 items-center ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                            <div className="flex gap-1 items-center">
+                                                <ChampionImage championId={selectedPlayer.championId} teamId={selectedPlayer.teamId} isTeamIdSame={false} classes="h-10" />
+                                                <p className="text-sm text-gray-200">{selectedPlayer.riotIdGameName}</p>
+                                            </div>
+                                            {event.killType === "KILL_FIRST_BLOOD" && (
+                                                <p className="text-sm text-white">got First Blood</p>
+                                            )}
+                                            {event.killType === "KILL_ACE" && (
+                                                <p className="text-sm text-white">got Kill Ace</p>
+                                            )}
+                                            {event.multiKillLength === 2 && (
+                                                <p className="text-sm text-white">got Double Kill</p>
+                                            )}
+                                            {event.multiKillLength === 3 && (
+                                                <p className="text-sm text-white">got Double Kill</p>
+                                            )}
+                                            {event.multiKillLength === 4 && (
+                                                <p className="text-sm text-white">got Double Kill</p>
+                                            )}
+                                            {event.multiKillLength === 5 && (
+                                                <p className="text-sm text-white">got Double Kill</p>
+                                            )}
+                                            {event.multiKillLength > 5 && (
+                                                <p className="text-sm text-white">killed {event.multiKillLength} Players</p>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -1164,7 +1396,7 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchInfo; selectedPlayer: M
     );
 }
 
-const MatchRow: React.FC<{info: MatchInfo; timelineJson: string; puuid: string; region: string;}> = ({info, timelineJson, puuid, region}) => {
+const MatchRow: React.FC<{info: MatchInfo; timelineJson: string; items: any; puuid: string; region: string;}> = ({info, timelineJson, items, puuid, region}) => {
     const [showDetailsDiv, setShowDetailsDiv] = useState<boolean>(false);
     const [chooseTab, setChooseTab] = useState<string>("General");
     const [champions, setChampions] = useState<any[]>([]);
@@ -1386,7 +1618,7 @@ const MatchRow: React.FC<{info: MatchInfo; timelineJson: string; puuid: string; 
                         {(info.queueId > 400 && info.queueId < 500) ? (
                             <div className="mt-2 mb-1">
                                 <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} />
-                                <MatchTimeline timeline={timeline} info={info} selectedPlayer={selectedPlayer} />
+                                <MatchTimeline timeline={timeline} info={info} selectedPlayer={selectedPlayer} items={items} />
                             </div>
                         ) : (
                             <div className="text-center text-2xl p-3">
@@ -1422,6 +1654,7 @@ const Summoner: React.FC = () => {
     const [showFilter, setShowFilter] = useState<boolean>(false);
     const [showPatch, setShowPatch] = useState<boolean>(false);
     const [champions, setChampions] = useState<any[]>([]);
+    const [items, setItems] = useState<any>({});
     const [showSelectChampions, setShowSelectChampions] = useState<boolean>(false);
     const [paginatorPage, setPaginatorPage] = useState<number>(1);
     const inputRef = useRef<HTMLDivElement>(null);
@@ -1457,6 +1690,19 @@ const Summoner: React.FC = () => {
             }
         };
         fetchChampions();
+    }, [DD_VERSION]);
+
+    useEffect(() => {
+        const fetchItems = async () => {
+            try {
+                const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/data/en_US/item.json`);
+                const json = await res.json();
+                setItems(json.data);
+            } catch (error) {
+                console.error("Error fetching items:", error);
+            }
+        };
+        fetchItems();
     }, [DD_VERSION]);
 
     useEffect(() => {
@@ -2051,7 +2297,7 @@ const Summoner: React.FC = () => {
                         <div className="bg-neutral-800">
                             <div className="flex flex-col gap-1 p-2">
                                 {allMatchesData.map((match: Match) => (
-                                    <MatchRow info={match.details.info} timelineJson={match.timelineJson} puuid={apiData.puuid} region={regionCode} />
+                                    <MatchRow info={match.details.info} timelineJson={match.timelineJson} items={items} puuid={apiData.puuid} region={regionCode} />
                                 ))}
                             </div>
                             <div className="flex justify-center">
