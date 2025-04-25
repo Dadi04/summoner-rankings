@@ -18,7 +18,7 @@ import queueJson from "../../assets/json/queues.json";
 
 import arrowDownLight from "../../assets/arrow-down-light.png";
 
-const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: any; champions: any[]; puuid: string; region: string;}> = ({info, timelineJson, items, champions, puuid, region}) => {
+const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: any; champions: any[]; puuid: string; region: string; classes?: string;}> = ({info, timelineJson, items, champions, puuid, region, classes}) => {
     const [showDetailsDiv, setShowDetailsDiv] = useState<boolean>(false);
     const [chooseTab, setChooseTab] = useState<string>("General");
 
@@ -68,7 +68,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
     }
 
     return (
-        <>
+        <div className={classes}>
             <div className={`w-full grid grid-cols-[25%_35%_17.5%_17.5%_5%] items-center ${participant.win ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
                 <div className="p-2">
                     <div className="w-[80%] border-b-2 border-neutral-400 p-2">
@@ -236,7 +236,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                     </div>
                 )}
             </div>
-        </>
+        </div>
     );
 };
 

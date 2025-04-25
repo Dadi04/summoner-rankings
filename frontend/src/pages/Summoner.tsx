@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { DD_VERSION, LOL_VERSION } from "../version";
@@ -73,6 +73,14 @@ const Summoner: React.FC = () => {
 
     const [major, minor] = LOL_VERSION.split('.').map(Number);
     const versions = Array.from({length: minor - 0}, (_, i) => `${major}.${minor - i}`);
+
+    const matchesByDate = useMemo(() => {
+        return apiData?.allMatchesData.reduce<Record<string, Match[]>>((acc, match) => {
+            const date = new Date(match.details.info.gameStartTimestamp).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+            (acc[date] ??= []).push(match);
+            return acc;
+        }, {}) || {};
+    }, [apiData]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -703,12 +711,24 @@ const Summoner: React.FC = () => {
                             </div>
                         </div>
                         <div className="bg-neutral-800">
-                            <div className="flex flex-col gap-1 p-2">
-                                {allMatchesData.map((match: Match) => (
-                                    <MatchRow info={match.details.info} timelineJson={match.timelineJson} items={items} champions={champions} puuid={apiData.puuid} region={regionCode} />
-                                ))}
-                            </div>
-                            <div className="flex justify-center">
+                            {Object.entries(matchesByDate).map(([date, matches]) => (
+                                <div key={date}>
+                                    <h2 className="px-4 py-2 text-xl font-semibold">{date}</h2>
+                                    {matches.map(match => (
+                                        <MatchRow
+                                            key={match.details.info.gameId}
+                                            info={match.details.info}
+                                            timelineJson={match.timelineJson}
+                                            items={items}
+                                            champions={champions}
+                                            puuid={apiData.puuid}
+                                            region={regionCode}
+                                            classes="mb-1 px-2"
+                                        />
+                                    ))}
+                                </div>
+                            ))}
+                            <div className="flex justify-center mt-4">
                                 <ul className="flex items-center h-10 text-base">
                                     <li>
                                         <span onClick={() => setPaginatorPage((prev) => Math.max(prev - 1, 1))} className="flex items-center justify-center px-4 h-10 leading-tight border cursor-pointer transition-all border-gray-300 rounded-s-lg hover:bg-neutral-900 hover:text-neutral-100">
