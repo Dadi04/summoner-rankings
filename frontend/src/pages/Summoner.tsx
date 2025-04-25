@@ -1003,22 +1003,57 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchInfo; selectedPlayer: M
 
     const getPlayerId = (event: any) => event.participantId ?? event.killerId ?? event.creatorId;
 
+    function getSupportItemId(player: MatchParticipant): number {
+        const slots = [
+          player.item0,
+          player.item1,
+          player.item2,
+          player.item3,
+          player.item4,
+          player.item5,
+        ];
+        return slots.find((id) => id > 3864 && id < 3878) || 0;
+    }
+
+    function getSupportItemProgression(frames: any[], participantId: number): any[] {
+        return frames.flatMap((frame) => frame.events || []).filter((event) =>
+            event.type === 'ITEM_DESTROYED' &&
+            event.itemId! > 3864 &&
+            event.itemId! < 3878 &&
+            event.participantId === participantId
+        );
+    }
+
     const everyTimeline: Record<number, any[]> = {};
     for (const frame of timeline.info.frames) {
         if (!frame.events) continue;
     
         for (const event of frame.events) {
-          if (['ITEM_DESTROYED', 'ITEM_UNDO', 'LEVEL_UP', 'SKILL_LEVEL_UP'].includes(event.type)) continue;
-    
-          const playerId = getPlayerId(event);
-          if (!playerId) continue;
-    
-          if (!everyTimeline[playerId]) everyTimeline[playerId] = [];
-          everyTimeline[playerId].push(event);
+            if (["ITEM_UNDO", "LEVEL_UP", "SKILL_LEVEL_UP"].includes(event.type)) continue;
+            if (event.type === "ITEM_DESTROYED" && (event.itemId <= 3864 || event.itemId >= 3868)) continue;
+            if ((event.type === "WARD_PLACED" || event.type === "WARD_KILL") && event.wardType === "UNDEFINED") continue;
+            if (event.type === "ITEM_PURCHASED" && event.itemId > 3868 && event.itemId < 3878) continue;
+        
+            const playerId = getPlayerId(event);
+            if (!playerId) continue;
+        
+            if (!everyTimeline[playerId]) everyTimeline[playerId] = [];
+            everyTimeline[playerId].push(event);
         }
     }
     const playerTimeline = everyTimeline[selectedPlayer.participantId];
-    console.log(playerTimeline)
+
+    const blueTeamSupport = info.participants[4].teamId === 100 ? info.participants[4] : info.participants[9];
+    const redTeamSupport = info.participants[9].teamId === 200 ? info.participants[9] : info.participants[4];
+
+    const supportItemId = getSupportItemId(selectedPlayer);
+    const blueTeamSupportItemId = getSupportItemId(blueTeamSupport);
+    const redTeamSupportItemId = getSupportItemId(redTeamSupport);
+
+    const frames = timeline.info.frames;
+    const supportItemProgression = getSupportItemProgression(frames, selectedPlayer.participantId);
+    const blueTeamSupportItemProgression = getSupportItemProgression(frames, blueTeamSupport.participantId);
+    const redTeamSupportItemProgression = getSupportItemProgression(frames, redTeamSupport.participantId);
 
     return (
         <>  
@@ -1096,6 +1131,38 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchInfo; selectedPlayer: M
                                         </div>
                                     </div>
                                 )}
+                                {event.type === "ITEM_DESTROYED" && (
+                                    <div key={i} className={`flex items-center mb-1 gap-2`}>
+                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                        <div className={`flex w-full p-2 gap-2 items-center ${selectedPlayer.teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                            <div className="flex gap-1 items-center">
+                                                <ChampionImage championId={selectedPlayer.championId} teamId={selectedPlayer.teamId} isTeamIdSame={false} classes="h-10" />
+                                                <p className="text-sm text-gray-200">{selectedPlayer.riotIdGameName}</p>
+                                            </div>
+                                            {event.itemId === 3865 && (
+                                                <>  
+                                                    <p className="text-sm text-white">completed a quest for</p>
+                                                    <ItemImage itemId={event.itemId+1} matchWon={selectedPlayer.win} classes="h-10" />
+                                                    <p className="text-sm text-gray-200">Runic Compass</p>
+                                                </>
+                                            )}
+                                            {event.itemId === 3866 && (
+                                                <>
+                                                    <p className="text-sm text-white">completed a quest for</p>
+                                                    <ItemImage itemId={event.itemId+1} matchWon={selectedPlayer.win} classes="h-10" />
+                                                    <p className="text-sm text-gray-200">Bounty of Worlds</p>
+                                                </>
+                                            )}
+                                            {event.itemId === 3867 && (
+                                                <>
+                                                    <p className="text-sm text-white">chose</p>
+                                                    <ItemImage itemId={supportItemId} matchWon={selectedPlayer.win} classes="h-10" />
+                                                    <p className="text-sm text-gray-200">{items[supportItemId]?.name || "Unknown Item"}</p>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                                 {event.type === "WARD_PLACED" && (
                                     <div key={i} className={`flex items-center mb-1 gap-2`}>
                                         <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
@@ -1123,11 +1190,26 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchInfo; selectedPlayer: M
                                                     <p className="text-sm text-gray-200">Farsight Alteration</p>
                                                 </>
                                             )}
-                                            {/* wtf fix ward trinket support item */}
                                             {event.wardType === "SIGHT_WARD" && (
                                                 <>
-                                                    <ItemImage itemId={3340} matchWon={selectedPlayer.win} classes="h-10" />
-                                                    <p className="text-sm text-gray-200">{event.wardType}</p>
+                                                    {(supportItemProgression[0].timestamp < event.timestamp && supportItemProgression[1].timestamp > event.timestamp) && (
+                                                        <>
+                                                            <ItemImage itemId={supportItemProgression[1].itemId} matchWon={selectedPlayer.win} classes="h-10" />
+                                                            <p className="text-sm text-gray-200">{items[supportItemProgression[1].itemId]?.name || "Unknown Item"} ward</p>
+                                                        </>
+                                                    )}
+                                                    {(supportItemProgression[1].timestamp < event.timestamp && supportItemProgression[2].timestamp > event.timestamp) && (
+                                                        <>
+                                                            <ItemImage itemId={supportItemProgression[2].itemId} matchWon={selectedPlayer.win} classes="h-10" />
+                                                            <p className="text-sm text-gray-200">{items[supportItemProgression[2].itemId]?.name || "Unknown Item"} ward</p>
+                                                        </>
+                                                    )}
+                                                    {(supportItemProgression[2].timestamp < event.timestamp) && (
+                                                        <>
+                                                            <ItemImage itemId={supportItemId} matchWon={selectedPlayer.win} classes="h-10" />
+                                                            <p className="text-sm text-gray-200">{items[supportItemId]?.name || "Unknown Item"} ward</p>
+                                                        </>
+                                                    )}
                                                 </>
                                             )}
                                         </div>
@@ -1160,11 +1242,51 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchInfo; selectedPlayer: M
                                                     <p className="text-sm text-gray-200">Farsight Alteration</p>
                                                 </>
                                             )}
-                                            {/* wtf fix ward trinket support item */}
                                             {event.wardType === "SIGHT_WARD" && (
                                                 <>
-                                                    <ItemImage itemId={3340} matchWon={selectedPlayer.win} classes="h-10" />
-                                                    <p className="text-sm text-gray-200">{event.wardType}</p>
+                                                    {selectedPlayer.teamId === 100 ? (
+                                                        <>
+                                                            {(redTeamSupportItemProgression[0].timestamp < event.timestamp && redTeamSupportItemProgression[1].timestamp > event.timestamp) && (
+                                                                <>
+                                                                    <ItemImage itemId={redTeamSupportItemProgression[1].itemId} matchWon={selectedPlayer.win} classes="h-10" />
+                                                                    <p className="text-sm text-gray-200">{items[redTeamSupportItemProgression[1].itemId]?.name || "Unknown Item"} ward</p>
+                                                                </>
+                                                            )}
+                                                            {(redTeamSupportItemProgression[1].timestamp < event.timestamp && redTeamSupportItemProgression[2].timestamp > event.timestamp) && (
+                                                                <>
+                                                                    <ItemImage itemId={redTeamSupportItemProgression[2].itemId} matchWon={selectedPlayer.win} classes="h-10" />
+                                                                    <p className="text-sm text-gray-200">{items[redTeamSupportItemProgression[2].itemId]?.name || "Unknown Item"} ward</p>
+                                                                </>
+                                                            )}
+                                                            {(redTeamSupportItemProgression[2].timestamp < event.timestamp) && (
+                                                                <>
+                                                                    <ItemImage itemId={redTeamSupportItemId} matchWon={selectedPlayer.win} classes="h-10" />
+                                                                    <p className="text-sm text-gray-200">{items[redTeamSupportItemId]?.name || "Unknown Item"} ward</p>
+                                                                </>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            {(blueTeamSupportItemProgression[0].timestamp < event.timestamp && blueTeamSupportItemProgression[1].timestamp > event.timestamp) && (
+                                                                <>
+                                                                    <ItemImage itemId={blueTeamSupportItemProgression[1].itemId} matchWon={selectedPlayer.win} classes="h-10" />
+                                                                    <p className="text-sm text-gray-200">{items[blueTeamSupportItemProgression[1].itemId]?.name || "Unknown Item"} ward</p>
+                                                                </>
+                                                            )}
+                                                            {(blueTeamSupportItemProgression[1].timestamp < event.timestamp && blueTeamSupportItemProgression[2].timestamp > event.timestamp) && (
+                                                                <>
+                                                                    <ItemImage itemId={blueTeamSupportItemProgression[2].itemId} matchWon={selectedPlayer.win} classes="h-10" />
+                                                                    <p className="text-sm text-gray-200">{items[blueTeamSupportItemProgression[2].itemId]?.name || "Unknown Item"} ward</p>
+                                                                </>
+                                                            )}
+                                                            {(blueTeamSupportItemProgression[2].timestamp < event.timestamp) && (
+                                                                <>
+                                                                    <ItemImage itemId={blueTeamSupportItemId} matchWon={selectedPlayer.win} classes="h-10" />
+                                                                    <p className="text-sm text-gray-200">{items[blueTeamSupportItemId]?.name || "Unknown Item"} ward</p>
+                                                                </>
+                                                            )}
+                                                        </>
+                                                    )}
                                                 </>
                                             )}
                                         </div>
@@ -1252,7 +1374,7 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchInfo; selectedPlayer: M
                                                 <ChampionImage championId={selectedPlayer.championId} teamId={selectedPlayer.teamId} isTeamIdSame={false} classes="h-10" />
                                                 <p className="text-sm text-gray-200">{selectedPlayer.riotIdGameName}</p>
                                             </div>
-                                            <p className="text-sm text-white">destroyed a plate on</p>
+                                            <p className="text-sm text-white">destroyed a Turret Plate on</p>
                                             {event.laneType === "TOP_LANE" && (
                                                 <>
                                                     <img src={`https://dpm.lol/position/TOP.svg`} alt="TOP" className="h-10" />
@@ -1396,10 +1518,9 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchInfo; selectedPlayer: M
     );
 }
 
-const MatchRow: React.FC<{info: MatchInfo; timelineJson: string; items: any; puuid: string; region: string;}> = ({info, timelineJson, items, puuid, region}) => {
+const MatchRow: React.FC<{info: MatchInfo; timelineJson: string; items: any; champions: any[]; puuid: string; region: string;}> = ({info, timelineJson, items, champions, puuid, region}) => {
     const [showDetailsDiv, setShowDetailsDiv] = useState<boolean>(false);
     const [chooseTab, setChooseTab] = useState<string>("General");
-    const [champions, setChampions] = useState<any[]>([]);
 
     const participant = info.participants.find((p) => p.puuid === puuid)!;
     const [choosePlayerDetails, setChoosePlayerDetails] = useState<string>(participant.championName);
@@ -1445,19 +1566,6 @@ const MatchRow: React.FC<{info: MatchInfo; timelineJson: string; items: any; puu
     } else {
         killParticipation = Math.round(((participant.kills + participant.assists) / totalKills) * 100);
     }
- 
-    useEffect(() => {
-        const fetchChampions = async () => {
-            try {
-                const response = await fetch(`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/data/en_US/championFull.json`);
-                const data = await response.json();
-                setChampions(Object.values(data.data));
-            } catch (error) {
-                console.error(error);
-            }
-        };
-        fetchChampions();
-    }, [DD_VERSION]);
 
     return (
         <>
@@ -1681,7 +1789,7 @@ const Summoner: React.FC = () => {
     useEffect(() => {
         const fetchChampions = async () => {
             try {
-                const response = await fetch(`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/data/en_US/champion.json`);
+                const response = await fetch(`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/data/en_US/championFull.json`);
                 const data = await response.json();
                 const championsArray = Object.values(data.data);
                 setChampions(championsArray);
@@ -2297,7 +2405,7 @@ const Summoner: React.FC = () => {
                         <div className="bg-neutral-800">
                             <div className="flex flex-col gap-1 p-2">
                                 {allMatchesData.map((match: Match) => (
-                                    <MatchRow info={match.details.info} timelineJson={match.timelineJson} items={items} puuid={apiData.puuid} region={regionCode} />
+                                    <MatchRow info={match.details.info} timelineJson={match.timelineJson} items={items} champions={champions} puuid={apiData.puuid} region={regionCode} />
                                 ))}
                             </div>
                             <div className="flex justify-center">
