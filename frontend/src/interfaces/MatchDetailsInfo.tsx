@@ -1,6 +1,6 @@
 import MatchParticipant from "./MatchParticipant";
 
-interface MatchInfo {
+interface MatchDetailsInfo {
     endOfGameResult: string;
     gameCreation: number;
     gameDuration: number;
@@ -40,4 +40,4 @@ interface Objective {
     kills: number;
 }
 
-export default MatchInfo;
+export default MatchDetailsInfo;

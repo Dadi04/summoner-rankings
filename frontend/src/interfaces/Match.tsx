@@ -1,4 +1,4 @@
-import MatchDetailsInfo from "./MatchInfo";
+import MatchDetailsInfo from "./MatchDetailsInfo";
 
 interface Match {
     details: MatchDetails;

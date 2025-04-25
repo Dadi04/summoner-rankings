@@ -8,7 +8,7 @@ import SummonerSpellImage from "../components/SummonerSpellImage";
 import BannedChampionsList from "../components/BannedChampionList";
 import ChampionImage from "../components/ChampionImage";
 import GameTimer from "../components/GameTime";
-import SummonerProfileHeader from "../components/SummonerProfileHeader";
+import ProfileHeader from "../components/ProfileHeader";
 import ShardSlot from "../components/ShardSlot";
 import RuneSlot from "../components/RuneSlot";
 
@@ -273,7 +273,7 @@ const LiveGame: React.FC = () => {
     if (!newSpectatorData) {
         return (
             <div className="container m-auto">
-                <SummonerProfileHeader data={newData} regionCode={regionCode} encodedSummoner={encodedSummoner} setData={setNewData} />
+                <ProfileHeader data={newData} regionCode={regionCode} encodedSummoner={encodedSummoner} setData={setNewData} />
                 
                 <div className="flex flex-col justify-center container h-[342px] bg-neutral-800 m-auto mt-2 mb-2 p-4 text-center gap-2">
                     <h2 className="text-2xl font-semibold text-neutral-50">
@@ -406,7 +406,7 @@ const LiveGame: React.FC = () => {
     if (loading || !liveGameData) {
         return (
             <div className="container m-auto mb-[39px]">
-                <SummonerProfileHeader data={newData} regionCode={regionCode} encodedSummoner={encodedSummoner} setData={setNewData} />
+                <ProfileHeader data={newData} regionCode={regionCode} encodedSummoner={encodedSummoner} setData={setNewData} />
                 <div className="w-full flex justify-center mt-5">
                     <DotLottieReact src={loadingAnimation} className="w-[600px] bg-transparent" loop autoplay />
                 </div>
@@ -416,7 +416,7 @@ const LiveGame: React.FC = () => {
 
     return (
         <div className="container m-auto">
-            <SummonerProfileHeader data={newData} regionCode={regionCode} encodedSummoner={encodedSummoner} setData={setNewData} />
+            <ProfileHeader data={newData} regionCode={regionCode} encodedSummoner={encodedSummoner} setData={setNewData} />
             <div className="flex justify-between items-center text-neutral-100 bg-neutral-800 mt-2 p-2">
                 <div className="flex">
                     <h1 className="mr-2">

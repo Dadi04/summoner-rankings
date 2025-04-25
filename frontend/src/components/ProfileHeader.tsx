@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { DD_VERSION } from '../version';
 
-import UpdateButton from "../components/UpdateButton";
+import UpdateButton from "./UpdateButton";
 
 import Player from '../interfaces/Player';
 
-const SummonerProfileHeader: React.FC<{data: Player; regionCode: string; encodedSummoner: string; setData: React.Dispatch<React.SetStateAction<any>>;}> = ({data, regionCode, encodedSummoner, setData}) => {
+const ProfileHeader: React.FC<{data: Player; regionCode: string; encodedSummoner: string; setData: React.Dispatch<React.SetStateAction<any>>;}> = ({data, regionCode, encodedSummoner, setData}) => {
     const summonerData = data.summonerData;
     const spectatorData = data.spectatorData;
 
@@ -106,4 +106,4 @@ const SummonerProfileHeader: React.FC<{data: Player; regionCode: string; encoded
     );
 };
 
-export default SummonerProfileHeader;
+export default ProfileHeader;

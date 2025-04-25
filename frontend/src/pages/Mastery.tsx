@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 
-import SummonerProfileHeader from '../components/SummonerProfileHeader';
+import SummonerProfileHeader from '../components/ProfileHeader';
 
 import Player from '../interfaces/Player';
 
