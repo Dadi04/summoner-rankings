@@ -17,6 +17,8 @@ import MatchDetailsInfo from "../../interfaces/MatchDetailsInfo";
 import queueJson from "../../assets/json/queues.json";
 
 import arrowDownLight from "../../assets/arrow-down-light.png";
+import blueKaynIcon from "../../assets/blue-kayn-icon.png"
+import redKaynIcon from "../../assets/red-kayn-icon.png"
 
 const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: any; champions: any[]; puuid: string; region: string; classes?: string;}> = ({info, timelineJson, items, champions, puuid, region, classes}) => {
     const [showDetailsDiv, setShowDetailsDiv] = useState<boolean>(false);
@@ -67,6 +69,15 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
         killParticipation = Math.round(((participant.kills + participant.assists) / totalKills) * 100);
     }
 
+    let kaynTransformation = null
+    for (const frame of timeline.info.frames) {
+        if (!frame.events) continue;
+
+        for (const event of frame.events) {
+            if (event.type === "CHAMPION_TRANSFORM") kaynTransformation = event;
+        }
+    }
+
     return (
         <div className={classes}>
             <div className={`w-full grid grid-cols-[25%_35%_17.5%_17.5%_5%] items-center ${participant.win ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
@@ -84,7 +95,18 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                 <div className="flex flex-col gap-4 p-2">
                     <div className="flex gap-2">
                         <div className="relative">
-                            <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} classes="h-15" />
+                            {(kaynTransformation && participant.championName === "Kayn") ? (
+                                <>
+                                    {kaynTransformation.transformType === "SLAYER" && (
+                                        <img src={redKaynIcon} alt="redKaynIcon" className="h-15" />
+                                    )}
+                                    {kaynTransformation.transformType === "ASSASSIN" && (
+                                        <img src={blueKaynIcon} alt="blueKaynIcon" className="h-15" />
+                                    )}
+                                </>
+                            ) : (
+                                <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} classes="h-15" />
+                            )}
                             <p className="absolute text-sm right-0 bottom-0 transform translate-x-[4px] translate-y-[4px] bg-neutral-800 border border-neutral-400 px-0.5">{participant.champLevel}</p>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -134,7 +156,18 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                     {info.participants.filter((participant) => participant.teamId === 100).map(participant => (
                         <div key={participant.puuid}>
                             <Link to={`/lol/profile/${region}/${participant.riotIdGameName}-${participant.riotIdTagline}`} className="w-fit flex gap-0.5 items-center cursor-pointer hover:underline">
-                                <ChampionImage championId={participant.championId} teamId={100} isTeamIdSame={true} classes="h-6" />
+                                {(kaynTransformation && participant.championName === "Kayn") ? (
+                                    <>
+                                        {kaynTransformation.transformType === "SLAYER" && (
+                                            <img src={redKaynIcon} alt="redKaynIcon" className="h-6" />
+                                        )}
+                                        {kaynTransformation.transformType === "ASSASSIN" && (
+                                            <img src={blueKaynIcon} alt="blueKaynIcon" className="h-6" />
+                                        )}
+                                    </>
+                                ) : (
+                                    <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} classes="h-6" />
+                                )}
                                 <p className={`${participant.puuid === puuid ? "text-purple-400" : ""}`}>
                                     {participant.riotIdGameName}
                                 </p>
@@ -146,7 +179,18 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                     {info.participants.filter(participant => participant.teamId === 200).map(participant => (
                         <div key={participant.puuid}>
                             <Link to={`/lol/profile/${region}/${participant.riotIdGameName}-${participant.riotIdTagline}`} className="w-fit flex gap-0.5 items-center cursor-pointer hover:underline">
-                                <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-6" />
+                                {(kaynTransformation && participant.championName === "Kayn") ? (
+                                    <>
+                                        {kaynTransformation.transformType === "SLAYER" && (
+                                            <img src={redKaynIcon} alt="redKaynIcon" className="h-6" />
+                                        )}
+                                        {kaynTransformation.transformType === "ASSASSIN" && (
+                                            <img src={blueKaynIcon} alt="blueKaynIcon" className="h-6" />
+                                        )}
+                                    </>
+                                ) : (
+                                    <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} classes="h-6" />
+                                )}
                                 <p className={`${participant.puuid === puuid ? "text-purple-400" : ""}`}>
                                     {participant.riotIdGameName}
                                 </p>
@@ -171,7 +215,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                     <div>
                         {(info.queueId > 400 && info.queueId < 500) ? (
                             <div className="mt-2 mb-1">
-                                <MatchGeneral info={info} timeline={timeline} puuid={puuid} region={region} />
+                                <MatchGeneral info={info} timeline={timeline} puuid={puuid} region={region} kaynTransformation={kaynTransformation} />
                             </div>
                         ) : (
                             <div className="text-center text-2xl p-3">
@@ -184,7 +228,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                     <div>
                         {(info.queueId > 400 && info.queueId < 500) ? (
                             <div className="mt-2 mb-1">
-                                <MatchPerformance info={info} puuid={puuid} />
+                                <MatchPerformance info={info} puuid={puuid} kaynTransformation={kaynTransformation} />
                             </div>
                         ) : (
                             <div className="text-center text-2xl p-3">
@@ -197,7 +241,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                     <div>
                         {(info.queueId > 400 && info.queueId < 500) ? (
                             <div className="mt-2 mb-1">
-                                <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} />
+                                <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} kaynTransformation={kaynTransformation} />
                                 <MatchDetails info={info} timeline={timeline} selectedPlayer={selectedPlayer} champions={champions} />
                             </div>
                         ) : (
@@ -211,7 +255,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                     <div>
                         {(info.queueId > 400 && info.queueId < 500) ? (
                             <div className="mt-2 mb-1">
-                                <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} />
+                                <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} kaynTransformation={kaynTransformation} />
                                 <MatchRunes statPerks={selectedPlayer.perks.statPerks} styles={selectedPlayer.perks.styles} />
                             </div>
                         ) : (
@@ -225,8 +269,8 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                     <div>
                         {(info.queueId > 400 && info.queueId < 500) ? (
                             <div className="mt-2 mb-1">
-                                <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} />
-                                <MatchTimeline timeline={timeline} info={info} selectedPlayer={selectedPlayer} items={items} />
+                                <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} kaynTransformation={kaynTransformation} />
+                                <MatchTimeline timeline={timeline} info={info} selectedPlayer={selectedPlayer} items={items} kaynTransformation={kaynTransformation} />
                             </div>
                         ) : (
                             <div className="text-center text-2xl p-3">

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 
-import SummonerProfileHeader from '../components/ProfileHeader';
+import ProfileHeader from '../components/ProfileHeader';
 
 import Player from '../interfaces/Player';
 
@@ -21,7 +21,7 @@ const Champions: React.FC = () => {
 
     return (
         <div className="container m-auto">
-            <SummonerProfileHeader data={newData} regionCode={regionCode} encodedSummoner={encodedSummoner} setData={setNewData} />
+            <ProfileHeader data={newData} regionCode={regionCode} encodedSummoner={encodedSummoner} setData={setNewData} />
             <div className="mt-2 text-neutral-50 bg-neutral-800">
                 <h1 className="text-center">Summary</h1>
             </div>

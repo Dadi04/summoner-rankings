@@ -4,6 +4,9 @@ import MatchDetailsInfo from "../../interfaces/MatchDetailsInfo";
 import MatchParticipant from "../../interfaces/MatchParticipant";
 import ChampionImage from "../ChampionImage";
 
+import blueKaynIcon from "../../assets/blue-kayn-icon.png"
+import redKaynIcon from "../../assets/red-kayn-icon.png"
+
 type SortField = 
     | "kills"
     | "deaths"
@@ -15,7 +18,7 @@ type SortField =
     | "wardsPlaced"
     | "cs";
 
-const MatchPerformance: React.FC<{info: MatchDetailsInfo, puuid: string}> = ({info, puuid}) => {
+const MatchPerformance: React.FC<{info: MatchDetailsInfo; puuid: string; kaynTransformation: any}> = ({info, puuid, kaynTransformation}) => {
     const [sortBy, setSortBy] = useState<SortField | null>(null);
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
@@ -91,9 +94,20 @@ const MatchPerformance: React.FC<{info: MatchDetailsInfo, puuid: string}> = ({in
 
                     return (
                         <div key={index} className={`grid grid-cols-[19%_6%_6%_6%_13%_13%_13%_13%_10%] items-center mt-2 ${participant.win ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
-                            <div className={`flex items-center text-center gap-0.5 p-2 ${participant.puuid === puuid ? "text-purple-600" : ""}`}>
+                            <div className={`flex items-center text-center gap-2 p-2 ${participant.puuid === puuid ? "text-purple-600" : ""}`}>
                                 <div className="relative inline-block">
-                                    <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-12" />
+                                    {(kaynTransformation && participant.championName === "Kayn") ? (
+                                        <>
+                                            {kaynTransformation.transformType === "SLAYER" && (
+                                                <img src={redKaynIcon} alt="redKaynIcon" className="h-12" />
+                                            )}
+                                            {kaynTransformation.transformType === "ASSASSIN" && (
+                                                <img src={blueKaynIcon} alt="blueKaynIcon" className="h-12" />
+                                            )}
+                                        </>
+                                    ) : (
+                                        <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-12" />
+                                    )}
                                     <img src={`https://dpm.lol/position/${participant.teamPosition}.svg`} alt={participant.teamPosition} className="absolute bottom-0 right-0 h-6 bg-black transform translate-x-1/8 translate-y-1/8" />
                                 </div>
                                 <p>{participant.riotIdGameName}</p>

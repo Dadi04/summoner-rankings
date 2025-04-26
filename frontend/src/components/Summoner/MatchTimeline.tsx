@@ -24,6 +24,8 @@ import red_nexusimg from "../../assets/monsters/imgs/red_nexus.webp";
 import blue_nexusimg from "../../assets/monsters/imgs/blue_nexus.webp";
 import red_inhibitorimg from "../../assets/monsters/imgs/red_inhibitor.png";
 import blue_inhibitorimg from "../../assets/monsters/imgs/blue_inhibitor.webp";
+import blueKaynIcon from "../../assets/blue-kayn-icon.png"
+import redKaynIcon from "../../assets/red-kayn-icon.png"
 
 const CHECKBOXES = [
     { id: 'kills', label: 'Kills' },
@@ -34,13 +36,13 @@ const CHECKBOXES = [
 ];
 
 const EVENT_TYPE_MAP: Record<number, string[]> = {
-    0: ["CHAMPION_KILL", "CHAMPION_SPECIAL_KILL"],
+    0: ["CHAMPION_KILL", "CHAMPION_SPECIAL_KILL", "CHAMPION_TRANSFORM"],
     1: ["BUILDING_KILL", "TURRET_PLATE_DESTROYED", "ELITE_MONSTER_KILL"],
     3: ["WARD_PLACED", "WARD_KILL"],
     4: ["ITEM_PURCHASED", "ITEM_SOLD", "ITEM_DESTROYED"],
 };
 
-const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPlayer: MatchParticipant; items: any;}> = ({timeline, info, selectedPlayer, items}) => {
+const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPlayer: MatchParticipant; items: any; kaynTransformation: any;}> = ({timeline, info, selectedPlayer, items, kaynTransformation}) => {
     const [timelineFilter, setTimelineFilter] = useState<boolean[]>([true, true, false, true, true])
     
     const toggleFilter = (index: number) => {
@@ -59,7 +61,7 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
 
             const allowedTypes = activeTypeIndices.flatMap(i => EVENT_TYPE_MAP[i]);
             return baseEvents.filter(event => allowedTypes.includes(event.type))
-        }, [everyTimeline, selectedPlayerId, timelineFilter]);   
+        }, [everyTimeline, selectedPlayerId, timelineFilter]);
     }
 
     function getSupportItemId(player: MatchParticipant): number {
@@ -77,22 +79,23 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
     function getSupportItemProgression(frames: any[], participantId: number): any[] {
         return frames.flatMap((frame) => frame.events || []).filter((event) =>
             event.type === 'ITEM_DESTROYED' &&
-            event.itemId! > 3864 &&
-            event.itemId! < 3878 &&
+            event.itemId > 3864 &&
+            event.itemId < 3878 &&
             event.participantId === participantId
         );
     }
-
+    
+    const itemsIds = [3865, 3866, 3867, 3003, 3004, 3121];
     const everyTimeline: Record<number, any[]> = {};
     for (const frame of timeline.info.frames) {
         if (!frame.events) continue;
 
         for (const event of frame.events) {
             if (["ITEM_UNDO", "LEVEL_UP", "SKILL_LEVEL_UP"].includes(event.type)) continue;
-            if (event.type === "ITEM_DESTROYED" && (event.itemId <= 3864 || event.itemId >= 3868)) continue;
+            if (event.type === "ITEM_DESTROYED" && !itemsIds.includes(event.itemId)) continue;
             if ((event.type === "WARD_PLACED" || event.type === "WARD_KILL") && event.wardType === "UNDEFINED") continue;
             if (event.type === "ITEM_PURCHASED" && event.itemId > 3868 && event.itemId < 3878) continue;
-        
+
             const playerId = event.participantId ?? event.killerId ?? event.creatorId;
             if (!playerId) continue;
         
@@ -147,12 +150,34 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                         <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
                                         <div className={`flex w-full p-2 gap-2 items-center ${(timelineFilter[2] && info.participants[event.killerId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800" : info.participants[event.killerId-1].teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
                                             <div className="flex gap-1 items-center">
-                                                <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                    <>
+                                                        {kaynTransformation.transformType === "SLAYER" && (
+                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                        {kaynTransformation.transformType === "ASSASSIN" && (
+                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                    </>
+                                                ): (
+                                                    <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                )}
                                                 <p className="text-sm text-gray-200">{info.participants[event.killerId-1].riotIdGameName}</p>
                                             </div>
                                             <p className="text-sm text-white">killed</p>
                                             <div className="flex gap-1 items-center">
-                                                <ChampionImage championId={info.participants[event.victimId-1].championId} teamId={info.participants[event.victimId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                {(kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                    <>
+                                                        {kaynTransformation.transformType === "SLAYER" && (
+                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.victimId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                        {kaynTransformation.transformType === "ASSASSIN" && (
+                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.victimId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                    </>
+                                                ): (
+                                                    <ChampionImage championId={info.participants[event.victimId-1].championId} teamId={info.participants[event.victimId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                )}
                                                 <p className="text-sm text-gray-200">{info.participants[event.victimId-1].riotIdGameName}</p>
                                             </div>
                                         </div>
@@ -163,7 +188,18 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                         <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
                                         <div className={`flex w-full p-2 gap-2 items-center ${(timelineFilter[2] && info.participants[event.participantId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800" : info.participants[event.participantId-1].teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
                                             <div className="flex gap-1 items-center">
-                                                <ChampionImage championId={info.participants[event.participantId-1].championId} teamId={info.participants[event.participantId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                    <>
+                                                        {kaynTransformation.transformType === "SLAYER" && (
+                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                        {kaynTransformation.transformType === "ASSASSIN" && (
+                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                    </>
+                                                ): (
+                                                    <ChampionImage championId={info.participants[event.participantId-1].championId} teamId={info.participants[event.participantId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                )}
                                                 <p className="text-sm text-gray-200">{info.participants[event.participantId-1].riotIdGameName}</p>
                                             </div>
                                             <p className="text-sm text-white">purchased</p>
@@ -177,7 +213,18 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                         <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
                                         <div className={`flex w-full p-2 gap-2 items-center ${(timelineFilter[2] && info.participants[event.participantId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800" : info.participants[event.participantId-1].teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
                                             <div className="flex gap-1 items-center">
-                                                <ChampionImage championId={info.participants[event.participantId-1].championId} teamId={info.participants[event.participantId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                    <>
+                                                        {kaynTransformation.transformType === "SLAYER" && (
+                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                        {kaynTransformation.transformType === "ASSASSIN" && (
+                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                    </>
+                                                ): (
+                                                    <ChampionImage championId={info.participants[event.participantId-1].championId} teamId={info.participants[event.participantId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                )}
                                                 <p className="text-sm text-gray-200">{info.participants[event.participantId-1].riotIdGameName}</p>
                                             </div>
                                             <p className="text-sm text-white">sold</p>
@@ -197,9 +244,41 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                         <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
                                         <div className={`flex w-full p-2 gap-2 items-center ${(timelineFilter[2] && info.participants[event.participantId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800" : info.participants[event.participantId-1].teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
                                             <div className="flex gap-1 items-center">
-                                                <ChampionImage championId={info.participants[event.participantId-1].championId} teamId={info.participants[event.participantId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                    <>
+                                                        {kaynTransformation.transformType === "SLAYER" && (
+                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                        {kaynTransformation.transformType === "ASSASSIN" && (
+                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                    </>
+                                                ): (
+                                                    <ChampionImage championId={info.participants[event.participantId-1].championId} teamId={info.participants[event.participantId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                )}
                                                 <p className="text-sm text-gray-200">{info.participants[event.participantId-1].riotIdGameName}</p>
                                             </div>
+                                            {event.itemId === 3003 && (
+                                                <>  
+                                                    <p className="text-sm text-white">completed a quest for</p>
+                                                    <ItemImage itemId={3040} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
+                                                    <p className="text-sm text-gray-200">Seraph's Embrace</p>
+                                                </>
+                                            )}
+                                            {event.itemId === 3004 && (
+                                                <>  
+                                                    <p className="text-sm text-white">completed a quest for</p>
+                                                    <ItemImage itemId={3042} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
+                                                    <p className="text-sm text-gray-200">Muramana</p>
+                                                </>
+                                            )}
+                                            {event.itemId === 3119 && (
+                                                <>  
+                                                    <p className="text-sm text-white">completed a quest for</p>
+                                                    <ItemImage itemId={3121} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
+                                                    <p className="text-sm text-gray-200">Fimbulwinter</p>
+                                                </>
+                                            )}
                                             {event.itemId === 3865 && (
                                                 <>  
                                                     <p className="text-sm text-white">completed a quest for</p>
@@ -229,7 +308,18 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                         <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
                                         <div className={`flex w-full p-2 gap-2 items-center ${(timelineFilter[2] && info.participants[event.creatorId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800" : info.participants[event.creatorId-1].teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
                                             <div className="flex gap-1 items-center">
-                                                <ChampionImage championId={info.participants[event.creatorId-1].championId} teamId={info.participants[event.creatorId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                    <>
+                                                        {kaynTransformation.transformType === "SLAYER" && (
+                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.creatorId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                        {kaynTransformation.transformType === "ASSASSIN" && (
+                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.creatorId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                    </>
+                                                ): (
+                                                    <ChampionImage championId={info.participants[event.creatorId-1].championId} teamId={info.participants[event.creatorId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                )}
                                                 <p className="text-sm text-gray-200">{info.participants[event.creatorId-1].riotIdGameName}</p>
                                             </div>
                                             <p className="text-sm text-white">placed</p>
@@ -306,7 +396,18 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                         <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
                                         <div className={`flex w-full p-2 gap-2 items-center ${(timelineFilter[2] && info.participants[event.killerId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800" : info.participants[event.killerId-1].teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
                                             <div className="flex gap-1 items-center">
-                                                <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                    <>
+                                                        {kaynTransformation.transformType === "SLAYER" && (
+                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                        {kaynTransformation.transformType === "ASSASSIN" && (
+                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                    </>
+                                                ): (
+                                                    <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                )}
                                                 <p className="text-sm text-gray-200">{info.participants[event.killerId-1].riotIdGameName}</p>
                                             </div>
                                             <p className="text-sm text-white">destroyed</p>
@@ -378,12 +479,47 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                         </div>
                                     </div>
                                 )}
+                                {event.type === "CHAMPION_TRANSFORM" && (
+                                    <div key={i} className={`flex items-center mb-1 gap-2`}>
+                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                        <div className={`flex w-full p-2 gap-2 items-center ${(timelineFilter[2] && info.participants[event.participantId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800" : info.participants[event.participantId-1].teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
+                                            <div className="flex gap-1 items-center">
+                                                <ChampionImage championId={info.participants[event.participantId-1].championId} teamId={info.participants[event.participantId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                <p className="text-sm text-gray-200">{info.participants[event.participantId-1].riotIdGameName}</p>
+                                            </div>
+                                            <p className="text-sm text-white">finished the transformation and chose</p>
+                                            {event.transformType === "ASSASSIN" && (
+                                                <>
+                                                    <img src={blueKaynIcon} alt="blueKaynIcon" className="h-10" />
+                                                    <p className="text-sm text-gray-200">Shadow Assassin</p>
+                                                </>
+                                            )}
+                                            {event.transformType === "SLAYER" && (
+                                                <>
+                                                    <img src={redKaynIcon} alt="redKaynIcon" className="h-10" />
+                                                    <p className="text-sm text-gray-200">Darkin</p>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                                 {event.type === "BUILDING_KILL" && (
                                     <div key={i} className={`flex items-center mb-1 gap-2`}>
                                         <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
                                         <div className={`flex w-full p-2 gap-2 items-center ${(timelineFilter[2] && info.participants[event.killerId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800" : info.participants[event.killerId-1].teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
                                             <div className="flex gap-1 items-center">
-                                                <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                    <>
+                                                        {kaynTransformation.transformType === "SLAYER" && (
+                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                        {kaynTransformation.transformType === "ASSASSIN" && (
+                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                    </>
+                                                ): (
+                                                    <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                )}
                                                 <p className="text-sm text-gray-200">{info.participants[event.killerId-1].riotIdGameName}</p>
                                             </div>
                                             <p className="text-sm text-white">destroyed</p>
@@ -457,7 +593,18 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                         <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
                                         <div className={`flex w-full p-2 gap-2 items-center ${(timelineFilter[2] && info.participants[event.killerId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800" : info.participants[event.killerId-1].teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
                                             <div className="flex gap-1 items-center">
-                                                <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                    <>
+                                                        {kaynTransformation.transformType === "SLAYER" && (
+                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                        {kaynTransformation.transformType === "ASSASSIN" && (
+                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                    </>
+                                                ): (
+                                                    <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                )}
                                                 <p className="text-sm text-gray-200">{info.participants[event.killerId-1].riotIdGameName}</p>
                                             </div>
                                             <p className="text-sm text-white">destroyed a Turret Plate on</p>
@@ -487,7 +634,18 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                         <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
                                         <div className={`flex w-full p-2 gap-2 items-center ${(timelineFilter[2] && info.participants[event.killerId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800" : info.participants[event.killerId-1].teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
                                             <div className="flex gap-1 items-center">
-                                                <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                    <>
+                                                        {kaynTransformation.transformType === "SLAYER" && (
+                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                        {kaynTransformation.transformType === "ASSASSIN" && (
+                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                    </>
+                                                ): (
+                                                    <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                )}
                                                 <p className="text-sm text-gray-200">{info.participants[event.killerId-1].riotIdGameName}</p>
                                             </div>
                                             <p className="text-sm text-white">killed</p>
@@ -565,7 +723,18 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                         <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
                                         <div className={`flex w-full p-2 gap-2 items-center ${(timelineFilter[2] && info.participants[event.killerId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800" : info.participants[event.killerId-1].teamId === 100 ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
                                             <div className="flex gap-1 items-center">
-                                                <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                    <>
+                                                        {kaynTransformation.transformType === "SLAYER" && (
+                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                        {kaynTransformation.transformType === "ASSASSIN" && (
+                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                        )}
+                                                    </>
+                                                ): (
+                                                    <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                )}
                                                 <p className="text-sm text-gray-200">{info.participants[event.killerId-1].riotIdGameName}</p>
                                             </div>
                                             {event.killType === "KILL_FIRST_BLOOD" && (
@@ -578,13 +747,13 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                                 <p className="text-sm text-white">got Double Kill</p>
                                             )}
                                             {event.multiKillLength === 3 && (
-                                                <p className="text-sm text-white">got Double Kill</p>
+                                                <p className="text-sm text-white">got Triple Kill</p>
                                             )}
                                             {event.multiKillLength === 4 && (
-                                                <p className="text-sm text-white">got Double Kill</p>
+                                                <p className="text-sm text-white">got Quadra Kill</p>
                                             )}
                                             {event.multiKillLength === 5 && (
-                                                <p className="text-sm text-white">got Double Kill</p>
+                                                <p className="text-sm text-white">got Penta Kill</p>
                                             )}
                                             {event.multiKillLength > 5 && (
                                                 <p className="text-sm text-white">killed {event.multiKillLength} Players</p>

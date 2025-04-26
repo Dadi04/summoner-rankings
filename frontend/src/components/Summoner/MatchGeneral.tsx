@@ -20,8 +20,10 @@ import baronicon from "../../assets/monsters/icons/baron.png";
 import atakhanicon from "../../assets/monsters/icons/atakhan.png";
 import turreticon from "../../assets/monsters/icons/tower.png";
 import inhibitoricon from "../../assets/monsters/icons/inhibitor.png";
+import blueKaynIcon from "../../assets/blue-kayn-icon.png"
+import redKaynIcon from "../../assets/red-kayn-icon.png"
 
-const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: string, region: string}> = ({info, timeline, puuid, region}) => {
+const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: string, region: string, kaynTransformation: any;}> = ({info, timeline, puuid, region, kaynTransformation}) => {
     const blueSideWon = info.participants.find(p => p.teamId === 100)?.win;
 
     const blueTeamObjectives = info.teams.find(team => team.teamId === 100)?.objectives;
@@ -178,7 +180,18 @@ const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: stri
                         <div key={participant.puuid} className="grid grid-cols-[40%_10%_10%_10%_30%] items-center gap-2">
                             <div className="flex gap-2 items-center">
                                 <div className="relative">
-                                    <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-12" />
+                                    {(kaynTransformation && participant.championName === "Kayn") ? (
+                                        <>
+                                            {kaynTransformation.transformType === "SLAYER" && (
+                                                <img src={redKaynIcon} alt="redKaynIcon" className="h-12" />
+                                            )}
+                                            {kaynTransformation.transformType === "ASSASSIN" && (
+                                                <img src={blueKaynIcon} alt="blueKaynIcon" className="h-12" />
+                                            )}
+                                        </>
+                                    ) : (
+                                        <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} classes="h-12" />
+                                    )}
                                     <p className="absolute text-sm right-0 bottom-0 transform translate-x-[2px] translate-y-[2px] bg-neutral-800 border border-neutral-400 px-0.5">{participant.champLevel}</p>
                                 </div>
                                 <div className="flex flex-col gap-1">
@@ -318,7 +331,18 @@ const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: stri
                         <div key={participant.puuid} className="grid grid-cols-[40%_10%_10%_10%_30%] items-center gap-2">
                             <div className="flex gap-2 items-center">
                                 <div className="relative">
-                                    <ChampionImage championId={participant.championId} teamId={200} isTeamIdSame={true} classes="h-12" />
+                                    {(kaynTransformation && participant.championName === "Kayn") ? (
+                                        <>
+                                            {kaynTransformation.transformType === "SLAYER" && (
+                                                <img src={redKaynIcon} alt="redKaynIcon" className="h-12" />
+                                            )}
+                                            {kaynTransformation.transformType === "ASSASSIN" && (
+                                                <img src={blueKaynIcon} alt="blueKaynIcon" className="h-12" />
+                                            )}
+                                        </>
+                                    ) : (
+                                        <ChampionImage championId={participant.championId} teamId={participant.teamId} isTeamIdSame={true} classes="h-12" />
+                                    )}
                                     <p className="absolute text-sm right-0 bottom-0 transform translate-x-[2px] translate-y-[2px] bg-neutral-800 border border-neutral-400 px-0.5">{participant.champLevel}</p>
                                 </div>
                                 <div className="flex flex-col gap-1">

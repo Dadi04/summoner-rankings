@@ -8,7 +8,7 @@ import ChampionImage from "../components/ChampionImage";
 import ProfileHeader from "../components/ProfileHeader";
 import MatchRow from "../components/Summoner/MatchRow";
 
-import Participant from "../interfaces/Participant";
+import Participant from "../interfaces/LiveGameParticipant";
 import Entry from "../interfaces/Entry";
 import ChampionStats from "../interfaces/ChampionStats";
 import PreferredRole from "../interfaces/PreferredRole";

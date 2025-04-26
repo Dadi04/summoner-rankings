@@ -1,6 +1,6 @@
 import Perk from "./Perk";
 
-interface Participant {
+interface LiveGameParticipant {
     puuid: string;
     teamId: number;
     spell1Id: number;
@@ -15,4 +15,4 @@ interface Participant {
     predictedRole: string;
 }
 
-export default Participant
+export default LiveGameParticipant;
