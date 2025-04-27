@@ -252,7 +252,7 @@ const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: stri
                     : 
                         <p className="text-red-500 font-bold text-lg">Defeat</p>
                     }
-                    <p className="text-neutral-400 text-lg">(Blue Side)</p>
+                    <p className="text-neutral-400 text-lg">(Red Side)</p>
                     <div className="flex gap-3 font-normal text-2xl text-neutral-200 py-2">
                         <div className="flex items-center">
                             <img src={grubsicon} alt="grubsicon" className="h-10" />
@@ -364,7 +364,7 @@ const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: stri
                                     <div className="text-neutral-300 flex items-center gap-1">
                                         {/* <img src={`https://static.bigbrain.gg/assets/lol/ranks/s13/mini/${participant.entry.tier.toLowerCase()}.svg`} alt={participant.entry.tier.toLowerCase()} className="h-5" /> */}
                                         {/* <p className="capitalize">{participant.entry.tier.toLowerCase()} {participant.entry.rank} {participant.entry.leaguePoints} LP</p> */}
-                                        <p className="capitalize">Level {participant.summonerLevel} (TODO RANK (CANCER))</p>
+                                        <p className="capitalize">Level {participant.summonerLevel} (TODO RANK)</p>
                                     </div>
                                 </div>
                             </div>

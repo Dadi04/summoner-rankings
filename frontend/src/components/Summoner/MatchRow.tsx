@@ -69,12 +69,14 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
         killParticipation = Math.round(((participant.kills + participant.assists) / totalKills) * 100);
     }
 
+    const kaynParticipant = info.participants.find(p => p.championName === "Kayn");
+    const kaynId = kaynParticipant ? kaynParticipant.participantId : null;
     let kaynTransformation = null
     for (const frame of timeline.info.frames) {
         if (!frame.events) continue;
 
         for (const event of frame.events) {
-            if (event.type === "CHAMPION_TRANSFORM") kaynTransformation = event;
+            if (event.type === "CHAMPION_TRANSFORM" && event.participantId === kaynId) kaynTransformation = event;
         }
     }
 
