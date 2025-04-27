@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { DD_VERSION, LOL_VERSION } from "../version";
 
@@ -42,6 +42,7 @@ const roleLabels: { role: Role; label: string }[] = [
 
 const Summoner: React.FC = () => {
     const {regionCode, encodedSummoner} = useParams<{regionCode: string; encodedSummoner: string }>(); 
+    const location = useLocation();
 
     if (!encodedSummoner) {
         return <div>Error: Summoner parameter is missing.</div>;
@@ -51,6 +52,7 @@ const Summoner: React.FC = () => {
     }
 
     const summoner = decodeURIComponent(encodedSummoner);
+    const cacheKey = `summoner_${regionCode}_${summoner}`;
 
     const [selectedChampionPerformanceMode, setSelectedChampionPerformanceMode] = useState<string>("soloduo");
     const [selectedRolePerformanceMode, setSelectedRolePerformanceMode] = useState<string>("soloduo");
@@ -68,8 +70,23 @@ const Summoner: React.FC = () => {
     const inputRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const [apiData, setApiData] = useState<Player | null>(null);
-    const [loading, setLoading] = useState(true);
+    const getCachedData = () => {
+        try {
+            const cachedData = localStorage.getItem(cacheKey);
+            return cachedData ? JSON.parse(cachedData) : null;
+        } catch (error) {
+            console.error('Error retrieving cached data:', error);
+            return null;
+        }
+    };
+
+    const [apiData, setApiData] = useState<Player | null>(() => {
+        if (location.state?.apiData) {
+            return location.state.apiData;
+        }
+        return getCachedData();
+    });
+    const [loading, setLoading] = useState(!apiData);
 
     const [major, minor] = LOL_VERSION.split('.').map(Number);
     const versions = Array.from({length: minor - 0}, (_, i) => `${major}.${minor - i}`);
@@ -122,7 +139,21 @@ const Summoner: React.FC = () => {
     }, [DD_VERSION]);
 
     useEffect(() => {
+        if (apiData) {
+            try {
+                localStorage.setItem(cacheKey, JSON.stringify(apiData));
+            } catch (error) {
+                console.error('Error caching data:', error);
+            }
+        }
+    }, [apiData, cacheKey]);
+
+    useEffect(() => {
         const fetchData = async () => {
+            if (apiData) {
+                return;
+            }
+            
             try {
                 const response = await fetch(`/api/lol/profile/${regionCode}/${summoner}`);
                 if (!response.ok) {
@@ -137,7 +168,7 @@ const Summoner: React.FC = () => {
             }
         }
         fetchData();
-    }, [regionCode, summoner]);
+    }, [regionCode, summoner, apiData]);
 
     if (loading || !apiData) {
         return <div className="w-full flex justify-center mt-[125px] mb-[195px]"><DotLottieReact src={loadingAnimation} className="w-[600px] bg-transparent" loop autoplay /></div>

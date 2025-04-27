@@ -24,9 +24,32 @@ const LiveGame: React.FC = () => {
     if (!regionCode) {
         return <div>Error: RegionCode parameter is missing.</div>;
     }
+
+    const summoner = decodeURIComponent(encodedSummoner);
+    const cacheKey = `summoner_${regionCode}_${summoner}`;
     
-    const initialData = location.state?.apiData || {};
+    const getCachedData = () => {
+        try {
+            const cachedData = localStorage.getItem(cacheKey);
+            return cachedData ? JSON.parse(cachedData) : null;
+        } catch (error) {
+            console.error('Error retrieving cached data:', error);
+            return null;
+        }
+    };
+    
+    const initialData = location.state?.apiData || getCachedData() || {};
     const [newData, setNewData] = useState(initialData);
+    
+    useEffect(() => {
+        if (newData && Object.keys(newData).length > 0) {
+            try {
+                localStorage.setItem(cacheKey, JSON.stringify(newData));
+            } catch (error) {
+                console.error('Error caching data:', error);
+            }
+        }
+    }, [newData, cacheKey]);
     
     const spectatorData = newData.spectatorData ? JSON.parse(newData.spectatorData) : null;
 
