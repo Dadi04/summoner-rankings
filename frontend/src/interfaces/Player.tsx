@@ -26,8 +26,6 @@ interface Player {
     clashData: any;
     addedAt: number;
     totalMatches: number;
-    currentPage: number;
-    pageSize: number;
 }
 
 export default Player;

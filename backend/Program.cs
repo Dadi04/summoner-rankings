@@ -237,7 +237,7 @@ var regionMapping = new Dictionary<string, string> {
     {"me1", "europe"},
 };
 
-app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (string region, string summonerName, string summonerTag, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext, int page = 0, int pageSize = 20) => {
+app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (string region, string summonerName, string summonerTag, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext) => {
     if (!regionMapping.TryGetValue(region, out var continent)) {
         return Results.Problem("Invalid region specified.");
     }
@@ -1224,10 +1224,6 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
     await dbContext.SaveChangesAsync();
     
     var allMatchesData = JsonSerializer.Deserialize<List<LeagueMatchDto>>(existingPlayer.AllMatchesData)!;
-    var paginatedMatches = allMatchesData
-        .Skip(page * pageSize)
-        .Take(pageSize)
-        .ToList();
         
     var playerDto = new PlayerDto {
         Id = existingPlayer.Id,
@@ -1239,7 +1235,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         EntriesData = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(existingPlayer.EntriesData)!,
         TopMasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(existingPlayer.TopMasteriesData)!,
         AllMatchIds = JsonSerializer.Deserialize<List<string>>(existingPlayer.AllMatchIds)!,
-        AllMatchesData = paginatedMatches,
+        AllMatchesData = allMatchesData,
         TotalMatches = allMatchesData.Count,
         AllGamesChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(existingPlayer.AllGamesChampionStatsData)!,
         AllGamesRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRole>>(existingPlayer.AllGamesRoleStatsData)!,
@@ -1250,14 +1246,12 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         SpectatorData = JsonSerializer.Deserialize<object>(existingPlayer.SpectatorData),
         ClashData = JsonSerializer.Deserialize<object>(existingPlayer.ClashData),
         AddedAt = existingPlayer.AddedAt,
-        CurrentPage = page,
-        PageSize = pageSize
     };
     
     return Results.Ok(playerDto);
 });
 
-app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/livegame", async (string region, string puuid, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext, int page = 0, int pageSize = 20) => {
+app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/livegame", async (string region, string puuid, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext) => {
     if (!regionMapping.TryGetValue(region, out var continent)) {
         return Results.Problem("Invalid region specified.");
     }
@@ -1268,10 +1262,6 @@ app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/livegame", async (string 
     }
     
     var allMatchesData = JsonSerializer.Deserialize<List<LeagueMatchDto>>(player.AllMatchesData)!;
-    var paginatedMatches = allMatchesData
-        .Skip(page * pageSize)
-        .Take(pageSize)
-        .ToList();
         
     var dto = new PlayerDto {
         Id = player.Id,
@@ -1283,7 +1273,7 @@ app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/livegame", async (string 
         EntriesData = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(player.EntriesData)!,
         TopMasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(player.TopMasteriesData)!,
         AllMatchIds = JsonSerializer.Deserialize<List<string>>(player.AllMatchIds)!,
-        AllMatchesData = paginatedMatches,
+        AllMatchesData = allMatchesData,
         TotalMatches = allMatchesData.Count,
         AllGamesChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(player.AllGamesChampionStatsData)!,
         AllGamesRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRole>>(player.AllGamesRoleStatsData)!,
@@ -1294,8 +1284,6 @@ app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/livegame", async (string 
         SpectatorData = JsonSerializer.Deserialize<object>(player.SpectatorData),
         ClashData = JsonSerializer.Deserialize<object>(player.ClashData),
         AddedAt = player.AddedAt,
-        CurrentPage = page,
-        PageSize = pageSize
     };
     
     return Results.Ok(dto);
@@ -1683,8 +1671,6 @@ public class PlayerDto {
     public object? ClashData { get; set; }
     public long AddedAt { get; set; }
     public int TotalMatches { get; set; }
-    public int CurrentPage { get; set; }
-    public int PageSize { get; set; }
 }
 
 public class RiotSummonerDto {

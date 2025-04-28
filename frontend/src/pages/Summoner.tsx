@@ -40,6 +40,8 @@ const roleLabels: { role: Role; label: string }[] = [
     { role: "UTILITY", label: "Support" },
 ];  
 
+const GAMES_PER_PAGE = 20;
+
 const Summoner: React.FC = () => {
     const {regionCode, encodedSummoner} = useParams<{regionCode: string; encodedSummoner: string }>(); 
     const location = useLocation();
@@ -95,12 +97,26 @@ const Summoner: React.FC = () => {
     const versions = Array.from({length: minor - 0}, (_, i) => `${major}.${minor - i}`);
 
     const matchesByDate = useMemo(() => {
-        return apiData?.allMatchesData.reduce<Record<string, Match[]>>((acc, match) => {
-            const date = new Date(match.details.info.gameStartTimestamp).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+        if (!apiData) return {};
+
+        const sorted = [...apiData.allMatchesData].sort(
+            (a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp
+        );
+
+        const start = (paginatorPage - 1) * GAMES_PER_PAGE;
+        const end = start + GAMES_PER_PAGE;
+
+        const pageMatches = sorted.slice(start, end);
+        
+        return pageMatches.reduce<Record<string, Match[]>>((acc, match) => {
+            const date = new Date(match.details.info.gameStartTimestamp).toLocaleDateString(
+                'en-US',
+                { day: 'numeric', month: 'short' }
+            );
             (acc[date] ??= []).push(match);
             return acc;
-        }, {}) || {};
-    }, [apiData]);
+        }, {});
+    }, [apiData, paginatorPage]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -304,7 +320,7 @@ const Summoner: React.FC = () => {
     const rolePercents: Record<Role, number> = {} as any;
     (roleLabels as typeof roleLabels).forEach(({ role }) => {rolePercents[role] = totalGames > 0 ? Math.round((roleCounts[role] / totalGames) * 100) : 0;});
 
-    const totalPages = Math.round(apiData.totalMatches / apiData.pageSize);
+    const totalPages = Math.ceil(apiData.totalMatches / GAMES_PER_PAGE);
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
     const allWins = allMatchesData.reduce((sum, match) => {
@@ -649,11 +665,11 @@ const Summoner: React.FC = () => {
                                     <p className="text-neutral-400 text-lg">KDA</p>
                                     <p className="text-6xl text-purple-400 font-semibold mt-12 mb-5">{avgKDA}</p>
                                     <div className="flex items-center justify-center">
-                                        <p className="text-xl">{(totalPlayerKills/apiData.pageSize).toFixed(1)}</p>
+                                        <p className="text-xl">{(totalPlayerKills/GAMES_PER_PAGE).toFixed(1)}</p>
                                         <p className="text-md text-neutral-600 px-2">/</p>
-                                        <p className="text-xl text-purple-300">{(totalPlayerDeaths/apiData.pageSize).toFixed(1)}</p>
+                                        <p className="text-xl text-purple-300">{(totalPlayerDeaths/GAMES_PER_PAGE).toFixed(1)}</p>
                                         <p className="text-md text-neutral-600 px-2">/</p>
-                                        <p className="text-xl">{(totalPlayerAssists/apiData.pageSize).toFixed(1)}</p>
+                                        <p className="text-xl">{(totalPlayerAssists/GAMES_PER_PAGE).toFixed(1)}</p>
                                     </div>
                                     <p className="text-neutral-400 mt-4">Average Kill Participation {avgKP}%</p>
                                 </div>
@@ -680,12 +696,25 @@ const Summoner: React.FC = () => {
                         </div>
                         <div className="flex justify-between items-center mb-2">
                             <div className="flex bg-neutral-700 rounded-xl gap-3 p-2 border border-purple-500">
-                                <img onClick={() => setSelectedRole("fill")} src={fill} alt="FILL" className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === "fill" ? "bg-neutral-800" : ""}`} />
-                                <img onClick={() => setSelectedRole("top")} src={`https://dpm.lol/position/TOP.svg`} alt="TOP" className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === "top" ? "bg-neutral-800" : ""}`} />
-                                <img onClick={() => setSelectedRole("jungle")} src={`https://dpm.lol/position/JUNGLE.svg`} alt="JUNGLE" className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === "jungle" ? "bg-neutral-800" : ""}`} />
-                                <img onClick={() => setSelectedRole("middle")} src={`https://dpm.lol/position/MIDDLE.svg`} alt="MIDDLE" className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === "middle" ? "bg-neutral-800" : ""}`} />
-                                <img onClick={() => setSelectedRole("bottom")} src={`https://dpm.lol/position/BOTTOM.svg`} alt="BOTTOM" className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === "bottom" ? "bg-neutral-800" : ""}`} />
-                                <img onClick={() => setSelectedRole("utility")} src={`https://dpm.lol/position/UTILITY.svg`} alt="UTILITY" className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === "utility" ? "bg-neutral-800" : ""}`} />
+                            {["fill","top","jungle","middle","bottom","utility"].map((role) => (
+                                <>
+                                    {role === "fill" ? (
+                                        <img key="fill" 
+                                            onClick={() => setSelectedRole(role)}
+                                            src={fill} 
+                                            alt={role} 
+                                            className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === role ? "bg-neutral-800" : ""}`} 
+                                        />
+                                    ) : (
+                                        <img key={role} 
+                                            onClick={() => setSelectedRole(role)}
+                                            src={`https://dpm.lol/position/${role.toUpperCase()}.svg`} 
+                                            alt={role} 
+                                            className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === role ? "bg-neutral-800" : ""}`} 
+                                        />
+                                    )}
+                                </>
+                            ))}
                             </div>
                             <div>
                                 <div 
@@ -706,6 +735,8 @@ const Summoner: React.FC = () => {
                                         <p onClick={() => setSelectedQueue("flex")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "flex" ? "bg-neutral-700" : ""}`}>Flex</p>
                                         <p onClick={() => setSelectedQueue("aram")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "aram" ? "bg-neutral-700" : ""}`}>Aram</p>
                                         <p onClick={() => setSelectedQueue("normal")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "normal" ? "bg-neutral-700" : ""}`}>Normal</p>
+                                        <p onClick={() => setSelectedQueue("arena")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "arena" ? "bg-neutral-700" : ""}`}>Arena</p>
+                                        <p onClick={() => setSelectedQueue("urf")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "urf" ? "bg-neutral-700" : ""}`}>URF</p>
                                     </div>
                                     <div className="relative">
                                         <div ref={inputPatchesRef} className="flex items-center justify-center p-2 text-lg font-bold">
@@ -714,7 +745,7 @@ const Summoner: React.FC = () => {
                                         </div>
                                         <div ref={dropdownPatchesRef} className={`z-100 absolute top-full left-0 w-full bg-neutral-800 text-center transition-all duration-300 border border-purple-500 overflow-y-auto shadow-lg max-h-[300px] custom-scrollbar
                                             ${showPatch ? "opacity-100 visible" : "opacity-0 invisible"}`}>
-                                            <p key="all-patches" onClick={() => setSelectedPatch("all-patches")} className={`p-1 cursor-pointer text-lg transition-all duration-100 hover:text-neutral-300 ${selectedPatch === "all-patches" ? "bg-neutral-700" : ""}`}>
+                                            <p key="all-patches" onClick={() => {setSelectedPatch("all-patches"); setShowPatch(false)}} className={`p-1 cursor-pointer text-lg transition-all duration-100 hover:text-neutral-300 ${selectedPatch === "all-patches" ? "bg-neutral-700" : ""}`}>
                                                 All Patches
                                             </p>
                                             {versions.map((version) => (
@@ -766,31 +797,33 @@ const Summoner: React.FC = () => {
                                 </div>
                             ))}
                             <div className="flex justify-center mt-4">
-                                <ul className="flex items-center h-10 text-base">
-                                    <li>
-                                        <span onClick={() => setPaginatorPage((prev) => Math.max(prev - 1, 1))} className="flex items-center justify-center px-4 h-10 leading-tight border cursor-pointer transition-all border-gray-300 rounded-s-lg hover:bg-neutral-900 hover:text-neutral-100">
-                                            <span className="sr-only">Previous</span>
-                                            <svg className="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
-                                            </svg>
-                                        </span>
-                                    </li>
-                                    {pageNumbers.map((page: number) => (
-                                        <li key={page} onClick={() => setPaginatorPage(page)}>
-                                            <span className={`flex items-center justify-center px-4 h-10 leading-tight border-y border-r cursor-pointer transition-all ${paginatorPage === page ? "text-purple-600 border-purple-300 bg-purple-100 hover:bg-purple-200 hover:text-purple-700" : "border-gray-300 hover:bg-neutral-900 hover:text-neutral-100"}`}>
-                                                {page}
+                                {pageNumbers.length > 1 && (
+                                    <ul className="flex items-center h-10 text-base">
+                                        <li>
+                                            <span onClick={() => setPaginatorPage((prev) => Math.max(prev - 1, 1))} className="flex items-center justify-center px-4 h-10 leading-tight border cursor-pointer transition-all border-gray-300 rounded-s-lg hover:bg-neutral-900 hover:text-neutral-100">
+                                                <span className="sr-only">Previous</span>
+                                                <svg className="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
+                                                </svg>
                                             </span>
                                         </li>
-                                    ))}
-                                    <li>
-                                        <span onClick={() => setPaginatorPage((prev) => Math.min(prev + 1, totalPages))} className="flex items-center justify-center px-4 h-10 leading-tight border-y border-r cursor-pointer transition-all border-gray-300 rounded-e-lg hover:bg-neutral-900 hover:text-neutral-100">
-                                            <span className="sr-only">Next</span>
-                                            <svg className="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
-                                            </svg>
-                                        </span>
-                                    </li>
-                                </ul>
+                                        {pageNumbers.map((page: number) => (
+                                            <li key={page} onClick={() => setPaginatorPage(page)}>
+                                                <span className={`flex items-center justify-center px-4 h-10 leading-tight border-y border-r cursor-pointer transition-all ${paginatorPage === page ? "text-purple-600 border-purple-300 bg-purple-100 hover:bg-purple-200 hover:text-purple-700" : "border-gray-300 hover:bg-neutral-900 hover:text-neutral-100"}`}>
+                                                    {page}
+                                                </span>
+                                            </li>
+                                        ))}
+                                        <li>
+                                            <span onClick={() => setPaginatorPage((prev) => Math.min(prev + 1, totalPages))} className="flex items-center justify-center px-4 h-10 leading-tight border-y border-r cursor-pointer transition-all border-gray-300 rounded-e-lg hover:bg-neutral-900 hover:text-neutral-100">
+                                                <span className="sr-only">Next</span>
+                                                <svg className="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+                                                </svg>
+                                            </span>
+                                        </li>
+                                    </ul>
+                                )}
                             </div>
                         </div>
                     </div>
