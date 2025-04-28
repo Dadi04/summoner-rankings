@@ -63,12 +63,15 @@ const Summoner: React.FC = () => {
     const [selectedChampion, setSelectedChampion] = useState<string>("All Champions");
     const [showFilter, setShowFilter] = useState<boolean>(false);
     const [showPatch, setShowPatch] = useState<boolean>(false);
+    const [filterChampions, setFilterChampions] = useState('');
     const [champions, setChampions] = useState<any[]>([]);
     const [items, setItems] = useState<any>({});
     const [showSelectChampions, setShowSelectChampions] = useState<boolean>(false);
     const [paginatorPage, setPaginatorPage] = useState<number>(1);
-    const inputRef = useRef<HTMLDivElement>(null);
-    const dropdownRef = useRef<HTMLDivElement>(null);
+    const inputPatchesRef = useRef<HTMLDivElement>(null);
+    const dropdownPatchesRef = useRef<HTMLDivElement>(null);
+    const inputChampionsRef = useRef<HTMLDivElement>(null);
+    const dropdownChampionsRef = useRef<HTMLDivElement>(null);
 
     const getCachedData = () => {
         try {
@@ -102,8 +105,12 @@ const Summoner: React.FC = () => {
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node;
-            if (inputRef.current && dropdownRef.current && !inputRef.current.contains(target) && !dropdownRef.current.contains(target)) {
+            if (inputChampionsRef.current && dropdownChampionsRef.current && !inputChampionsRef.current.contains(target) && !dropdownChampionsRef.current.contains(target)) {
                 setShowSelectChampions(false);
+            }
+
+            if (inputPatchesRef.current && dropdownPatchesRef.current && !inputPatchesRef.current.contains(target) && !dropdownPatchesRef.current.contains(target)) {
+                setShowPatch(false)
             }
         }
 
@@ -701,11 +708,11 @@ const Summoner: React.FC = () => {
                                         <p onClick={() => setSelectedQueue("normal")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "normal" ? "bg-neutral-700" : ""}`}>Normal</p>
                                     </div>
                                     <div className="relative">
-                                        <div onClick={() => setShowPatch(prev => !prev)} className="flex items-center justify-center p-2 text-lg font-bold">
-                                            <p>Select Patch</p>
-                                            <img src={arrowDownLight} alt="arrowDownLight" className={`h-4 transform transition-transform ${showPatch ? "rotate-180" : ""}`} />
+                                        <div ref={inputPatchesRef} className="flex items-center justify-center p-2 text-lg font-bold">
+                                            <p onClick={() => setShowPatch(prev => !prev)}>Select Patch</p>
+                                            <img src={arrowDownLight} alt="arrowDownLight" onClick={() => setShowPatch(prev => !prev)} className={`h-4 transform transition-transform ${showPatch ? "rotate-180" : ""}`} />
                                         </div>
-                                        <div className={`absolute top-full left-0 w-full bg-neutral-800 text-center transition-all duration-300 border border-purple-500 overflow-y-auto shadow-lg max-h-[300px]
+                                        <div ref={dropdownPatchesRef} className={`z-100 absolute top-full left-0 w-full bg-neutral-800 text-center transition-all duration-300 border border-purple-500 overflow-y-auto shadow-lg max-h-[300px] custom-scrollbar
                                             ${showPatch ? "opacity-100 visible" : "opacity-0 invisible"}`}>
                                             <p key="all-patches" onClick={() => setSelectedPatch("all-patches")} className={`p-1 cursor-pointer text-lg transition-all duration-100 hover:text-neutral-300 ${selectedPatch === "all-patches" ? "bg-neutral-700" : ""}`}>
                                                 All Patches
@@ -719,19 +726,18 @@ const Summoner: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="relative">
-                                    <div ref={inputRef} onClick={() => setShowSelectChampions(true)} className="text-xl">
-                                    {/* You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`. */}
-                                        <input type="text" placeholder="Select Champion" value={selectedChampion} className="w-full border-none outline-none" />
+                                    <div ref={inputChampionsRef} onClick={() => setShowSelectChampions(true)} className="text-xl">
+                                        <input type="text" placeholder="Select Champion" value={filterChampions} onChange={e => setFilterChampions(e.target.value)} className="w-full border-none outline-none bg-neutral-900 px-2 py-1" />
                                     </div>
-                                    <div ref={dropdownRef} className={`absolute top-full left-0 w-full bg-neutral-800 transition-all duration-300 border border-purple-500 overflow-y-auto shadow-lg max-h-[400px]
+                                    <div ref={dropdownChampionsRef} className={`z-100 absolute top-full left-0 w-full bg-neutral-800 transition-all duration-300 border border-purple-500 overflow-y-auto shadow-lg max-h-[400px]
                                          ${showSelectChampions ? "opacity-100 visible" : "opacity-0 invisible"} custom-scrollbar`}>
-                                        <div onClick={() => setSelectedChampion("All Champions")} className={`flex items-center text-lg justify-between pl-4 pr-4 pt-0.5 pb-0.5 cursor-pointer transition-all duration-100 hover:text-neutral-300 ${selectedChampion === "All Champions" ? "bg-neutral-700" : ""}`}>
+                                        <div onClick={() => {setSelectedChampion("All Champions"); setFilterChampions('All Champions'); setShowSelectChampions(false)}} className={`flex items-center text-lg justify-between pl-4 pr-4 pt-0.5 pb-0.5 cursor-pointer transition-all duration-100 hover:text-neutral-300 ${selectedChampion === "All Champions" ? "bg-neutral-700" : ""}`}>
                                             <img src={noneicon} alt="none-icon" className="h-12" />
                                             <span>All Champions</span>
                                         </div>
                                         <div>
-                                            {champions.map((champion) => (
-                                                <div key={champion.id} onClick={() => setSelectedChampion(champion.name)} className={`flex items-center text-lg justify-between pl-4 pr-4 pt-0.5 pb-0.5 cursor-pointer transition-all duration-100 hover:text-neutral-300 ${selectedChampion === champion.name ? "bg-neutral-700" : ""} `}>
+                                            {champions.filter(champ =>champ.name.toLowerCase().startsWith(filterChampions.toLowerCase())).map((champion) => (
+                                                <div key={champion.id} onClick={() => {setSelectedChampion(champion.name); setFilterChampions(champion.name); setShowSelectChampions(false);}} className={`flex items-center text-lg justify-between pl-4 pr-4 pt-0.5 pb-0.5 cursor-pointer transition-all duration-100 hover:text-neutral-300 ${selectedChampion === champion.name ? "bg-neutral-700" : ""} `}>
                                                     <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/champion/${champion.id}.png`} alt={champion.name} className="h-12" />
                                                     <span>{champion.name}</span>
                                                 </div>
