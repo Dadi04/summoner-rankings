@@ -275,8 +275,6 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
             .AsNoTracking()
             .Where(pm => pm.PlayerId == existingPlayer.Id)
             .OrderBy(pm => pm.MatchIndex)
-            .Skip(page * pageSize)
-            .Take(pageSize)
             .Select(pm => JsonSerializer.Deserialize<LeagueMatchDto>(
                               pm.MatchJson,
                               new JsonSerializerOptions {
@@ -304,8 +302,6 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
             SpectatorData = JsonSerializer.Deserialize<object>(existingPlayer.SpectatorData),
             ClashData = JsonSerializer.Deserialize<object>(existingPlayer.ClashData),
             AddedAt = existingPlayer.AddedAt,
-            CurrentPage = page,
-            PageSize = pageSize
         };
 
         return Results.Ok(dto);
@@ -711,11 +707,6 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         });
     }
     await dbContext.SaveChangesAsync();   
-
-    var initialPage = allMatchesDataList
-        .Skip(page * pageSize)
-        .Take(pageSize)
-        .ToList();
     
     var playerDto = new PlayerDto {
         Id = player.Id,
@@ -727,7 +718,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         EntriesData = entries!,
         TopMasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(player.TopMasteriesData)!,
         AllMatchIds = allMatchIds,
-        AllMatchesData = initialPage,
+        AllMatchesData = allMatchesDataList,
         TotalMatches = allMatchesDataList.Count,
         AllGamesChampionStatsData = allGamesChampionStats,
         AllGamesRoleStatsData = allGamesRoleStats,
@@ -738,14 +729,12 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         SpectatorData = JsonSerializer.Deserialize<object>(player.SpectatorData),
         ClashData = JsonSerializer.Deserialize<object>(player.ClashData),
         AddedAt = player.AddedAt,
-        CurrentPage = page,
-        PageSize = pageSize
     };
 
     return Results.Ok(playerDto);
 });
 
-app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", async (string region, string summonerName, string summonerTag, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext, int page = 0, int pageSize = 20) => {
+app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", async (string region, string summonerName, string summonerTag, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext) => {
     if (!regionMapping.TryGetValue(region, out var continent)) {
         return Results.Problem("Invalid region specified.");
     }
