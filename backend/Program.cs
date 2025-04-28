@@ -268,9 +268,6 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
                             && p.SummonerTag == summonerTag
                             && p.Region == region);
     if (existingPlayer != null) {
-        var totalMatches = await dbContext.PlayerMatches
-            .Where(pm => pm.PlayerId == existingPlayer.Id)
-            .CountAsync();
         var pageMatches = await dbContext.PlayerMatches
             .AsNoTracking()
             .Where(pm => pm.PlayerId == existingPlayer.Id)
@@ -292,7 +289,6 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
             TopMasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(existingPlayer.TopMasteriesData)!,
             AllMatchIds = JsonSerializer.Deserialize<List<string>>(existingPlayer.AllMatchIds)!,
             AllMatchesData = pageMatches,
-            TotalMatches = totalMatches,
             AllGamesChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(existingPlayer.AllGamesChampionStatsData)!,
             AllGamesRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRole>>(existingPlayer.AllGamesRoleStatsData)!,
             RankedSoloChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(existingPlayer.RankedSoloChampionStatsData)!,
@@ -719,7 +715,6 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         TopMasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(player.TopMasteriesData)!,
         AllMatchIds = allMatchIds,
         AllMatchesData = allMatchesDataList,
-        TotalMatches = allMatchesDataList.Count,
         AllGamesChampionStatsData = allGamesChampionStats,
         AllGamesRoleStatsData = allGamesRoleStats,
         RankedSoloChampionStatsData = championStatsByQueue[rankedSoloQueueId],
@@ -1225,7 +1220,6 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         TopMasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(existingPlayer.TopMasteriesData)!,
         AllMatchIds = JsonSerializer.Deserialize<List<string>>(existingPlayer.AllMatchIds)!,
         AllMatchesData = allMatchesData,
-        TotalMatches = allMatchesData.Count,
         AllGamesChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(existingPlayer.AllGamesChampionStatsData)!,
         AllGamesRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRole>>(existingPlayer.AllGamesRoleStatsData)!,
         RankedSoloChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(existingPlayer.RankedSoloChampionStatsData)!,
@@ -1263,7 +1257,6 @@ app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/livegame", async (string 
         TopMasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(player.TopMasteriesData)!,
         AllMatchIds = JsonSerializer.Deserialize<List<string>>(player.AllMatchIds)!,
         AllMatchesData = allMatchesData,
-        TotalMatches = allMatchesData.Count,
         AllGamesChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(player.AllGamesChampionStatsData)!,
         AllGamesRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRole>>(player.AllGamesRoleStatsData)!,
         RankedSoloChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(player.RankedSoloChampionStatsData)!,
@@ -1659,7 +1652,6 @@ public class PlayerDto {
     public object? SpectatorData { get; set; }
     public object? ClashData { get; set; }
     public long AddedAt { get; set; }
-    public int TotalMatches { get; set; }
 }
 
 public class RiotSummonerDto {

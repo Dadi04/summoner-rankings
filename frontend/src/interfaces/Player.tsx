@@ -25,7 +25,6 @@ interface Player {
     spectatorData: any;
     clashData: any;
     addedAt: number;
-    totalMatches: number;
 }
 
 export default Player;

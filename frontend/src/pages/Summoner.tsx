@@ -40,6 +40,29 @@ const roleLabels: { role: Role; label: string }[] = [
     { role: "UTILITY", label: "Support" },
 ];  
 
+const gamemodeToQueues: { [key: string]: number[] | null } = {
+    "all-queues": null,
+    "solo-duo": [420],
+    "flex": [440],
+    "aram": [450],
+    "normal": [400, 430, 480, 490],
+    "arena": [1700, 1710],
+    "urf": [900, 1900]
+};
+  
+const patchWindows: { [key: string]: { startMs: number; endMs: number } } = {
+    "all-patches": { startMs: -Infinity, endMs: Infinity },
+    "15.1": { startMs: Date.parse("2025-01-09T00:00:00Z"), endMs: Date.parse("2025-01-23T00:00:00Z") },
+    "15.2": { startMs: Date.parse("2025-01-23T00:00:00Z"), endMs: Date.parse("2025-02-05T00:00:00Z") },
+    "15.3": { startMs: Date.parse("2025-02-05T00:00:00Z"), endMs: Date.parse("2025-02-20T00:00:00Z") },
+    "15.4": { startMs: Date.parse("2025-02-20T00:00:00Z"), endMs: Date.parse("2025-03-05T00:00:00Z") },
+    "15.5": { startMs: Date.parse("2025-03-05T00:00:00Z"), endMs: Date.parse("2025-03-19T00:00:00Z") },
+    "15.6": { startMs: Date.parse("2025-03-19T00:00:00Z"), endMs: Date.parse("2025-04-02T00:00:00Z") },
+    "15.7": { startMs: Date.parse("2025-04-02T00:00:00Z"), endMs: Date.parse("2025-04-16T00:00:00Z") },
+    "15.8": { startMs: Date.parse("2025-04-16T00:00:00Z"), endMs: Date.parse("2025-04-30T00:00:00Z") },
+    "15.9": { startMs: Date.parse("2025-04-30T00:00:00Z"), endMs: Date.parse("2025-05-14T00:00:00Z") }
+};
+
 const GAMES_PER_PAGE = 20;
 
 const Summoner: React.FC = () => {
@@ -96,10 +119,35 @@ const Summoner: React.FC = () => {
     const [major, minor] = LOL_VERSION.split('.').map(Number);
     const versions = Array.from({length: minor - 0}, (_, i) => `${major}.${minor - i}`);
 
-    const matchesByDate = useMemo(() => {
-        if (!apiData) return {};
+    const filteredMatches = useMemo(() => {
+        if (!apiData) return [];
+        return apiData.allMatchesData.filter(match => {
+            if (selectedRole !== "fill" && match.details.info.participants.find(p => p.puuid === apiData.puuid)?.teamPosition.toLowerCase() !== selectedRole) {
+                return false;
+            }
 
-        const sorted = [...apiData.allMatchesData].sort(
+            const allowedQueues = gamemodeToQueues[selectedQueue];
+            if (allowedQueues && !allowedQueues.includes(match.details.info.queueId)) {
+                return false;
+            }
+
+            const { startMs, endMs } = patchWindows[selectedPatch] || { startMs: -Infinity, endMs: Infinity };
+            if (match.details.info.gameStartTimestamp < startMs || match.details.info.gameStartTimestamp >= endMs) {
+                return false;
+            }
+
+            if (selectedChampion !== "All Champions" && match.details.info.participants.find(p => p.puuid === apiData.puuid)?.championName !== selectedChampion) {
+                return false;
+            }
+            setPaginatorPage(1)
+            return true;
+        })
+    }, [apiData, selectedRole, selectedQueue, selectedPatch, selectedChampion])
+
+    const matchesByDate = useMemo(() => {
+        if (!filteredMatches) return {};
+
+        const sorted = [...filteredMatches].sort(
             (a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp
         );
 
@@ -116,7 +164,7 @@ const Summoner: React.FC = () => {
             (acc[date] ??= []).push(match);
             return acc;
         }, {});
-    }, [apiData, paginatorPage]);
+    }, [filteredMatches, paginatorPage]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -320,7 +368,7 @@ const Summoner: React.FC = () => {
     const rolePercents: Record<Role, number> = {} as any;
     (roleLabels as typeof roleLabels).forEach(({ role }) => {rolePercents[role] = totalGames > 0 ? Math.round((roleCounts[role] / totalGames) * 100) : 0;});
 
-    const totalPages = Math.ceil(apiData.totalMatches / GAMES_PER_PAGE);
+    const totalPages = Math.ceil(filteredMatches.length / GAMES_PER_PAGE);
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
     const allWins = allMatchesData.reduce((sum, match) => {
@@ -778,54 +826,56 @@ const Summoner: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-neutral-800">
-                            {Object.entries(matchesByDate).map(([date, matches]) => (
-                                <div key={date}>
-                                    <h2 className="px-4 py-2 text-xl font-semibold">{date}</h2>
-                                    {matches.map(match => (
-                                        <MatchRow
-                                            key={match.details.info.gameId}
-                                            info={match.details.info}
-                                            timelineJson={match.timelineJson}
-                                            items={items}
-                                            champions={champions}
-                                            puuid={apiData.puuid}
-                                            region={regionCode}
-                                            classes="mb-1 px-2"
-                                        />
-                                    ))}
-                                </div>
-                            ))}
-                            <div className="flex justify-center mt-4">
-                                {pageNumbers.length > 1 && (
-                                    <ul className="flex items-center h-10 text-base">
-                                        <li>
-                                            <span onClick={() => setPaginatorPage((prev) => Math.max(prev - 1, 1))} className="flex items-center justify-center px-4 h-10 leading-tight border cursor-pointer transition-all border-gray-300 rounded-s-lg hover:bg-neutral-900 hover:text-neutral-100">
-                                                <span className="sr-only">Previous</span>
-                                                <svg className="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
-                                                </svg>
-                                            </span>
-                                        </li>
-                                        {pageNumbers.map((page: number) => (
-                                            <li key={page} onClick={() => setPaginatorPage(page)}>
-                                                <span className={`flex items-center justify-center px-4 h-10 leading-tight border-y border-r cursor-pointer transition-all ${paginatorPage === page ? "text-purple-600 border-purple-300 bg-purple-100 hover:bg-purple-200 hover:text-purple-700" : "border-gray-300 hover:bg-neutral-900 hover:text-neutral-100"}`}>
-                                                    {page}
+                        {Object.values(matchesByDate).length > 0 && (
+                            <div className="bg-neutral-800">
+                                {Object.entries(matchesByDate).map(([date, matches]) => (
+                                    <div key={date}>
+                                        <h2 className="px-4 py-2 text-xl font-semibold">{date}</h2>
+                                        {matches.map(match => (
+                                            <MatchRow
+                                                key={match.details.info.gameId}
+                                                info={match.details.info}
+                                                timelineJson={match.timelineJson}
+                                                items={items}
+                                                champions={champions}
+                                                puuid={apiData.puuid}
+                                                region={regionCode}
+                                                classes="mb-1 px-2"
+                                            />
+                                        ))}
+                                    </div>
+                                ))}
+                                <div className="flex justify-center mt-4">
+                                    {pageNumbers.length > 1 && (
+                                        <ul className="flex items-center h-10 text-base">
+                                            <li>
+                                                <span onClick={() => setPaginatorPage((prev) => Math.max(prev - 1, 1))} className="flex items-center justify-center px-4 h-10 leading-tight border cursor-pointer transition-all border-gray-300 rounded-s-lg hover:bg-neutral-900 hover:text-neutral-100">
+                                                    <span className="sr-only">Previous</span>
+                                                    <svg className="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
+                                                    </svg>
                                                 </span>
                                             </li>
-                                        ))}
-                                        <li>
-                                            <span onClick={() => setPaginatorPage((prev) => Math.min(prev + 1, totalPages))} className="flex items-center justify-center px-4 h-10 leading-tight border-y border-r cursor-pointer transition-all border-gray-300 rounded-e-lg hover:bg-neutral-900 hover:text-neutral-100">
-                                                <span className="sr-only">Next</span>
-                                                <svg className="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
-                                                </svg>
-                                            </span>
-                                        </li>
-                                    </ul>
-                                )}
+                                            {pageNumbers.map((page: number) => (
+                                                <li key={page} onClick={() => setPaginatorPage(page)}>
+                                                    <span className={`flex items-center justify-center px-4 h-10 leading-tight border-y border-r cursor-pointer transition-all ${paginatorPage === page ? "text-purple-600 border-purple-300 bg-purple-100 hover:bg-purple-200 hover:text-purple-700" : "border-gray-300 hover:bg-neutral-900 hover:text-neutral-100"}`}>
+                                                        {page}
+                                                    </span>
+                                                </li>
+                                            ))}
+                                            <li>
+                                                <span onClick={() => setPaginatorPage((prev) => Math.min(prev + 1, totalPages))} className="flex items-center justify-center px-4 h-10 leading-tight border-y border-r cursor-pointer transition-all border-gray-300 rounded-e-lg hover:bg-neutral-900 hover:text-neutral-100">
+                                                    <span className="sr-only">Next</span>
+                                                    <svg className="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+                                                    </svg>
+                                                </span>
+                                            </li>
+                                        </ul>
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>
