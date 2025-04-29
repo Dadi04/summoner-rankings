@@ -40,15 +40,20 @@ const roleLabels: { role: Role; label: string }[] = [
     { role: "UTILITY", label: "Support" },
 ];  
 
-const gamemodeToQueues: { [key: string]: number[] | null } = {
-    "all-queues": null,
-    "solo-duo": [420],
-    "flex": [440],
-    "aram": [450],
-    "normal": [400, 430, 480, 490],
-    "arena": [1700, 1710],
-    "urf": [900, 1900]
+type QueueDef = {
+    key: string;
+    label: string;
+    modeIds: number[] | null;
 };
+const queueDefs: QueueDef[] = [
+    { key: "all-queues", label: "All", modeIds: null },
+    { key: "solo-duo", label: "Solo Duo", modeIds: [420] },
+    { key: "flex", label: "Flex", modeIds: [440] },
+    { key: "aram", label: "Aram", modeIds: [450] },
+    { key: "normal", label: "Normal", modeIds: [400, 430, 480, 490] },
+    { key: "arena", label: "Arena", modeIds: [1700, 1710] },
+    { key: "urf", label: "URF", modeIds: [900, 1900] },
+];
   
 const patchWindows: { [key: string]: { startMs: number; endMs: number } } = {
     "all-patches": { startMs: -Infinity, endMs: Infinity },
@@ -126,7 +131,7 @@ const Summoner: React.FC = () => {
                 return false;
             }
 
-            const allowedQueues = gamemodeToQueues[selectedQueue];
+            const allowedQueues = queueDefs.find(q => q.key === selectedQueue)?.modeIds;
             if (allowedQueues && !allowedQueues.includes(match.details.info.queueId)) {
                 return false;
             }
@@ -139,13 +144,13 @@ const Summoner: React.FC = () => {
             if (selectedChampion !== "All Champions" && match.details.info.participants.find(p => p.puuid === apiData.puuid)?.championName !== selectedChampion) {
                 return false;
             }
-            setPaginatorPage(1)
+            // setPaginatorPage(1)
             return true;
         })
     }, [apiData, selectedRole, selectedQueue, selectedPatch, selectedChampion])
 
-    const matchesByDate = useMemo(() => {
-        if (!filteredMatches) return {};
+    const { grouped: matchesByDate, pageMatches } = useMemo(() => {
+        if (!filteredMatches.length) return { grouped: {}, pageMatches: [] };
 
         const sorted = [...filteredMatches].sort(
             (a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp
@@ -156,15 +161,97 @@ const Summoner: React.FC = () => {
 
         const pageMatches = sorted.slice(start, end);
         
-        return pageMatches.reduce<Record<string, Match[]>>((acc, match) => {
-            const date = new Date(match.details.info.gameStartTimestamp).toLocaleDateString(
-                'en-US',
-                { day: 'numeric', month: 'short' }
-            );
+        const grouped = pageMatches.reduce<Record<string, Match[]>>((acc, match) => {
+            const date = new Date(match.details.info.gameStartTimestamp).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
             (acc[date] ??= []).push(match);
             return acc;
         }, {});
+        
+        return { grouped, pageMatches };
     }, [filteredMatches, paginatorPage]);
+
+    const pageStats = useMemo(() => {
+        const matches = pageMatches;
+        const totalGames = matches.length;
+        const allWins = matches.reduce((sum, match) => {
+            const p = match.details.info.participants.find(p => p.puuid === apiData?.puuid);
+            return sum + (p?.win ? 1 : 0);
+        }, 0)
+        const allLosses = totalGames - allWins;
+        const winrate = totalGames > 0 ? Math.round((allWins/totalGames)*100) : 0;
+
+        const totalKills = matches.reduce((sum, match) => {
+            const p = match.details.info.participants.find(p => p.puuid === apiData?.puuid);
+            return sum + (p?.kills ?? 0);
+        }, 0)
+        const totalDeaths = matches.reduce((sum, match) => {
+            const p = match.details.info.participants.find(p => p.puuid === apiData?.puuid);
+            return sum + (p?.deaths ?? 0);
+        }, 0)
+        const totalAssists = matches.reduce((sum, match) => {
+            const p = match.details.info.participants.find(p => p.puuid === apiData?.puuid);
+            return sum + (p?.assists ?? 0);
+        }, 0)
+        const avgKDA = totalDeaths > 0 ? ((totalKills + totalAssists) / totalDeaths).toFixed(2) : "Perfect";
+
+        const totalTeamKills = matches.reduce((sum, match) => {
+            const p = match.details.info.participants.find(p => p.puuid === apiData?.puuid);
+            if (!p) return sum;
+            const teamKills = match.details.info.participants.filter(t => t.teamId === p.teamId).reduce((ts, t) => ts + (t.kills || 0), 0);
+            return sum + teamKills;
+        }, 0)
+        const avgKP = totalTeamKills > 0 ? Math.round(((totalKills + totalAssists) / totalTeamKills) * 100) : 0;
+
+        const champMap = new Map();
+        matches.forEach(match => {
+            const p = match.details.info.participants.find(p => p.puuid === apiData?.puuid);
+            if (!p) return;
+            const key = p.championId;
+            if (!champMap.has(key)) {
+                champMap.set(key, {
+                    championId: key,
+                    championName: p.championName,
+                    games: 0,
+                    wins: 0,
+                    kills: 0,
+                    deaths: 0,
+                    assists: 0,
+                });
+            }
+
+            const e = champMap.get(key);
+            e.games++;
+            e.wins += p.win ? 1 : 0;
+            e.kills += p.kills;
+            e.deaths += p.deaths;
+            e.assists += p.assists;
+        });
+        const top3 = Array.from(champMap.values())
+        .map(e => ({
+            ...e,
+            winrate: (e.wins / e.games) * 100,
+            averageKDA: e.deaths > 0 ? (e.kills + e.assists) / e.deaths : e.kills + e.assists,
+        }))
+        .sort((a, b) => b.games - a.games || b.winrate - a.winrate || b.averageKDA - a.averageKDA)
+        .slice(0, 3);
+
+        const roleCounts = roleLabels.reduce((acc, {role}) => {
+            acc[role] = 0;
+            return acc;
+        }, {} as Record<Role, number>);
+        matches.forEach(match => {
+            const p = match.details.info.participants.find(p => p.puuid === apiData?.puuid);
+            if (p) {
+                roleCounts[p.teamPosition as Role]++;
+            }
+        });
+        const rolePercents = roleLabels.reduce((acc, {role}) => {
+            acc[role] = totalGames > 0 ? Math.round((roleCounts[role] / totalGames) * 100) : 0;
+            return acc;
+        }, {} as Record<Role, number>);
+
+        return { totalGames, allWins, allLosses, winrate, avgKDA, avgKP, top3, totalKills, totalDeaths, totalAssists, rolePercents };
+    }, [pageMatches, apiData?.puuid]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -256,7 +343,7 @@ const Summoner: React.FC = () => {
     const entriesData: Entry[] = apiData.entriesData;
     const topMasteriesData: Mastery[] = apiData.topMasteriesData;
     // const allMatchIds: string[] = apiData.allMatchIds;
-    const allMatchesData: Match[] = apiData.allMatchesData;
+    // const allMatchesData: Match[] = apiData.allMatchesData;
     const spectatorData = apiData.spectatorData;
     
     championStatsSoloDuoData.sort((a: ChampionStats, b: ChampionStats) => b.games - a.games || b.winRate - a.winRate);
@@ -284,99 +371,8 @@ const Summoner: React.FC = () => {
         rankedFlexWinrate = Math.round(rankedFlexEntry.wins / (rankedFlexEntry.wins + rankedFlexEntry.losses) * 100);
     }
     
-    const totalPlayerKills = allMatchesData.reduce((sum, match) => {
-        const player = match.details.info.participants.find(p => p.puuid === apiData.puuid);
-        return sum + (player?.kills ?? 0)
-    }, 0);
-    const totalPlayerDeaths = allMatchesData.reduce((sum, match) => {
-        const player = match.details.info.participants.find(p => p.puuid === apiData.puuid);
-        return sum + (player?.deaths ?? 0)
-    }, 0);
-    const totalPlayerAssists = allMatchesData.reduce((sum, match) => {
-        const player = match.details.info.participants.find(p => p.puuid === apiData.puuid);
-        return sum + (player?.assists ?? 0)
-    }, 0);
-    const avgKDA = totalPlayerDeaths > 0 ? ((totalPlayerKills + totalPlayerAssists) / totalPlayerDeaths).toFixed(2) : "Perfect";
-
-    const totalKills = allMatchesData.reduce((sum, match) => {
-        const player = match.details.info.participants.find(p => p.puuid === apiData.puuid);
-        if (player) {
-            const playerTeamId = player.teamId;
-            const teamKills = match.details.info.participants.filter(p => p.teamId === playerTeamId).reduce((teamSum, teammate) => teamSum + (teammate.kills || 0), 0);  
-            
-            return sum + teamKills;
-        }
-        return sum;
-    }, 0);
-    const avgKP = Math.round((totalPlayerAssists+totalPlayerKills)/totalKills*100);
-
-    const champStats = new Map<number, ChampionStats>();
-    for (const match of allMatchesData) {
-        const p = match.details.info.participants.find((player) => player.puuid === apiData.puuid);
-        if (!p) continue;
-        const { championId: id, championName: name, win, kills, deaths, assists } = p;
-
-        if (!champStats.has(id)) {
-            champStats.set(id, {
-              championId: id,
-              championName: name,
-              games: 0,
-              wins: 0,
-              totalKills: 0,
-              totalDeaths: 0,
-              totalAssists: 0,
-              winRate: 0,
-              averageKDA: 0,
-            });
-        }
-        const entry = champStats.get(id)!;
-        entry.games += 1;
-        if (win) entry.wins += 1;
-        entry.totalKills   += kills;
-        entry.totalDeaths  += deaths;
-        entry.totalAssists += assists;
-    }
-
-    for (const entry of champStats.values()) { 
-        entry.winRate = (entry.wins / entry.games) * 100;
-        entry.averageKDA = entry.totalDeaths > 0 ? (entry.totalKills + entry.totalAssists) / entry.totalDeaths : entry.totalKills + entry.totalAssists;
-    }
-
-    const top3 = Array.from(champStats.values()).sort((a, b) => {
-        if (b.games !== a.games) {
-          return b.games - a.games;
-        }
-        if (b.winRate !== a.winRate) {
-          return b.winRate - a.winRate;
-        }
-        return b.averageKDA - a.averageKDA;
-    }).slice(0, 3);
-
-    const roleCounts = roleLabels.reduce((acc, { role }) => {
-        acc[role] = 0;
-        return acc;
-    }, {} as Record<Role, number>);
-
-    allMatchesData.forEach(match => {
-        const player = match.details.info.participants.find(p => p.puuid === apiData.puuid);
-        if (player) {
-            roleCounts[player.teamPosition as Role]++;
-        }
-    });
-    const totalGames = allMatchesData.length;  
-
-    const rolePercents: Record<Role, number> = {} as any;
-    (roleLabels as typeof roleLabels).forEach(({ role }) => {rolePercents[role] = totalGames > 0 ? Math.round((roleCounts[role] / totalGames) * 100) : 0;});
-
     const totalPages = Math.ceil(filteredMatches.length / GAMES_PER_PAGE);
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
-
-    const allWins = allMatchesData.reduce((sum, match) => {
-        const player = match.details.info.participants.find(p => p.puuid === apiData.puuid);
-        return sum + (player?.win ? 1 : 0)
-    }, 0);
-    const winratePercent = Math.round(allWins / totalGames * 100);
-    const winAngle = winratePercent * 1.8;
 
     function getWinrateColor(winrate: number, games: number) {
         if (games == 0) return "";
@@ -679,27 +675,27 @@ const Summoner: React.FC = () => {
                             </div>
                             <div className="grid grid-cols-[25%_25%_25%_25%]">
                                 <div className="flex flex-col items-center justify-center space-y-10 relative">
-                                    <div className="relative w-52 h-52 rounded-full" style={{ background: `conic-gradient( #ef4444 0deg ${winAngle}deg, #3b82f6 ${winAngle}deg 360deg)`}}>
+                                    <div className="relative w-52 h-52 rounded-full" style={{ background: `conic-gradient( #3b82f6 0deg ${pageStats.winrate * 3.6}deg, #ef4444 ${pageStats.winrate * 3.6}deg 360deg)`}}>
                                         <div className="absolute inset-0 m-auto w-40 h-40 bg-neutral-800 rounded-full flex items-center justify-center">
                                             <div className="flex flex-col items-center justify-center">
-                                                <p className={`text-xl font-semibold m-0 ${getWinrateColor(winratePercent, totalGames)}`}>
-                                                    {winratePercent}%
+                                                <p className={`text-xl font-semibold m-0 ${getWinrateColor(pageStats.winrate, pageStats.totalGames)}`}>
+                                                    {pageStats.winrate}%
                                                 </p>
                                                 <p className="text-neutral-400 text-lg mb-2">Winrate</p>
                                                 <p className="text-xl text-neutral-300 font-semibold">
-                                                    {allWins}W - {totalGames - allWins}L
+                                                    {pageStats.allWins}W - {pageStats.allLosses}L
                                                 </p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="flex flex-col h-full justify-center gap-4">
-                                    {top3.map(champStats => (
-                                        <div className="flex items-center justify-center gap-4">
+                                    {pageStats.top3.map(champStats => (
+                                        <div className="flex items-center justify-end gap-6">
                                             <ChampionImage championId={champStats.championId} teamId={200} isTeamIdSame={true} classes="h-13" />
-                                            <div className="flex flex-col text-lg">
+                                            <div className="w-[140px] flex flex-col text-lg">
                                                 <div className="flex gap-2">
-                                                    <p className={`${getWinrateColor(champStats.winRate, champStats.games)}`}>{Math.round(champStats.winRate)}%</p>
+                                                    <p className={`${getWinrateColor(champStats.winrate, champStats.games)}`}>{Math.round(champStats.winrate)}%</p>
                                                     <p className="text-neutral-400">{champStats.wins}W-{champStats.games-champStats.wins}L</p>
                                                 </div>
                                                 <div>
@@ -711,21 +707,21 @@ const Summoner: React.FC = () => {
                                 </div>
                                 <div>
                                     <p className="text-neutral-400 text-lg">KDA</p>
-                                    <p className="text-6xl text-purple-400 font-semibold mt-12 mb-5">{avgKDA}</p>
+                                    <p className="text-6xl text-purple-400 font-semibold mt-12 mb-5">{pageStats.avgKDA}</p>
                                     <div className="flex items-center justify-center">
-                                        <p className="text-xl">{(totalPlayerKills/GAMES_PER_PAGE).toFixed(1)}</p>
+                                        <p className="text-xl">{(pageStats.totalKills/GAMES_PER_PAGE).toFixed(1)}</p>
                                         <p className="text-md text-neutral-600 px-2">/</p>
-                                        <p className="text-xl text-purple-300">{(totalPlayerDeaths/GAMES_PER_PAGE).toFixed(1)}</p>
+                                        <p className="text-xl text-purple-300">{(pageStats.totalDeaths/GAMES_PER_PAGE).toFixed(1)}</p>
                                         <p className="text-md text-neutral-600 px-2">/</p>
-                                        <p className="text-xl">{(totalPlayerAssists/GAMES_PER_PAGE).toFixed(1)}</p>
+                                        <p className="text-xl">{(pageStats.totalAssists/GAMES_PER_PAGE).toFixed(1)}</p>
                                     </div>
-                                    <p className="text-neutral-400 mt-4">Average Kill Participation {avgKP}%</p>
+                                    <p className="text-neutral-400 mt-4">Average Kill Participation {pageStats.avgKP}%</p>
                                 </div>
                                 <div>
                                     <p className="text-neutral-400 text-lg">Preferred Roles</p>
                                     <div className="space-y-2 p-2">
                                         {roleLabels.map(({ role, }) => {
-                                            const percent = rolePercents[role];
+                                            const percent = pageStats.rolePercents[role];
                                             return (
                                                 <div key={role}>
                                                     <div className="flex justify-between mb-1 text-sm text-neutral-300 items-center">
@@ -778,13 +774,11 @@ const Summoner: React.FC = () => {
                             <div className="flex justify-between items-center p-2">
                                 <div>
                                     <div className="flex gap-4 p-2">
-                                        <p onClick={() => setSelectedQueue("all-queues")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "all-queues" ? "bg-neutral-700" : ""}`}>All</p>
-                                        <p onClick={() => setSelectedQueue("solo-duo")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "solo-duo" ? "bg-neutral-700" : ""}`}>Solo Duo</p>
-                                        <p onClick={() => setSelectedQueue("flex")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "flex" ? "bg-neutral-700" : ""}`}>Flex</p>
-                                        <p onClick={() => setSelectedQueue("aram")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "aram" ? "bg-neutral-700" : ""}`}>Aram</p>
-                                        <p onClick={() => setSelectedQueue("normal")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "normal" ? "bg-neutral-700" : ""}`}>Normal</p>
-                                        <p onClick={() => setSelectedQueue("arena")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "arena" ? "bg-neutral-700" : ""}`}>Arena</p>
-                                        <p onClick={() => setSelectedQueue("urf")} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === "urf" ? "bg-neutral-700" : ""}`}>URF</p>
+                                        {queueDefs.map(({ key, label }) => (
+                                            <p key={key} onClick={() => setSelectedQueue(key)} className={`cursor-pointer p-2 transition-all duration-100 hover:text-neutral-300 ${selectedQueue === key ? "bg-neutral-700" : ""}`}>
+                                                {label}
+                                            </p>
+                                        ))}
                                     </div>
                                     <div className="relative">
                                         <div ref={inputPatchesRef} className="flex items-center justify-center p-2 text-lg font-bold">
