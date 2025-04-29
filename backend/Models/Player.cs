@@ -14,7 +14,7 @@ namespace backend.Models {
         public string EntriesData { get; set; } = string.Empty;
         public string TopMasteriesData { get; set; } = string.Empty;
         public string AllMatchIds { get; set; } = string.Empty;
-        public string AllMatchesData { get; set; } = string.Empty;
+        // public string AllMatchesData { get; set; } = string.Empty;
         public string AllGamesChampionStatsData { get; set; } = string.Empty;
         public string AllGamesRoleStatsData { get; set; } = string.Empty;
         public string RankedSoloChampionStatsData { get; set; } = string.Empty;

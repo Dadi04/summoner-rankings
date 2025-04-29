@@ -632,7 +632,7 @@ const Summoner: React.FC = () => {
                                 <img src={topThreeLight} alt="topThreeLight" className="h-7" />
                                 <h1>Top 3 Highest Masteries</h1>
                             </div>
-                            <div className="flex justify-around mb-7">
+                            <div className="flex justify-around mb-2">
                                 {[topMasteriesData[1], topMasteriesData[0], topMasteriesData[2]].map((mastery: Mastery, index: number) => {
                                     let medalSrc, medalAlt;
                                     if (index === 0) {
@@ -658,6 +658,7 @@ const Summoner: React.FC = () => {
                                                 <img src={medalSrc} alt={medalAlt} className="h-8 absolute transform bottom-0 left-1/2 translate-y-1/2 -translate-x-1/2" />
                                                 <ChampionImage championId={mastery.championId} isTeamIdSame={true} classes="h-15" />
                                             </div>
+                                            <p className="mt-5 text-md text-gray-200">{mastery.championPoints}</p>
                                         </div>
                                     )
                                 })}

@@ -241,32 +241,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
     if (!regionMapping.TryGetValue(region, out var continent)) {
         return Results.Problem("Invalid region specified.");
     }
-    var existingPlayer = await dbContext.Players
-        .AsNoTracking()
-        .Select(p => new  {
-            p.Id,
-            p.SummonerName,
-            p.SummonerTag,
-            p.Region,
-            p.Puuid,
-            p.SummonerData,
-            p.EntriesData,
-            p.TopMasteriesData,
-            p.AllMatchIds,
-            // p.AllMatchesData is deliberately omitted here
-            p.AllGamesChampionStatsData,
-            p.AllGamesRoleStatsData,
-            p.RankedSoloChampionStatsData,
-            p.RankedSoloRoleStatsData,
-            p.RankedFlexChampionStatsData,
-            p.RankedFlexRoleStatsData,
-            p.SpectatorData,
-            p.ClashData,
-            p.AddedAt
-        })
-        .FirstOrDefaultAsync(p => p.SummonerName == summonerName
-                            && p.SummonerTag == summonerTag
-                            && p.Region == region);
+    var existingPlayer = await dbContext.Players.FirstOrDefaultAsync(p => p.SummonerName == summonerName && p.SummonerTag == summonerTag && p.Region == region);
     if (existingPlayer != null) {
         var pageMatches = await dbContext.PlayerMatches
             .AsNoTracking()
@@ -682,7 +657,6 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         ClashData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await clashTask)),
 
         AllMatchIds = JsonSerializer.Serialize(allMatchIds),
-        AllMatchesData = JsonSerializer.Serialize(allMatchesDataList),
         AllGamesChampionStatsData = JsonSerializer.Serialize(allGamesChampionStats),
         AllGamesRoleStatsData = JsonSerializer.Serialize(allGamesRoleStats),
         RankedSoloChampionStatsData = JsonSerializer.Serialize(championStatsByQueue[rankedSoloQueueId]),
@@ -734,13 +708,18 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         return Results.Problem("Invalid region specified.");
     }
 
-    var existingPlayer = await dbContext.Players.FirstOrDefaultAsync(p => p.SummonerName == summonerName
-                                                                    && p.SummonerTag == summonerTag
-                                                                    && p.Region == region);
+    var existingPlayer = await dbContext.Players.FirstOrDefaultAsync(p => p.SummonerName == summonerName && p.SummonerTag == summonerTag && p.Region == region);
     if (existingPlayer == null) {
-        return Results.NotFound(existingPlayer); 
+        return Results.NotFound();
     }
 
+    var allMatchesData = await dbContext.PlayerMatches
+        .AsNoTracking()
+        .Where(pm => pm.PlayerId == existingPlayer.Id)
+        .OrderBy(pm => pm.MatchIndex)
+        .Select(pm => JsonSerializer.Deserialize<LeagueMatchDto>(pm.MatchJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!)
+        .ToListAsync();
+                                                         
     var client = httpClientFactory.CreateClient();
     
     var retryPolicyResponse = Policy
@@ -1002,13 +981,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         roleStatsByQueue[rankedFlexQueueId] = MergeRoleStats(existingRankedFlexRoleStats, roleStatsByQueue[rankedFlexQueueId]);
     }
 
-    var existingMatchesList = string.IsNullOrEmpty(existingPlayer.AllMatchesData) ? new List<LeagueMatchDto>() : JsonSerializer.Deserialize<List<LeagueMatchDto>>(
-            existingPlayer.AllMatchesData!,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
-    var validExistingDetails = existingMatchesList.Where(m => m != null && m.details.metadata != null && m.details.metadata.matchId != null).ToList();
-    var validNewDetails = newMatchesList.Where(m => m != null && m.details.metadata != null && m.details.metadata.matchId != null).ToList();
-
-    var mergedMatchList = existingMatchesList
+    var mergedMatchList = allMatchesData
         .Concat(newMatchesList)
         .GroupBy(m => m?.details.metadata.matchId)
         .Select(g => g.First())
@@ -1187,6 +1160,20 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
 
     await Task.WhenAll(summonerTask, topMasteriesTask, clashTask);
 
+    var lastIndex = await dbContext.PlayerMatches
+        .Where(pm => pm.PlayerId == existingPlayer.Id)
+        .Select(pm => (int?)pm.MatchIndex)
+        .MaxAsync() ?? -1;
+    int nextIndex = lastIndex + 1;
+    foreach (var match in newMatchesList) {
+        var matchJson = JsonSerializer.Serialize(match);
+        dbContext.PlayerMatches.Add(new PlayerMatch {
+            PlayerId = existingPlayer.Id,
+            MatchIndex = nextIndex++,
+            MatchJson = matchJson
+        });
+    }
+
     existingPlayer.Puuid = puuid;
     existingPlayer.SummonerData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await summonerTask));
     existingPlayer.EntriesData = JsonSerializer.Serialize(entries);
@@ -1195,7 +1182,6 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
     existingPlayer.ClashData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await clashTask));
 
     existingPlayer.AllMatchIds = JsonSerializer.Serialize(mergedMatchIds);
-    existingPlayer.AllMatchesData = JsonSerializer.Serialize(mergedMatchList);
     existingPlayer.AllGamesChampionStatsData = JsonSerializer.Serialize(allGamesChampionStats);
     existingPlayer.AllGamesRoleStatsData = JsonSerializer.Serialize(allGamesRoleStats);
     existingPlayer.RankedSoloChampionStatsData = JsonSerializer.Serialize(championStatsByQueue[rankedSoloQueueId]);
@@ -1206,8 +1192,6 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
     existingPlayer.AddedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
     await dbContext.SaveChangesAsync();
-    
-    var allMatchesData = JsonSerializer.Deserialize<List<LeagueMatchDto>>(existingPlayer.AllMatchesData)!;
         
     var playerDto = new PlayerDto {
         Id = existingPlayer.Id,
@@ -1219,7 +1203,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         EntriesData = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(existingPlayer.EntriesData)!,
         TopMasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(existingPlayer.TopMasteriesData)!,
         AllMatchIds = JsonSerializer.Deserialize<List<string>>(existingPlayer.AllMatchIds)!,
-        AllMatchesData = allMatchesData,
+        AllMatchesData = mergedMatchList!,
         AllGamesChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(existingPlayer.AllGamesChampionStatsData)!,
         AllGamesRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRole>>(existingPlayer.AllGamesRoleStatsData)!,
         RankedSoloChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(existingPlayer.RankedSoloChampionStatsData)!,
@@ -1243,8 +1227,6 @@ app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/livegame", async (string 
     if (player == null) {
         return Results.NotFound("Player not found.");
     }
-    
-    var allMatchesData = JsonSerializer.Deserialize<List<LeagueMatchDto>>(player.AllMatchesData)!;
         
     var dto = new PlayerDto {
         Id = player.Id,
@@ -1256,7 +1238,6 @@ app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/livegame", async (string 
         EntriesData = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(player.EntriesData)!,
         TopMasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(player.TopMasteriesData)!,
         AllMatchIds = JsonSerializer.Deserialize<List<string>>(player.AllMatchIds)!,
-        AllMatchesData = allMatchesData,
         AllGamesChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(player.AllGamesChampionStatsData)!,
         AllGamesRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRole>>(player.AllGamesRoleStatsData)!,
         RankedSoloChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(player.RankedSoloChampionStatsData)!,
