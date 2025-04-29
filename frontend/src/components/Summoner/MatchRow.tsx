@@ -20,6 +20,8 @@ import arrowDownLight from "../../assets/arrow-down-light.png";
 import blueKaynIcon from "../../assets/blue-kayn-icon.png"
 import redKaynIcon from "../../assets/red-kayn-icon.png"
 
+const SUMMONERS_RIFT_WITH_ROLES = [400, 420, 430, 440, 480, 490, 700, 870, 880, 890];
+
 const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: any; champions: any[]; puuid: string; region: string; classes?: string;}> = ({info, timelineJson, items, champions, puuid, region, classes}) => {
     const [showDetailsDiv, setShowDetailsDiv] = useState<boolean>(false);
     const [chooseTab, setChooseTab] = useState<string>("General");
@@ -91,7 +93,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                     </div>
                     <div className="flex flex-col p-2">
                         <p className="font-bold text-neutral-200">{participant.win ? "Victory" : "Defeat"}</p>
-                        <p className="text-md text-neutral-400">{Math.round(info.gameDuration/60)}m {Math.round(info.gameDuration%60)}s</p>
+                        <p className="text-md text-neutral-400">{Math.floor(info.gameDuration/60)}m {Math.floor(info.gameDuration%60)}s</p>
                     </div>
                 </div>
                 <div className="flex flex-col gap-4 p-2">
@@ -215,7 +217,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                 </div>
                 {chooseTab === "General" && (
                     <div>
-                        {(info.queueId > 400 && info.queueId < 500) ? (
+                        {(SUMMONERS_RIFT_WITH_ROLES.includes(info.queueId)) ? (
                             <div className="mt-2 mb-1">
                                 <MatchGeneral info={info} timeline={timeline} puuid={puuid} region={region} kaynTransformation={kaynTransformation} />
                             </div>
@@ -228,7 +230,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                 )}
                 {chooseTab === "Performance" && (
                     <div>
-                        {(info.queueId > 400 && info.queueId < 500) ? (
+                        {(SUMMONERS_RIFT_WITH_ROLES.includes(info.queueId)) ? (
                             <div className="mt-2 mb-1">
                                 <MatchPerformance info={info} puuid={puuid} kaynTransformation={kaynTransformation} />
                             </div>
@@ -241,7 +243,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                 )}
                 {chooseTab === "Details" && (
                     <div>
-                        {(info.queueId > 400 && info.queueId < 500) ? (
+                        {(SUMMONERS_RIFT_WITH_ROLES.includes(info.queueId)) ? (
                             <div className="mt-2 mb-1">
                                 <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} kaynTransformation={kaynTransformation} />
                                 <MatchDetails info={info} timeline={timeline} selectedPlayer={selectedPlayer} champions={champions} />
@@ -255,7 +257,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                 )}
                 {chooseTab === "Runes" && (
                     <div>
-                        {(info.queueId > 400 && info.queueId < 500) ? (
+                        {(SUMMONERS_RIFT_WITH_ROLES.includes(info.queueId)) ? (
                             <div className="mt-2 mb-1">
                                 <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} kaynTransformation={kaynTransformation} />
                                 <MatchRunes statPerks={selectedPlayer.perks.statPerks} styles={selectedPlayer.perks.styles} />
@@ -269,7 +271,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                 )}
                 {chooseTab === "Timeline" && (
                     <div>
-                        {(info.queueId > 400 && info.queueId < 500) ? (
+                        {(SUMMONERS_RIFT_WITH_ROLES.includes(info.queueId)) ? (
                             <div className="mt-2 mb-1">
                                 <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} kaynTransformation={kaynTransformation} />
                                 <MatchTimeline timeline={timeline} info={info} selectedPlayer={selectedPlayer} items={items} kaynTransformation={kaynTransformation} />

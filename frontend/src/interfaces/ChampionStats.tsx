@@ -6,6 +6,8 @@ interface ChampionStats {
     totalKills: number;
     totalDeaths: number;
     totalAssists: number;
+    totalCS: number;
+    totalMin: number;
     winRate: number;
     averageKDA: number;
 }

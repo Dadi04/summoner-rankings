@@ -493,6 +493,8 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
             stats.TotalKills += participant.kills;
             stats.TotalDeaths += participant.deaths;
             stats.TotalAssists += participant.assists;
+            stats.TotalCS += participant.totalMinionsKilled + participant.neutralMinionsKilled;
+            stats.TotalMin += Math.Round(match.details.info.gameDuration/60.0, 1);
         }
 
         void UpdateRoleStats(Dictionary<string, PreferredRole> roleDict) {
@@ -1598,6 +1600,8 @@ public class ChampionStats {
     public int TotalKills { get; set; }
     public int TotalDeaths { get; set; }
     public int TotalAssists { get; set; }
+    public int TotalCS { get; set; }
+    public double TotalMin { get; set; }
     public double WinRate => Games > 0 ? (double)Wins / Games * 100 : 0;
     public double AverageKDA => TotalDeaths > 0 ? (double)(TotalKills + TotalAssists) / TotalDeaths : (TotalKills + TotalAssists);
 }

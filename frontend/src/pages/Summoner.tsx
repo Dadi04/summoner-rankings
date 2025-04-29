@@ -538,14 +538,7 @@ const Summoner: React.FC = () => {
                                     </select>
                                 </div>
                             </div>
-                            {championsStatsData.length > 0 ? (
-                                <div className="grid grid-cols-[28%_26%_26%_20%] mb-1 pr-5 text-neutral-400 text-lg">
-                                    <p></p>
-                                    <h1 className="text-center">KDA</h1>
-                                    <h1 className="text-center">Games</h1>
-                                    <h1 className="text-center">Winrate</h1>
-                                </div>
-                            ) : (
+                            {championsStatsData.length === 0 && (
                                 <div className="text-center p-2">
                                     <p>No games found</p>
                                 </div>
@@ -555,9 +548,13 @@ const Summoner: React.FC = () => {
                                     return (
                                         <div key={championStat.championId}>
                                             { index !== 0 && <hr /> }
-                                            <div className="grid grid-cols-[28%_26%_26%_20%] pr-5 mb-1 mt-1 items-center text-center">
-                                                <div className="flex justify-center">
+                                            <div className="grid grid-cols-[40%_40%_20%] px-2 mb-1 mt-1 items-center text-center">
+                                                <div className="flex items-center gap-1">
                                                     <ChampionImage championId={championStat.championId} isTeamIdSame={true} classes="h-15" />
+                                                    <div className="flex flex-col text-md items-start">
+                                                        <p>{championStat.championName === "MonkeyKing" ? "Wukong" : championStat.championName}</p>
+                                                        <p className="text-sm text-neutral-200">CS {championStat.totalCS} ({championStat.totalCS/championStat.totalMin})</p>
+                                                    </div>
                                                 </div>
                                                 <div>
                                                     <p className={`${getKDAColor(Math.round(championStat.averageKDA*100)/100)}`}>
@@ -571,11 +568,9 @@ const Summoner: React.FC = () => {
                                                         <p className="text-neutral-200 text-md">{Math.round(championStat.totalAssists/championStat.games*10)/10}</p>
                                                     </div>
                                                 </div>
-                                                <div>
-                                                    {championStat.games}
-                                                </div>
-                                                <div className={`${getWinrateColor(Math.round(championStat.winRate), championStat.games)}`}>
+                                                <div className={`flex flex-col items-end ${getWinrateColor(Math.round(championStat.winRate), championStat.games)}`}>
                                                     <p>{Math.round(championStat.winRate)}%</p> 
+                                                    <p className="text-sm text-gray-200">{championStat.games} Games</p>
                                                     {/* <p>({championStat.Wins}W-{championStat.Games-championStat.Wins}L)</p> */}
                                                 </div>
                                             </div>
