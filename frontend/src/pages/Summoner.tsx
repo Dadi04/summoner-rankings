@@ -552,8 +552,8 @@ const Summoner: React.FC = () => {
                                                 <div className="flex items-center gap-1">
                                                     <ChampionImage championId={championStat.championId} isTeamIdSame={true} classes="h-15" />
                                                     <div className="flex flex-col text-md items-start">
-                                                        <p>{championStat.championName === "MonkeyKing" ? "Wukong" : championStat.championName}</p>
-                                                        <p className="text-sm text-neutral-200">CS {championStat.totalCS} ({championStat.totalCS/championStat.totalMin})</p>
+                                                        <p className="font-bold">{championStat.championName === "MonkeyKing" ? "Wukong" : championStat.championName}</p>
+                                                        <p className="text-sm text-neutral-200">CS {Math.round(championStat.totalCS/championStat.games)} ({(championStat.totalCS/championStat.totalMin).toFixed(1)})</p>
                                                     </div>
                                                 </div>
                                                 <div>

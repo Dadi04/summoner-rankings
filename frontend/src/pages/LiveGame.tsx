@@ -51,7 +51,7 @@ const LiveGame: React.FC = () => {
         }
     }, [newData, cacheKey]);
     
-    const spectatorData = newData.spectatorData ? JSON.parse(newData.spectatorData) : null;
+    const spectatorData = newData.spectatorData;
 
     const [newSpectatorData, _] = useState(spectatorData);
     if (!newSpectatorData) {
