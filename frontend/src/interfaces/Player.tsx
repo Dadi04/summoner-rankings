@@ -13,7 +13,8 @@ interface Player {
     playerData: string;
     summonerData: SummonerInfo;
     entriesData: Entry[];
-    topMasteriesData: Mastery[];
+    masteriesData: Mastery[];
+    totalMasteryScoreData: number;
     allMatchIds: string[];
     allMatchesData: Match[];
     allGamesChampionStatsData: ChampionStats[];

@@ -341,7 +341,7 @@ const Summoner: React.FC = () => {
     const preferredFlexRoleData = Object.values(apiData.rankedFlexRoleStatsData);
     // const summonerData: SummonerInfo = apiData.summonerData;
     const entriesData: Entry[] = apiData.entriesData;
-    const topMasteriesData: Mastery[] = apiData.topMasteriesData;
+    const masteriesData: Mastery[] = apiData.masteriesData;
     // const allMatchIds: string[] = apiData.allMatchIds;
     // const allMatchesData: Match[] = apiData.allMatchesData;
     const spectatorData = apiData.spectatorData;
@@ -628,7 +628,7 @@ const Summoner: React.FC = () => {
                                 <h1>Top 3 Highest Masteries</h1>
                             </div>
                             <div className="flex justify-around mb-2">
-                                {[topMasteriesData[1], topMasteriesData[0], topMasteriesData[2]].map((mastery: Mastery, index: number) => {
+                                {[masteriesData[1], masteriesData[0], masteriesData[2]].map((mastery: Mastery, index: number) => {
                                     let medalSrc, medalAlt;
                                     if (index === 0) {
                                         medalSrc = silverMedal;
@@ -647,7 +647,6 @@ const Summoner: React.FC = () => {
                                                 {mastery.championLevel > 10 && (
                                                     <p className="text-sm bg-neutral-900 pl-2 pr-2 absolute transform bottom-0 left-1/2 -translate-x-1/2">{mastery.championLevel}</p>
                                                 )}
-                                                {/* <p className="text-center text-sm">{mastery.championPoints}</p> */}
                                             </div>
                                             <div className="relative">
                                                 <img src={medalSrc} alt={medalAlt} className="h-8 absolute transform bottom-0 left-1/2 translate-y-1/2 -translate-x-1/2" />
@@ -842,7 +841,7 @@ const Summoner: React.FC = () => {
                                                 <span onClick={() => setPaginatorPage((prev) => Math.max(prev - 1, 1))} className="flex items-center justify-center px-4 h-10 leading-tight border cursor-pointer transition-all border-gray-300 rounded-s-lg hover:bg-neutral-900 hover:text-neutral-100">
                                                     <span className="sr-only">Previous</span>
                                                     <svg className="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
+                                                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 1 1 5l4 4"/>
                                                     </svg>
                                                 </span>
                                             </li>
@@ -857,7 +856,7 @@ const Summoner: React.FC = () => {
                                                 <span onClick={() => setPaginatorPage((prev) => Math.min(prev + 1, totalPages))} className="flex items-center justify-center px-4 h-10 leading-tight border-y border-r cursor-pointer transition-all border-gray-300 rounded-e-lg hover:bg-neutral-900 hover:text-neutral-100">
                                                     <span className="sr-only">Next</span>
                                                     <svg className="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+                                                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
                                                     </svg>
                                                 </span>
                                             </li>

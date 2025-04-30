@@ -261,7 +261,8 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
             Puuid = existingPlayer.Puuid,
             SummonerData = JsonSerializer.Deserialize<RiotSummonerDto>(existingPlayer.SummonerData)!,
             EntriesData = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(existingPlayer.EntriesData)!,
-            TopMasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(existingPlayer.TopMasteriesData)!,
+            MasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(existingPlayer.MasteriesData)!,
+            TotalMasteryScoreData = JsonSerializer.Deserialize<int>(existingPlayer.TotalMasteryScoreData)!,
             AllMatchIds = JsonSerializer.Deserialize<List<string>>(existingPlayer.AllMatchIds)!,
             AllMatchesData = pageMatches,
             AllGamesChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(existingPlayer.AllGamesChampionStatsData)!,
@@ -637,14 +638,16 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
     }
 
     string summonerUrl = $"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={apiKey}";
-    string topMasteriesUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}/top?count=3&api_key={apiKey}";
+    string masteriesUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}?api_key={apiKey}";
+    string totalMasteryScoreUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/scores/by-puuid/{puuid}?api_key={apiKey}";
     string clashUrl = $"https://{region}.api.riotgames.com/lol/clash/v1/players/by-puuid/{puuid}?api_key={apiKey}"; // ukoliko nisi u clashu vraca [] i vraca 200
 
     var summonerTask = GetStringAsyncWithRetry(summonerUrl);
-    var topMasteriesTask = GetStringAsyncWithRetry(topMasteriesUrl);
+    var masteriesTask = GetStringAsyncWithRetry(masteriesUrl);
+    var totalMasteryScoreTask = GetStringAsyncWithRetry(totalMasteryScoreUrl);
     var clashTask = GetStringAsyncWithRetry(clashUrl);
 
-    await Task.WhenAll(summonerTask, topMasteriesTask, clashTask);
+    await Task.WhenAll(summonerTask, masteriesTask, totalMasteryScoreTask, clashTask);
 
     var player = new Player {
         SummonerName = summonerName,
@@ -654,7 +657,9 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
 
         SummonerData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await summonerTask)),
         EntriesData = JsonSerializer.Serialize(entries),
-        TopMasteriesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await topMasteriesTask)),
+        MasteriesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await masteriesTask)),
+        TotalMasteryScoreData = JsonSerializer.Deserialize<int>(await totalMasteryScoreTask),
+
         SpectatorData = spectatorData is string s ? s : JsonSerializer.Serialize(spectatorData),
         ClashData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await clashTask)),
 
@@ -688,7 +693,8 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
         Puuid = player.Puuid,
         SummonerData = JsonSerializer.Deserialize<RiotSummonerDto>(player.SummonerData)!,
         EntriesData = entries!,
-        TopMasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(player.TopMasteriesData)!,
+        MasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(player.MasteriesData)!,
+        TotalMasteryScoreData = JsonSerializer.Deserialize<int>(player.TotalMasteryScoreData)!,
         AllMatchIds = allMatchIds,
         AllMatchesData = allMatchesDataList,
         AllGamesChampionStatsData = allGamesChampionStats,
@@ -1153,14 +1159,16 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
     }
 
     string summonerUrl = $"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={apiKey}";
-    string topMasteriesUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}/top?count=3&api_key={apiKey}";
+    string masteriesUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}?api_key={apiKey}";
+    string totalMasteryScoreUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/scores/by-puuid/{puuid}?api_key={apiKey}";
     string clashUrl = $"https://{region}.api.riotgames.com/lol/clash/v1/players/by-puuid/{puuid}?api_key={apiKey}"; // ukoliko nisi u clashu vraca [] i vraca 200
 
     var summonerTask = GetStringAsyncWithRetry(summonerUrl);
-    var topMasteriesTask = GetStringAsyncWithRetry(topMasteriesUrl);
+    var masteriesTask = GetStringAsyncWithRetry(masteriesUrl);
+    var totalMasteryScoreTask = GetStringAsyncWithRetry(totalMasteryScoreUrl);
     var clashTask = GetStringAsyncWithRetry(clashUrl);
 
-    await Task.WhenAll(summonerTask, topMasteriesTask, clashTask);
+    await Task.WhenAll(summonerTask, masteriesTask, totalMasteryScoreTask, clashTask);
 
     var lastIndex = await dbContext.PlayerMatches
         .Where(pm => pm.PlayerId == existingPlayer.Id)
@@ -1179,7 +1187,8 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
     existingPlayer.Puuid = puuid;
     existingPlayer.SummonerData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await summonerTask));
     existingPlayer.EntriesData = JsonSerializer.Serialize(entries);
-    existingPlayer.TopMasteriesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await topMasteriesTask));
+    existingPlayer.MasteriesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await masteriesTask));
+    existingPlayer.TotalMasteryScoreData = JsonSerializer.Deserialize<int>(await totalMasteryScoreTask);
     existingPlayer.SpectatorData = spectatorData is string s ? s : JsonSerializer.Serialize(spectatorData);
     existingPlayer.ClashData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await clashTask));
 
@@ -1203,7 +1212,8 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         Puuid = existingPlayer.Puuid,
         SummonerData = JsonSerializer.Deserialize<RiotSummonerDto>(existingPlayer.SummonerData)!,
         EntriesData = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(existingPlayer.EntriesData)!,
-        TopMasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(existingPlayer.TopMasteriesData)!,
+        MasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(existingPlayer.MasteriesData)!,
+        TotalMasteryScoreData = JsonSerializer.Deserialize<int>(existingPlayer.TotalMasteryScoreData)!,
         AllMatchIds = JsonSerializer.Deserialize<List<string>>(existingPlayer.AllMatchIds)!,
         AllMatchesData = mergedMatchList!,
         AllGamesChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(existingPlayer.AllGamesChampionStatsData)!,
@@ -1238,7 +1248,8 @@ app.MapGet("/api/lol/profile/{region}/by-puuid/{puuid}/livegame", async (string 
         Puuid = player.Puuid,
         SummonerData = JsonSerializer.Deserialize<RiotSummonerDto>(player.SummonerData)!,
         EntriesData = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(player.EntriesData)!,
-        TopMasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(player.TopMasteriesData)!,
+        MasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(player.MasteriesData)!,
+        TotalMasteryScoreData = JsonSerializer.Deserialize<int>(player.TotalMasteryScoreData)!,
         AllMatchIds = JsonSerializer.Deserialize<List<string>>(player.AllMatchIds)!,
         AllGamesChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStats>>(player.AllGamesChampionStatsData)!,
         AllGamesRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRole>>(player.AllGamesRoleStatsData)!,
@@ -1625,7 +1636,8 @@ public class PlayerDto {
     public string Puuid { get; set; } = string.Empty;
     public RiotSummonerDto SummonerData { get; set; } = new();
     public List<LeagueEntriesDto> EntriesData { get; set; } = new();
-    public List<ChampionMasteryDto> TopMasteriesData { get; set; } = new();
+    public List<ChampionMasteryDto> MasteriesData { get; set; } = new();
+    public int TotalMasteryScoreData { get; set; }
     public List<string> AllMatchIds { get; set; } = new();
     public List<LeagueMatchDto> AllMatchesData { get; set; } = new();
     public Dictionary<int, ChampionStats> AllGamesChampionStatsData { get; set; } = new();

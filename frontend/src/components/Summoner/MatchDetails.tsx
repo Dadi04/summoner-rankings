@@ -91,6 +91,12 @@ const MatchDetails: React.FC<{info: MatchDetailsInfo, timeline: any, selectedPla
     const goldDiffs = [] as number[];
     const xpDiffs   = [] as number[];
     for (let i = 1; i <= 5; i++) {
+        if (!min15) {
+            csDiffs.push(0);
+            goldDiffs.push(0);
+            xpDiffs.push(0);
+            continue;
+        };
         const blueFrame = min15.participantFrames[i];
         const redFrame  = min15.participantFrames[i + 5];
         csDiffs.push((blueFrame.minionsKilled + blueFrame.jungleMinionsKilled) - (redFrame.minionsKilled + redFrame.jungleMinionsKilled));

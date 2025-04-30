@@ -12,9 +12,9 @@ namespace backend.Models {
         public string Puuid {get; set;} = string.Empty;
         public string SummonerData { get; set; } = string.Empty;
         public string EntriesData { get; set; } = string.Empty;
-        public string TopMasteriesData { get; set; } = string.Empty;
+        public string MasteriesData { get; set; } = string.Empty;
+        public int TotalMasteryScoreData { get; set; }
         public string AllMatchIds { get; set; } = string.Empty;
-        // public string AllMatchesData { get; set; } = string.Empty;
         public string AllGamesChampionStatsData { get; set; } = string.Empty;
         public string AllGamesRoleStatsData { get; set; } = string.Empty;
         public string RankedSoloChampionStatsData { get; set; } = string.Empty;
