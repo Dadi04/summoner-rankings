@@ -5,7 +5,7 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import Summoner from './pages/Summoner'
 import Champions from './pages/Champions';
-import Mastery from './pages/Mastery';
+import Masteries from './pages/Masteries';
 import LiveGame from './pages/LiveGame';
 import Races from './pages/Races';
 import Leaderboard from './pages/Leaderboard';
@@ -22,7 +22,7 @@ const App: React.FC = () => {
             <Route path="/" element={<Home />} />
             <Route path="/lol/profile/:regionCode/:encodedSummoner" element={<Summoner />} />
             <Route path="/lol/profile/:regionCode/:encodedSummoner/champions" element={<Champions />} />
-            <Route path="/lol/profile/:regionCode/:encodedSummoner/mastery" element={<Mastery />} />
+            <Route path="/lol/profile/:regionCode/:encodedSummoner/mastery" element={<Masteries />} />
             <Route path="/lol/profile/:regionCode/:encodedSummoner/livegame" element={<LiveGame />} />
             <Route path="/races" element={<Races />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
