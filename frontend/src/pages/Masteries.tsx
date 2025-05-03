@@ -303,106 +303,110 @@ const Masteries: React.FC = () => {
                         </div>
                     </div>
                 </div>
-                <div className="min-h-[143.5px] bg-neutral-800 w-full grid grid-cols-8 p-4 mb-2">
-                    {allMasteries.map(mastery => {
-                        const champ = champions.find(c => c.key === mastery.championId.toString());
-                        return (
-                            <Tippy 
-                                content={
-                                    <div className="p-2">
-                                        <div className="flex justify-between items-center border-b-2 border-neutral-400">
-                                            <p className="font-bold">{champ?.name}</p>
-                                            {mastery.chestGranted ? (
-                                                <div className="relative">
-                                                    <img src={hextechChest} alt="hextechChest" className="h-8" title="Chest available" />
-                                                    <svg className="absolute bottom-0 right-0 h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                        <line x1="4" y1="4" x2="20" y2="20" stroke="red" strokeWidth="3" />
-                                                        <line x1="20" y1="4" x2="4" y2="20" stroke="red" strokeWidth="3" />
-                                                    </svg>
-                                                </div> 
-                                            ) : (
-                                                <div className="relative">
-                                                    <img src={hextechChest} alt="hextechChest" className="h-8" title="Chest received" />
-                                                    <svg className="absolute bottom-0 right-0 h-4 w-4 text-green-500" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                        <path d="M20.285 6.707a1 1 0 00-1.414-1.414L9 15.164l-3.871-3.871a1 1 0 00-1.414 1.414l4.578 4.578a1 1 0 001.414 0l10.578-10.578z" fill="currentColor" />
-                                                    </svg>
+                {allMasteries.length > 0 ? (
+                    <div className="bg-neutral-800 w-full grid grid-cols-8 p-4 mb-2">
+                        {allMasteries.map(mastery => {
+                            const champ = champions.find(c => c.key === mastery.championId.toString());
+                            return (
+                                <Tippy 
+                                    content={
+                                        <div className="p-2">
+                                            <div className="flex justify-between items-center border-b-2 border-neutral-400">
+                                                <p className="font-bold">{champ?.name}</p>
+                                                {mastery.chestGranted ? (
+                                                    <div className="relative">
+                                                        <img src={hextechChest} alt="hextechChest" className="h-8" title="Chest available" />
+                                                        <svg className="absolute bottom-0 right-0 h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                            <line x1="4" y1="4" x2="20" y2="20" stroke="red" strokeWidth="3" />
+                                                            <line x1="20" y1="4" x2="4" y2="20" stroke="red" strokeWidth="3" />
+                                                        </svg>
+                                                    </div> 
+                                                ) : (
+                                                    <div className="relative">
+                                                        <img src={hextechChest} alt="hextechChest" className="h-8" title="Chest received" />
+                                                        <svg className="absolute bottom-0 right-0 h-4 w-4 text-green-500" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M20.285 6.707a1 1 0 00-1.414-1.414L9 15.164l-3.871-3.871a1 1 0 00-1.414 1.414l4.578 4.578a1 1 0 001.414 0l10.578-10.578z" fill="currentColor" />
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between items-center my-1">
+                                                    <div className="text-neutral-400">
+                                                        {mastery.tokensEarned === 0 && (
+                                                            <ol className="flex gap-1">
+                                                                <li className="flex h-[10px] w-[10px] items-center justify-center rounded-full border border-neutral-900 bg-neutral-800" />
+                                                                <li className="flex h-[10px] w-[10px] items-center justify-center rounded-full border border-neutral-900 bg-neutral-800" />
+                                                            </ol>
+                                                        )} 
+                                                        {mastery.tokensEarned === 1 && (
+                                                            <ol className="flex gap-1">
+                                                                <li className="flex h-[10px] w-[10px] items-center justify-center rounded-full bg-gradient-to-b from-[#5383e8] to-[#7d59ea]">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" fill="none" viewBox="0 0 8 8">
+                                                                        <path fill="#FFF9DB" d="M3.766.634a.25.25 0 0 1 .468 0l.527 1.423A2 2 0 0 0 5.943 3.24l1.423.527a.25.25 0 0 1 0 .468l-1.423.527A2 2 0 0 0 4.76 5.943l-.527 1.423a.25.25 0 0 1-.468 0l-.527-1.423A2 2 0 0 0 2.057 4.76L.634 4.234a.25.25 0 0 1 0-.468l1.423-.527A2 2 0 0 0 3.24 2.057z" />
+                                                                    </svg>
+                                                                </li>
+                                                                <li className="flex h-[10px] w-[10px] items-center justify-center rounded-full border border-neutral-900 bg-neutral-800" />
+                                                            </ol>
+                                                        )} 
+                                                        {mastery.tokensEarned >= 2 && (
+                                                            <ol className="flex gap-1">
+                                                                <li className="flex h-[10px] w-[10px] items-center justify-center rounded-full bg-gradient-to-b from-[#5383e8] to-[#7d59ea]">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" fill="none" viewBox="0 0 8 8">
+                                                                        <path fill="#FFF9DB" d="M3.766.634a.25.25 0 0 1 .468 0l.527 1.423A2 2 0 0 0 5.943 3.24l1.423.527a.25.25 0 0 1 0 .468l-1.423.527A2 2 0 0 0 4.76 5.943l-.527 1.423a.25.25 0 0 1-.468 0l-.527-1.423A2 2 0 0 0 2.057 4.76L.634 4.234a.25.25 0 0 1 0-.468l1.423-.527A2 2 0 0 0 3.24 2.057z" />
+                                                                    </svg>
+                                                                </li>
+                                                                <li className="flex h-[10px] w-[10px] items-center justify-center rounded-full bg-gradient-to-b from-[#5383e8] to-[#7d59ea]">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" fill="none" viewBox="0 0 8 8">
+                                                                        <path fill="#FFF9DB" d="M3.766.634a.25.25 0 0 1 .468 0l.527 1.423A2 2 0 0 0 5.943 3.24l1.423.527a.25.25 0 0 1 0 .468l-1.423.527A2 2 0 0 0 4.76 5.943l-.527 1.423a.25.25 0 0 1-.468 0l-.527-1.423A2 2 0 0 0 2.057 4.76L.634 4.234a.25.25 0 0 1 0-.468l1.423-.527A2 2 0 0 0 3.24 2.057z" />
+                                                                    </svg>
+                                                                </li>
+                                                            </ol>
+                                                            
+                                                        )} 
+                                                    </div>
+                                                    <p className="text-neutral-400">Milestone <strong>{mastery.championSeasonMilestone}</strong></p>
                                                 </div>
+                                                <div className="flex items-center gap-1 my-1">
+                                                    <p>{mastery.championPointsSinceLastLevel}</p>
+                                                    <div className="h-2 w-full bg-neutral-700">
+                                                        {Math.round(mastery.championPointsSinceLastLevel/(mastery.championPointsSinceLastLevel+mastery.championPointsUntilNextLevel) * 100) > 100 ? (
+                                                            <div className="h-full bg-purple-400"></div>
+                                                        ) : (
+                                                            <div className="h-full bg-purple-400" style={{width: `${Math.round(mastery.championPointsSinceLastLevel / (mastery.championPointsSinceLastLevel+mastery.championPointsUntilNextLevel) * 100)}%` }}></div>
+                                                        )}
+                                                    </div>
+                                                    <p>{mastery.championPointsSinceLastLevel+mastery.championPointsUntilNextLevel}</p>
+                                                </div>
+                                                <p>Last time played: {mastery.lastPlayTime != null ? new Date(mastery.lastPlayTime).toLocaleDateString("en-US", {day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false}): "Never played"}</p>
+                                            </div>
+                                        </div>
+                                    }
+                                    allowHTML={true}
+                                    interactive={true}
+                                    placement="top"
+                                >
+                                    <div className="justify-center transition-all hover:bg-neutral-700 rounded py-4 mb-3 ">
+                                        <ChampionImage championId={mastery.championId} isTeamIdSame={true} classes="h-20 mx-auto" />
+                                        <div className="relative">
+                                            <svg className="absolute left-1/2 -translate-x-1/2" width="49" height="35" viewBox="0 0 49 35" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path opacity="0.5" d="M0.5 0H48.5V35L24.5 25L0.5 35V0Z" fill="#1C1C1F" />
+                                            </svg>
+                                            <img src={`https://opgg-static.akamaized.net/images/champion_mastery/renew_v2/mastery-${mastery.championLevel > 10 ? 10 : mastery.championLevel}.png`} alt={`${mastery.championLevel}`} className="relative h-14 mx-auto" />
+                                            {mastery.championLevel > 10 && (
+                                                <p className="text-sm bg-neutral-900 pl-2 pr-2 absolute transform bottom-0 left-1/2 -translate-x-1/2 mx-auto">{mastery.championLevel}</p>
                                             )}
                                         </div>
-                                        <div>
-                                            <div className="flex justify-between items-center my-1">
-                                                <div className="text-neutral-400">
-                                                    {mastery.tokensEarned === 0 && (
-                                                        <ol className="flex gap-1">
-                                                            <li className="flex h-[10px] w-[10px] items-center justify-center rounded-full border border-neutral-900 bg-neutral-800" />
-                                                            <li className="flex h-[10px] w-[10px] items-center justify-center rounded-full border border-neutral-900 bg-neutral-800" />
-                                                        </ol>
-                                                    )} 
-                                                    {mastery.tokensEarned === 1 && (
-                                                        <ol className="flex gap-1">
-                                                            <li className="flex h-[10px] w-[10px] items-center justify-center rounded-full bg-gradient-to-b from-[#5383e8] to-[#7d59ea]">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" fill="none" viewBox="0 0 8 8">
-                                                                    <path fill="#FFF9DB" d="M3.766.634a.25.25 0 0 1 .468 0l.527 1.423A2 2 0 0 0 5.943 3.24l1.423.527a.25.25 0 0 1 0 .468l-1.423.527A2 2 0 0 0 4.76 5.943l-.527 1.423a.25.25 0 0 1-.468 0l-.527-1.423A2 2 0 0 0 2.057 4.76L.634 4.234a.25.25 0 0 1 0-.468l1.423-.527A2 2 0 0 0 3.24 2.057z" />
-                                                                </svg>
-                                                            </li>
-                                                            <li className="flex h-[10px] w-[10px] items-center justify-center rounded-full border border-neutral-900 bg-neutral-800" />
-                                                        </ol>
-                                                    )} 
-                                                    {mastery.tokensEarned >= 2 && (
-                                                        <ol className="flex gap-1">
-                                                            <li className="flex h-[10px] w-[10px] items-center justify-center rounded-full bg-gradient-to-b from-[#5383e8] to-[#7d59ea]">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" fill="none" viewBox="0 0 8 8">
-                                                                    <path fill="#FFF9DB" d="M3.766.634a.25.25 0 0 1 .468 0l.527 1.423A2 2 0 0 0 5.943 3.24l1.423.527a.25.25 0 0 1 0 .468l-1.423.527A2 2 0 0 0 4.76 5.943l-.527 1.423a.25.25 0 0 1-.468 0l-.527-1.423A2 2 0 0 0 2.057 4.76L.634 4.234a.25.25 0 0 1 0-.468l1.423-.527A2 2 0 0 0 3.24 2.057z" />
-                                                                </svg>
-                                                            </li>
-                                                            <li className="flex h-[10px] w-[10px] items-center justify-center rounded-full bg-gradient-to-b from-[#5383e8] to-[#7d59ea]">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" fill="none" viewBox="0 0 8 8">
-                                                                    <path fill="#FFF9DB" d="M3.766.634a.25.25 0 0 1 .468 0l.527 1.423A2 2 0 0 0 5.943 3.24l1.423.527a.25.25 0 0 1 0 .468l-1.423.527A2 2 0 0 0 4.76 5.943l-.527 1.423a.25.25 0 0 1-.468 0l-.527-1.423A2 2 0 0 0 2.057 4.76L.634 4.234a.25.25 0 0 1 0-.468l1.423-.527A2 2 0 0 0 3.24 2.057z" />
-                                                                </svg>
-                                                            </li>
-                                                        </ol>
-                                                        
-                                                    )} 
-                                                </div>
-                                                <p className="text-neutral-400">Milestone <strong>{mastery.championSeasonMilestone}</strong></p>
-                                            </div>
-                                            <div className="flex items-center gap-1 my-1">
-                                                <p>{mastery.championPointsSinceLastLevel}</p>
-                                                <div className="h-2 w-full bg-neutral-700">
-                                                    {Math.round(mastery.championPointsSinceLastLevel/(mastery.championPointsSinceLastLevel+mastery.championPointsUntilNextLevel) * 100) > 100 ? (
-                                                        <div className="h-full bg-purple-400"></div>
-                                                    ) : (
-                                                        <div className="h-full bg-purple-400" style={{width: `${Math.round(mastery.championPointsSinceLastLevel / (mastery.championPointsSinceLastLevel+mastery.championPointsUntilNextLevel) * 100)}%` }}></div>
-                                                    )}
-                                                </div>
-                                                <p>{mastery.championPointsSinceLastLevel+mastery.championPointsUntilNextLevel}</p>
-                                            </div>
-                                            <p>Last time played: {mastery.lastPlayTime != null ? new Date(mastery.lastPlayTime).toLocaleDateString("en-US", {day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false}): "Never played"}</p>
-                                        </div>
+                                        <p className="w-fit font-bold mx-auto border-b-1 px-2 border-neutral-900">{champ?.name ?? "…"}</p>
+                                        <p className="text-md text-gray-200 text-center">{mastery.championPoints}</p>
                                     </div>
-                                }
-                                allowHTML={true}
-                                interactive={true}
-                                placement="top"
-                            >
-                                <div className="justify-center transition-all hover:bg-neutral-700 rounded py-4 mb-3 ">
-                                    <ChampionImage championId={mastery.championId} isTeamIdSame={true} classes="h-20 mx-auto" />
-                                    <div className="relative">
-                                        <svg className="absolute left-1/2 -translate-x-1/2" width="49" height="35" viewBox="0 0 49 35" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path opacity="0.5" d="M0.5 0H48.5V35L24.5 25L0.5 35V0Z" fill="#1C1C1F" />
-                                        </svg>
-                                        <img src={`https://opgg-static.akamaized.net/images/champion_mastery/renew_v2/mastery-${mastery.championLevel > 10 ? 10 : mastery.championLevel}.png`} alt={`${mastery.championLevel}`} className="relative h-14 mx-auto" />
-                                        {mastery.championLevel > 10 && (
-                                            <p className="text-sm bg-neutral-900 pl-2 pr-2 absolute transform bottom-0 left-1/2 -translate-x-1/2 mx-auto">{mastery.championLevel}</p>
-                                        )}
-                                    </div>
-                                    <p className="w-fit font-bold mx-auto border-b-1 px-2 border-neutral-900">{champ?.name ?? "…"}</p>
-                                    <p className="text-md text-gray-200 text-center">{mastery.championPoints}</p>
-                                </div>
-                            </Tippy>
-                        )
-                    })}
-                </div>
+                                </Tippy>
+                            )
+                        })}
+                    </div>
+                ) : (
+                    <div className="h-[200px] bg-neutral-800 text-2xl mb-2 p-4 flex items-center justify-center">No Masteries found</div>
+                )}
             </div>
         </div>
     );
