@@ -263,13 +263,9 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                                     )}
                                                 </div>
                                             </div>
-                                        ) : (() => {
-                                            console.log(event)
-
-                                            return (
-                                                <div>Unknown event</div>
-                                            )
-                                        })}
+                                        ) : (
+                                            <div>Unknown event</div>
+                                        )}
                                     </>
                                 )}
                                 {event.type === "ITEM_PURCHASED" && (
@@ -849,13 +845,9 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                                     )}
                                                 </div>
                                             </div>
-                                        ) : (() => {
-                                            console.log(event)
-
-                                            return (
-                                                <div>Unknown event</div>
-                                            )
-                                        })}
+                                        ) : (
+                                            <div>Unknown event</div>
+                                        )}
                                     </>
                                 )}
                                 {event.type === "CHAMPION_SPECIAL_KILL" && (

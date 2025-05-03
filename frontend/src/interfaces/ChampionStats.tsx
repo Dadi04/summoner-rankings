@@ -1,6 +1,7 @@
 interface ChampionStats {
     championId: number;
     championName: string;
+    opponentMatchups: ChampionStats[];
     games: number;
     wins: number;
     totalKills: number;

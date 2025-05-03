@@ -496,6 +496,25 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
             stats.TotalAssists += participant.assists;
             stats.TotalCS += participant.totalMinionsKilled + participant.neutralMinionsKilled;
             stats.TotalMin += Math.Round(match.details.info.gameDuration/60.0, 1);
+
+            var opponent = match.details.info.participants.FirstOrDefault(p => p.teamPosition == participant.teamPosition && p.teamId != participant.teamId);
+            if (opponent != null) {
+                var matchup = stats.OpponentMatchups.FirstOrDefault(opp => opp.ChampionId == opponent.championId);
+                if (matchup == null) {
+                    matchup = new ChampionStats {
+                        ChampionId = opponent.championId,
+                        ChampionName = opponent.championName
+                    };
+                    stats.OpponentMatchups.Add(matchup);
+                }
+                matchup.Games++;
+                if (participant.win) matchup.Wins++;
+                matchup.TotalKills += participant.kills;
+                matchup.TotalDeaths += participant.deaths;
+                matchup.TotalAssists += participant.assists;
+                matchup.TotalCS += participant.totalMinionsKilled + participant.neutralMinionsKilled;
+                matchup.TotalMin += Math.Round(match.details.info.gameDuration / 60.0, 1);
+            }
         }
 
         void UpdateRoleStats(Dictionary<string, PreferredRole> roleDict) {
@@ -1606,6 +1625,7 @@ public class PerkSelectionDto {
 public class ChampionStats {
     public int ChampionId { get; set; }
     public string ChampionName { get; set; } = string.Empty;
+    public List<ChampionStats> OpponentMatchups { get; set; } = new List<ChampionStats>();
     public int Games { get; set; }
     public int Wins { get; set; }
     public int TotalKills { get; set; }
