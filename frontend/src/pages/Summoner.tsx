@@ -166,6 +166,7 @@ const Summoner: React.FC = () => {
             (acc[date] ??= []).push(match);
             return acc;
         }, {});
+        setPaginatorPage(1)
         
         return { grouped, pageMatches };
     }, [filteredMatches, paginatorPage]);

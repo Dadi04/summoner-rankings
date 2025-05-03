@@ -208,58 +208,69 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                     {sortedFilteredEvents.map((event: any) => {
                         const minutes = Math.round(event.timestamp / 60000);
                         const playerId = event.participantId ?? event.killerId ?? event.creatorId;
-                        const dotKey = `kill-dot-${event.timestamp}-${playerId}-${event.type}`;
+                        const championSpecialKillSubtype = event.killType ?? event.multiKillLength ?? "nothing";
+                        const dotKey = `kill-dot-${event.timestamp}-${playerId}-${event.type}-${championSpecialKillSubtype}`;
                         return (
                             <div>
                                 {(event.type === "CHAMPION_KILL") && (
-                                    <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
-                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
-                                        <div key={dotKey} className={`flex w-full p-2 gap-2 transition ${(timelineFilter[2] && info.participants[event.killerId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.killerId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
-                                            <div className="flex gap-2 items-center">
-                                                <div className="flex gap-1 items-center">
-                                                    {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
-                                                        <>
-                                                            {kaynTransformation.transformType === "SLAYER" && (
-                                                                <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                    <>
+                                        {(event.killerId > 0 && event.victimId > 0) ? (
+                                            <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
+                                                <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                                <div key={dotKey} className={`flex w-full p-2 gap-2 transition ${(timelineFilter[2] && info.participants[event.killerId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.killerId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
+                                                    <div className="flex gap-2 items-center">
+                                                        <div className="flex gap-1 items-center">
+                                                            {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                                <>
+                                                                    {kaynTransformation.transformType === "SLAYER" && (
+                                                                        <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                    )}
+                                                                    {kaynTransformation.transformType === "ASSASSIN" && (
+                                                                        <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                    )}
+                                                                </>
+                                                            ): (
+                                                                <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
                                                             )}
-                                                            {kaynTransformation.transformType === "ASSASSIN" && (
-                                                                <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
-                                                            )}
-                                                        </>
-                                                    ): (
-                                                        <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
-                                                    )}
-                                                    <p className="text-sm text-gray-200">{info.participants[event.killerId-1].riotIdGameName}</p>
-                                                </div>
-                                                <p className="text-sm text-white">killed</p>
-                                            </div>
-                                            <div className="flex gap-1 items-center">
-                                                {(kaynId === event.victimId  && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
-                                                    <>
-                                                        {kaynTransformation.transformType === "SLAYER" && (
-                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.victimId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
-                                                        )}
-                                                        {kaynTransformation.transformType === "ASSASSIN" && (
-                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.victimId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
-                                                        )}
-                                                    </>
-                                                ): (
-                                                    <ChampionImage championId={info.participants[event.victimId-1].championId} teamId={info.participants[event.victimId-1].teamId} isTeamIdSame={false} classes="h-10" />
-                                                )}
-                                                <p className="text-sm text-gray-200">{info.participants[event.victimId-1].riotIdGameName}</p>
-                                            </div>
-                                            {event.assistingParticipantIds && (
-                                                <div className="flex items-end gap-1">
-                                                    <p className="text-xs">assists:</p>
-                                                    {event.assistingParticipantIds.map((id: number, assistIndex: number) => (
-                                                        <div key={`assist-${event.timestamp}-${id}-${assistIndex}`}>
-                                                            <ChampionImage championId={info.participants[id-1].championId} teamId={info.participants[id-1].teamId} isTeamIdSame={false} classes="h-5" />
+                                                            <p className="text-sm text-gray-200">{info.participants[event.killerId-1].riotIdGameName}</p>
                                                         </div>
-                                                    ))}
+                                                        <p className="text-sm text-white">killed</p>
+                                                    </div>
+                                                    <div className="flex gap-1 items-center">
+                                                        {(kaynId === event.victimId  && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                            <>
+                                                                {kaynTransformation.transformType === "SLAYER" && (
+                                                                    <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.victimId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                )}
+                                                                {kaynTransformation.transformType === "ASSASSIN" && (
+                                                                    <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.victimId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                )}
+                                                            </>
+                                                        ): (
+                                                            <ChampionImage championId={info.participants[event.victimId-1].championId} teamId={info.participants[event.victimId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                        )}
+                                                        <p className="text-sm text-gray-200">{info.participants[event.victimId-1].riotIdGameName}</p>
+                                                    </div>
+                                                    {event.assistingParticipantIds && (
+                                                        <div className="flex items-end gap-1">
+                                                            <p className="text-xs">assists:</p>
+                                                            {event.assistingParticipantIds.map((id: number, assistIndex: number) => (
+                                                                <div key={`assist-${event.timestamp}-${id}-${assistIndex}`}>
+                                                                    <ChampionImage championId={info.participants[id-1].championId} teamId={info.participants[id-1].teamId} isTeamIdSame={false} classes="h-5" />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                            </div>
+                                        ) : (() => {
+                                            console.log(event)
+
+                                            return (
+                                                <div>Unknown event</div>
+                                            )
+                                        })}
+                                    </>
                                 )}
                                 {event.type === "ITEM_PURCHASED" && (
                                     <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
@@ -419,53 +430,31 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                                     <p className="text-sm text-gray-200">Farsight Alteration</p>
                                                 </>
                                             )}
-                                            {event.wardType === "SIGHT_WARD" && (
-                                                <>
-                                                    {info.participants[event.creatorId-1].teamId === 100 ? (
-                                                        <>
-                                                            {(blueTeamSupportItemProgression[0].timestamp < event.timestamp && blueTeamSupportItemProgression[1].timestamp > event.timestamp) && (
-                                                                <>
-                                                                    <ItemImage itemId={blueTeamSupportItemProgression[1].itemId} matchWon={info.participants[event.creatorId-1].win} classes="h-10" />
-                                                                    <p className="text-sm text-gray-200">{items[blueTeamSupportItemProgression[1].itemId]?.name || "Unknown Item"} Ward</p>
-                                                                </>
-                                                            )}
-                                                            {(blueTeamSupportItemProgression[1].timestamp < event.timestamp && blueTeamSupportItemProgression[2].timestamp > event.timestamp) && (
-                                                                <>
-                                                                    <ItemImage itemId={blueTeamSupportItemProgression[2].itemId} matchWon={info.participants[event.creatorId-1].win} classes="h-10" />
-                                                                    <p className="text-sm text-gray-200">{items[blueTeamSupportItemProgression[2].itemId]?.name || "Unknown Item"} Ward</p>
-                                                                </>
-                                                            )}
-                                                            {(blueTeamSupportItemProgression[2].timestamp < event.timestamp) && (
-                                                                <>
-                                                                    <ItemImage itemId={blueTeamSupportItemId} matchWon={info.participants[event.creatorId-1].win} classes="h-10" />
-                                                                    <p className="text-sm text-gray-200">{items[blueTeamSupportItemId]?.name || "Unknown Item"} Ward</p>
-                                                                </>
-                                                            )}
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            {(redTeamSupportItemProgression[0].timestamp < event.timestamp && redTeamSupportItemProgression[1].timestamp > event.timestamp) && (
-                                                                <>
-                                                                    <ItemImage itemId={redTeamSupportItemProgression[1].itemId} matchWon={info.participants[event.creatorId-1].win} classes="h-10" />
-                                                                    <p className="text-sm text-gray-200">{items[redTeamSupportItemProgression[1].itemId]?.name || "Unknown Item"} Ward</p>
-                                                                </>
-                                                            )}
-                                                            {(redTeamSupportItemProgression[1].timestamp < event.timestamp && redTeamSupportItemProgression[2].timestamp > event.timestamp) && (
-                                                                <>
-                                                                    <ItemImage itemId={redTeamSupportItemProgression[2].itemId} matchWon={info.participants[event.creatorId-1].win} classes="h-10" />
-                                                                    <p className="text-sm text-gray-200">{items[redTeamSupportItemProgression[2].itemId]?.name || "Unknown Item"} Ward</p>
-                                                                </>
-                                                            )}
-                                                            {(redTeamSupportItemProgression[2].timestamp < event.timestamp) && (
-                                                                <>
-                                                                    <ItemImage itemId={redTeamSupportItemId} matchWon={info.participants[event.creatorId-1].win} classes="h-10" />
-                                                                    <p className="text-sm text-gray-200">{items[redTeamSupportItemId]?.name || "Unknown Item"} Ward</p>
-                                                                </>
-                                                            )}
-                                                        </>
-                                                    )}
-                                                </>
-                                            )}
+                                            {event.wardType === "SIGHT_WARD" && (() => {
+                                                const player = info.participants[event.creatorId - 1];
+                                                const prog = player.teamId === 100 ? blueTeamSupportItemProgression : redTeamSupportItemProgression;
+                                                if (prog.length === 0) return null;
+
+                                                let displayItem;
+                                                if (prog[0].timestamp < event.timestamp && prog[1] && prog[1].timestamp > event.timestamp) {
+                                                    displayItem = prog[1];
+                                                } else if (prog[1] && prog[1].timestamp < event.timestamp && prog[2] && prog[2].timestamp > event.timestamp) {
+                                                    displayItem = prog[2];
+                                                } else if (prog[2] && prog[2].timestamp < event.timestamp) {
+                                                    displayItem = { itemId: player.teamId === 100 ? blueTeamSupportItemId : redTeamSupportItemId };
+                                                } else {
+                                                    return null;
+                                                }
+
+                                                return (
+                                                    <>
+                                                        <ItemImage itemId={displayItem.itemId} matchWon={player.win} classes="h-10" />
+                                                        <p className="text-sm text-gray-200">
+                                                            {items[displayItem.itemId]?.name || "Unknown Item"} Ward
+                                                        </p>
+                                                    </>
+                                                )
+                                            })()}
                                         </div>
                                     </div>
                                 )}
@@ -507,53 +496,32 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                                     <p className="text-sm text-gray-200">Farsight Alteration</p>
                                                 </>
                                             )}
-                                            {event.wardType === "SIGHT_WARD" && (
-                                                <>
-                                                    {info.participants[event.killerId-1].teamId === 100 ? (
-                                                        <>
-                                                            {(redTeamSupportItemProgression[0].timestamp < event.timestamp && redTeamSupportItemProgression[1].timestamp > event.timestamp) && (
-                                                                <>
-                                                                    <ItemImage itemId={redTeamSupportItemProgression[1].itemId} matchWon={info.participants[event.killerId-1].win} classes="h-10" />
-                                                                    <p className="text-sm text-gray-200">{items[redTeamSupportItemProgression[1].itemId]?.name || "Unknown Item"} Ward</p>
-                                                                </>
-                                                            )}
-                                                            {(redTeamSupportItemProgression[1].timestamp < event.timestamp && redTeamSupportItemProgression[2].timestamp > event.timestamp) && (
-                                                                <>
-                                                                    <ItemImage itemId={redTeamSupportItemProgression[2].itemId} matchWon={info.participants[event.killerId-1].win} classes="h-10" />
-                                                                    <p className="text-sm text-gray-200">{items[redTeamSupportItemProgression[2].itemId]?.name || "Unknown Item"} Ward</p>
-                                                                </>
-                                                            )}
-                                                            {(redTeamSupportItemProgression[2].timestamp < event.timestamp) && (
-                                                                <>
-                                                                    <ItemImage itemId={redTeamSupportItemId} matchWon={info.participants[event.killerId-1].win} classes="h-10" />
-                                                                    <p className="text-sm text-gray-200">{items[redTeamSupportItemId]?.name || "Unknown Item"} Ward</p>
-                                                                </>
-                                                            )}
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            {(blueTeamSupportItemProgression[0].timestamp < event.timestamp && blueTeamSupportItemProgression[1].timestamp > event.timestamp) && (
-                                                                <>
-                                                                    <ItemImage itemId={blueTeamSupportItemProgression[1].itemId} matchWon={info.participants[event.killerId-1].win} classes="h-10" />
-                                                                    <p className="text-sm text-gray-200">{items[blueTeamSupportItemProgression[1].itemId]?.name || "Unknown Item"} Ward</p>
-                                                                </>
-                                                            )}
-                                                            {(blueTeamSupportItemProgression[1].timestamp < event.timestamp && blueTeamSupportItemProgression[2].timestamp > event.timestamp) && (
-                                                                <>
-                                                                    <ItemImage itemId={blueTeamSupportItemProgression[2].itemId} matchWon={info.participants[event.killerId-1].win} classes="h-10" />
-                                                                    <p className="text-sm text-gray-200">{items[blueTeamSupportItemProgression[2].itemId]?.name || "Unknown Item"} Ward</p>
-                                                                </>
-                                                            )}
-                                                            {(blueTeamSupportItemProgression[2].timestamp < event.timestamp) && (
-                                                                <>
-                                                                    <ItemImage itemId={blueTeamSupportItemId} matchWon={info.participants[event.killerId-1].win} classes="h-10" />
-                                                                    <p className="text-sm text-gray-200">{items[blueTeamSupportItemId]?.name || "Unknown Item"} Ward</p>
-                                                                </>
-                                                            )}
-                                                        </>
-                                                    )}
-                                                </>
-                                            )}
+                                            {event.wardType === "SIGHT_WARD" && (() => {
+                                                const player = info.participants[event.killerId - 1];
+                                                const prog = player.teamId === 100 ? redTeamSupportItemProgression : blueTeamSupportItemProgression;
+
+                                                if (prog.length === 0) return null;
+
+                                                let displayItem;
+                                                if (prog[0].timestamp < event.timestamp && prog[1] && prog[1].timestamp > event.timestamp) {
+                                                    displayItem = prog[1];
+                                                } else if (prog[1] && prog[1].timestamp < event.timestamp && prog[2] && prog[2].timestamp > event.timestamp) {
+                                                    displayItem = prog[2];
+                                                } else if (prog[2] && prog[2].timestamp < event.timestamp) {
+                                                    displayItem = { itemId: player.teamId === 100 ? redTeamSupportItemId : blueTeamSupportItemId };
+                                                } else {
+                                                    return null;
+                                                }
+
+                                                return (
+                                                    <>
+                                                        <ItemImage itemId={displayItem.itemId} matchWon={player.win} classes="h-10" />
+                                                        <p className="text-sm text-gray-200">
+                                                            {items[displayItem.itemId]?.name || "Unknown Item"} Ward
+                                                        </p>
+                                                    </>
+                                                )
+                                            })()}
                                         </div>
                                     </div>
                                 )}
@@ -780,105 +748,115 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                     </div>
                                 )}
                                 {event.type === "ELITE_MONSTER_KILL" && (
-                                    <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
-                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
-                                        <div key={dotKey} className={`flex w-full p-2 gap-2 transition ${(timelineFilter[2] && info.participants[event.killerId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.killerId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
-                                            <div className="flex gap-2 items-center">
-                                                <div className="flex gap-1 items-center">
-                                                    {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
-                                                        <>
-                                                            {kaynTransformation.transformType === "SLAYER" && (
-                                                                <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                    <>
+                                        {(event.killerId > 0) ? (
+                                            <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
+                                                <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                                <div key={dotKey} className={`flex w-full p-2 gap-2 transition ${(timelineFilter[2] && info.participants[event.killerId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.killerId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
+                                                    <div className="flex gap-2 items-center">
+                                                        <div className="flex gap-1 items-center">
+                                                            {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                                <>
+                                                                    {kaynTransformation.transformType === "SLAYER" && (
+                                                                        <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                    )}
+                                                                    {kaynTransformation.transformType === "ASSASSIN" && (
+                                                                        <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                    )}
+                                                                </>
+                                                            ): (
+                                                                <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
                                                             )}
-                                                            {kaynTransformation.transformType === "ASSASSIN" && (
-                                                                <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
-                                                            )}
-                                                        </>
-                                                    ): (
-                                                        <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
-                                                    )}
-                                                    <p className="text-sm text-gray-200">{info.participants[event.killerId-1].riotIdGameName}</p>
-                                                </div>
-                                                <p className="text-sm text-white">killed</p>
-                                                {event.monsterType === "HORDE" && (
-                                                    <>
-                                                        <img src={grubsimg} alt="grubsimg" className="h-10" />
-                                                        <p className="text-sm text-gray-200">Void Grub</p>
-                                                    </>
-                                                )}
-                                                {(event.monsterType === "DRAGON" && event.monsterSubType === "AIR_DRAGON") && (
-                                                    <>
-                                                        <img src={air_drakeimg} alt="air_drakeimg" className="h-10" />
-                                                        <p className="text-sm text-gray-200">Cloud Drake</p>
-                                                    </>
-                                                )}
-                                                {(event.monsterType === "DRAGON" && event.monsterSubType === "EARTH_DRAGON") && (
-                                                    <>
-                                                        <img src={earth_drakeimg} alt="earth_drakeimg" className="h-10" />
-                                                        <p className="text-sm text-gray-200">Moutain Drake</p>
-                                                    </>
-                                                )}
-                                                {(event.monsterType === "DRAGON" && event.monsterSubType === "FIRE_DRAGON") && (
-                                                    <>
-                                                        <img src={fire_drakeimg} alt="fire_drakeimg" className="h-10" />
-                                                        <p className="text-sm text-gray-200">Infernal Drake</p>
-                                                    </>
-                                                )}
-                                                {(event.monsterType === "DRAGON" && event.monsterSubType === "WATER_DRAGON") && (
-                                                    <>
-                                                        <img src={water_drakeimg} alt="water_drakeimg" className="h-10" />
-                                                        <p className="text-sm text-gray-200">Ocean Drake</p>
-                                                    </>
-                                                )}
-                                                {(event.monsterType === "DRAGON" && event.monsterSubType === "HEXTECH_DRAGON") && (
-                                                    <>
-                                                        <img src={hextech_drakeimg} alt="hextech_drakeimg" className="h-10" />
-                                                        <p className="text-sm text-gray-200">Hextech Drake</p>
-                                                    </>
-                                                )}
-                                                {(event.monsterType === "DRAGON" && event.monsterSubType === "CHEMTECH_DRAGON") && (
-                                                    <>
-                                                        <img src={chemtech_drakeimg} alt="chemtech_drakeimg" className="h-10" />
-                                                        <p className="text-sm text-gray-200">Chemtech Drake</p>
-                                                    </>
-                                                )}
-                                                {(event.monsterType === "DRAGON" && event.monsterSubType === "ELDER_DRAGON") && (
-                                                    <>
-                                                        <img src={elder_drakeimg} alt="elder_drakeimg" className="h-10" />
-                                                        <p className="text-sm text-gray-200">Elder Drake</p>
-                                                    </>
-                                                )}
-                                                {event.monsterType === "RIFTHERALD" && (
-                                                    <>
-                                                        <img src={heraldimg} alt="heraldimg" className="h-10" />
-                                                        <p className="text-sm text-gray-200">Rift Herald</p>
-                                                    </>
-                                                )}
-                                                {event.monsterType === "BARON_NASHOR" && (
-                                                    <>
-                                                        <img src={baronimg} alt="baronimg" className="h-10" />
-                                                        <p className="text-sm text-gray-200">Baron Nashor</p>
-                                                    </>
-                                                )}
-                                                {event.monsterType === "ATAKHAN" && (
-                                                    <>
-                                                        <img src={atakhanimg} alt="atakhanimg" className="h-10" />
-                                                        <p className="text-sm text-gray-200">Atakhan</p>
-                                                    </>
-                                                )}
-                                            </div>
-                                            {event.assistingParticipantIds && (
-                                                <div className="flex items-end gap-1">
-                                                    <p className="text-xs">assists:</p>
-                                                    {event.assistingParticipantIds.map((id: number, assistIndex: number) => (
-                                                        <div key={`assist-${event.timestamp}-${id}-${assistIndex}`}>
-                                                            <ChampionImage championId={info.participants[id-1].championId} teamId={info.participants[id-1].teamId} isTeamIdSame={false} classes="h-5" />
+                                                            <p className="text-sm text-gray-200">{info.participants[event.killerId-1].riotIdGameName}</p>
                                                         </div>
-                                                    ))}
+                                                        <p className="text-sm text-white">killed</p>
+                                                        {event.monsterType === "HORDE" && (
+                                                            <>
+                                                                <img src={grubsimg} alt="grubsimg" className="h-10" />
+                                                                <p className="text-sm text-gray-200">Void Grub</p>
+                                                            </>
+                                                        )}
+                                                        {(event.monsterType === "DRAGON" && event.monsterSubType === "AIR_DRAGON") && (
+                                                            <>
+                                                                <img src={air_drakeimg} alt="air_drakeimg" className="h-10" />
+                                                                <p className="text-sm text-gray-200">Cloud Drake</p>
+                                                            </>
+                                                        )}
+                                                        {(event.monsterType === "DRAGON" && event.monsterSubType === "EARTH_DRAGON") && (
+                                                            <>
+                                                                <img src={earth_drakeimg} alt="earth_drakeimg" className="h-10" />
+                                                                <p className="text-sm text-gray-200">Moutain Drake</p>
+                                                            </>
+                                                        )}
+                                                        {(event.monsterType === "DRAGON" && event.monsterSubType === "FIRE_DRAGON") && (
+                                                            <>
+                                                                <img src={fire_drakeimg} alt="fire_drakeimg" className="h-10" />
+                                                                <p className="text-sm text-gray-200">Infernal Drake</p>
+                                                            </>
+                                                        )}
+                                                        {(event.monsterType === "DRAGON" && event.monsterSubType === "WATER_DRAGON") && (
+                                                            <>
+                                                                <img src={water_drakeimg} alt="water_drakeimg" className="h-10" />
+                                                                <p className="text-sm text-gray-200">Ocean Drake</p>
+                                                            </>
+                                                        )}
+                                                        {(event.monsterType === "DRAGON" && event.monsterSubType === "HEXTECH_DRAGON") && (
+                                                            <>
+                                                                <img src={hextech_drakeimg} alt="hextech_drakeimg" className="h-10" />
+                                                                <p className="text-sm text-gray-200">Hextech Drake</p>
+                                                            </>
+                                                        )}
+                                                        {(event.monsterType === "DRAGON" && event.monsterSubType === "CHEMTECH_DRAGON") && (
+                                                            <>
+                                                                <img src={chemtech_drakeimg} alt="chemtech_drakeimg" className="h-10" />
+                                                                <p className="text-sm text-gray-200">Chemtech Drake</p>
+                                                            </>
+                                                        )}
+                                                        {(event.monsterType === "DRAGON" && event.monsterSubType === "ELDER_DRAGON") && (
+                                                            <>
+                                                                <img src={elder_drakeimg} alt="elder_drakeimg" className="h-10" />
+                                                                <p className="text-sm text-gray-200">Elder Drake</p>
+                                                            </>
+                                                        )}
+                                                        {event.monsterType === "RIFTHERALD" && (
+                                                            <>
+                                                                <img src={heraldimg} alt="heraldimg" className="h-10" />
+                                                                <p className="text-sm text-gray-200">Rift Herald</p>
+                                                            </>
+                                                        )}
+                                                        {event.monsterType === "BARON_NASHOR" && (
+                                                            <>
+                                                                <img src={baronimg} alt="baronimg" className="h-10" />
+                                                                <p className="text-sm text-gray-200">Baron Nashor</p>
+                                                            </>
+                                                        )}
+                                                        {event.monsterType === "ATAKHAN" && (
+                                                            <>
+                                                                <img src={atakhanimg} alt="atakhanimg" className="h-10" />
+                                                                <p className="text-sm text-gray-200">Atakhan</p>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                    {event.assistingParticipantIds && (
+                                                        <div className="flex items-end gap-1">
+                                                            <p className="text-xs">assists:</p>
+                                                            {event.assistingParticipantIds.map((id: number, assistIndex: number) => (
+                                                                <div key={`assist-${event.timestamp}-${id}-${assistIndex}`}>
+                                                                    <ChampionImage championId={info.participants[id-1].championId} teamId={info.participants[id-1].teamId} isTeamIdSame={false} classes="h-5" />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                            </div>
+                                        ) : (() => {
+                                            console.log(event)
+
+                                            return (
+                                                <div>Unknown event</div>
+                                            )
+                                        })}
+                                    </>
                                 )}
                                 {event.type === "CHAMPION_SPECIAL_KILL" && (
                                     <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
@@ -1113,7 +1091,8 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
 
                             const playerId = event.participantId ?? event.killerId ?? event.creatorId;
                             const teamId = info.participants[playerId-1].teamId ?? event.teamId;
-                            const dotKey = `kill-dot-${event.timestamp}-${playerId}-${event.type}`;
+                            const championSpecialKillSubtype = event.killType ?? event.multiKillLength ?? "nothing";
+                            const dotKey = `kill-dot-${event.timestamp}-${playerId}-${event.type}-${championSpecialKillSubtype}`;
 
                             const baseColor = teamId === 100 ? "bg-blue-800 ring-blue-300" : "bg-red-800 ring-red-300";
                             const brightColor = teamId === 100 ? "bg-blue-400 ring-blue-200" : "bg-red-400 ring-red-200";

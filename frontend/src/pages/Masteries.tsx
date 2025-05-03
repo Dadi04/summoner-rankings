@@ -15,8 +15,8 @@ import arrowDownLight from "../assets/arrow-down-light.png"
 import noneicon from "../assets/none.jpg";
 
 const masteryOptions = [
-    { label: "Mastery level", value: "level" },
     { label: "Mastery points", value: "points" },
+    { label: "Mastery level", value: "level" },
     { label: "Recently played", value: "recent" },
     { label: "Alphabetical", value: "alpha" },
 ];
@@ -77,7 +77,7 @@ const Masteries: React.FC = () => {
     }
 
     const [champions, setChampions] = useState<any[]>([]);
-    const [masteryFilter, setMasteryFilter] = useState<string>("");
+    const [masteryFilter, setMasteryFilter] = useState<string>("points");
     const [championsFilter, setChampionsFilter] = useState<string>("");
     const [searchChampionsFilter, setSearchChampionsFilter] = useState<string>("");
     const [selectedChampion, setSelectedChampion]   = useState<string>("All Champions");

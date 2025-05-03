@@ -22,7 +22,7 @@ import arrowDownLight from "../../assets/arrow-down-light.png";
 import blueKaynIcon from "../../assets/blue-kayn-icon.png"
 import redKaynIcon from "../../assets/red-kayn-icon.png"
 
-const SUMMONERS_RIFT_WITH_ROLES = [400, 420, 430, 440, 480, 490, 700, 870, 880, 890];
+const SUMMONERS_RIFT_WITH_ROLES = [400, 420, 430, 440, 480, 490, 700, 870, 880, 890, 900];
 
 const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: any; puuid: string; region: string; classes?: string;}> = ({info, timelineJson, items, puuid, region, classes}) => {
     const [showDetailsDiv, setShowDetailsDiv] = useState<boolean>(false);
