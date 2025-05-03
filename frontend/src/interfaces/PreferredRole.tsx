@@ -5,7 +5,7 @@ interface PreferredRole {
     totalKills: number;
     totalDeaths: number;
     totalAssists: number;
-    winRate: number;
+    winrate: number;
     averageKDA: number;
 }
 

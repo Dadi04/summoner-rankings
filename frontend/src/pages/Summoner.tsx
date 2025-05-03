@@ -333,8 +333,8 @@ const Summoner: React.FC = () => {
     // const allMatchesData: Match[] = apiData.allMatchesData;
     const spectatorData = apiData.spectatorData;
     
-    championStatsSoloDuoData.sort((a: ChampionStats, b: ChampionStats) => b.games - a.games || b.winRate - a.winRate);
-    championStatsFlexData.sort((a: ChampionStats, b: ChampionStats) => b.games - a.games || b.winRate - a.winRate);
+    championStatsSoloDuoData.sort((a: ChampionStats, b: ChampionStats) => b.games - a.games || b.winrate - a.winrate);
+    championStatsFlexData.sort((a: ChampionStats, b: ChampionStats) => b.games - a.games || b.winrate - a.winrate);
 
     const championsStatsData = selectedChampionPerformanceMode === "soloduo" ? championStatsSoloDuoData : championStatsFlexData;
     const preferredRoleData = selectedRolePerformanceMode === "soloduo" ? preferredSoloDuoRoleData : preferredFlexRoleData;
@@ -555,8 +555,8 @@ const Summoner: React.FC = () => {
                                                         <p className="text-neutral-200 text-md">{Math.round(championStat.totalAssists/championStat.games*10)/10}</p>
                                                     </div>
                                                 </div>
-                                                <div className={`flex flex-col items-end ${getWinrateColor(Math.round(championStat.winRate), championStat.games)}`}>
-                                                    <p>{Math.round(championStat.winRate)}%</p> 
+                                                <div className={`flex flex-col items-end ${getWinrateColor(Math.round(championStat.winrate), championStat.games)}`}>
+                                                    <p>{Math.round(championStat.winrate)}%</p> 
                                                     <p className="text-sm text-gray-200">{championStat.games} Games</p>
                                                     {/* <p>({championStat.Wins}W-{championStat.Games-championStat.Wins}L)</p> */}
                                                 </div>
@@ -601,8 +601,8 @@ const Summoner: React.FC = () => {
                                         <div>
                                             <p>{role.games}</p>
                                         </div>
-                                        <div className={getWinrateColor(Math.round(role.winRate), role.games)}>
-                                            <p>{Math.round(role.winRate)}%</p>
+                                        <div className={getWinrateColor(Math.round(role.winrate), role.games)}>
+                                            <p>{Math.round(role.winrate)}%</p>
                                             {/* <p>({role.Wins}W-{role.Games-role.Wins}L)</p> */}
                                         </div>
                                     </div>

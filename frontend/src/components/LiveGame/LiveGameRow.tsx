@@ -153,8 +153,8 @@ const LiveGameRow: React.FC<{participant: Participant; isBeingWatched: boolean; 
             )}
             
             <div className="text-center">
-                <p className={getWinrateColor(champStats ? Math.round(champStats.winRate) : -1)}>
-                    {champStats ? `${Math.round(champStats.winRate)}%` : "-"}
+                <p className={getWinrateColor(champStats ? Math.round(champStats.winrate) : -1)}>
+                    {champStats ? `${Math.round(champStats.winrate)}%` : "-"}
                 </p>
                 <p>{champStats ? `(${champStats.games} Played)` : ""}</p>
             </div>

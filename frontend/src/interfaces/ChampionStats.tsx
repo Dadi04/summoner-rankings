@@ -9,7 +9,7 @@ interface ChampionStats {
     totalAssists: number;
     totalCS: number;
     totalMin: number;
-    winRate: number;
+    winrate: number;
     averageKDA: number;
 }
 
