@@ -22,8 +22,9 @@ import baronicon from "../../assets/monsters/icons/baron.png";
 import atakhanicon from "../../assets/monsters/icons/atakhan.png";
 import turreticon from "../../assets/monsters/icons/tower.png";
 import inhibitoricon from "../../assets/monsters/icons/inhibitor.png";
-import blueKaynIcon from "../../assets/blue-kayn-icon.png"
-import redKaynIcon from "../../assets/red-kayn-icon.png"
+import blueKaynIcon from "../../assets/blue-kayn-icon.png";
+import redKaynIcon from "../../assets/red-kayn-icon.png";
+import forbiddenlight from "../../assets/forbidden-light.png";
 
 const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: string, region: string, kaynTransformation: any;}> = ({info, timeline, puuid, region, kaynTransformation}) => {
     const blueSideWon = info.participants.find(p => p.teamId === 100)?.win;
@@ -104,203 +105,213 @@ const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: stri
                         <p className="text-red-500 font-bold text-lg">Defeat</p>
                     }
                     <p className="text-neutral-400 text-lg">(Blue Side)</p>
-                    <div className="flex gap-3 font-normal text-2xl text-neutral-200 py-2">
-                        <Tippy 
-                            content={
-                                <p className="text-purple-500 font-bold">{blueTeamKills.grubs} Voidgrub{blueTeamKills.grubs ? (blueTeamKills.grubs === 1 ? "" : "s") : "s"} killed</p>
-                            }
-                            allowHTML={true}
-                            interactive={false}
-                            placement="top"
-                        >
-                            <div className="flex items-center">
-                                <img src={grubsicon} alt="grubsicon" className="h-10" />
-                                <p>{blueTeamKills.grubs}</p>
-                            </div>
-                        </Tippy>
-                        <Tippy 
-                            content={
-                                <p className="text-purple-500 font-bold">{blueTeamKills.dragon} Drake{blueTeamKills.dragon ? (blueTeamKills.dragon === 1 ? "" : "s") : "s"} killed</p>
-                            }
-                            allowHTML={true}
-                            interactive={false}
-                            placement="top"
-                        >
-                            <div className="flex items-center">
-                                <img src={drakeicon} alt="drakeicon" className="h-10" />
-                                <p>{blueTeamKills.dragon}</p>
-                            </div>
-                        </Tippy>
-                        {blueTeamKills.air_dragon > 0 && (
+                    <div className="flex flex-1 items-center font-normal text-2xl text-neutral-200 py-2">
+                        <div className="flex gap-3">
                             <Tippy 
                                 content={
-                                    <p className="text-purple-500 font-bold">{blueTeamKills.air_dragon} Cloud Drake{blueTeamKills.air_dragon ? (blueTeamKills.air_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    <p className="text-purple-500 font-bold">{blueTeamKills.grubs} Voidgrub{blueTeamKills.grubs ? (blueTeamKills.grubs === 1 ? "" : "s") : "s"} killed</p>
                                 }
                                 allowHTML={true}
                                 interactive={false}
                                 placement="top"
                             >
                                 <div className="flex items-center">
-                                    <img src={air_drakeicon} alt="air_drakeicon" className="h-6" />
-                                    <p className="text-xl">{blueTeamKills.air_dragon}</p>
+                                    <img src={grubsicon} alt="grubsicon" className="h-10" />
+                                    <p>{blueTeamKills.grubs}</p>
                                 </div>
                             </Tippy>
-                        )}
-                        {blueTeamKills.earth_dragon > 0 && (
                             <Tippy 
                                 content={
-                                    <p className="text-purple-500 font-bold">{blueTeamKills.earth_dragon} Mountain Drake{blueTeamKills.earth_dragon ? (blueTeamKills.earth_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    <p className="text-purple-500 font-bold">{blueTeamKills.dragon} Drake{blueTeamKills.dragon ? (blueTeamKills.dragon === 1 ? "" : "s") : "s"} killed</p>
                                 }
                                 allowHTML={true}
                                 interactive={false}
                                 placement="top"
                             >
                                 <div className="flex items-center">
-                                    <img src={earth_drakeicon} alt="earth_drakeicon" className="h-6" />
-                                    <p className="text-xl">{blueTeamKills.earth_dragon}</p>
+                                    <img src={drakeicon} alt="drakeicon" className="h-10" />
+                                    <p>{blueTeamKills.dragon}</p>
                                 </div>
                             </Tippy>
-                        )}
-                        {blueTeamKills.fire_dragon > 0 && (
+                            {blueTeamKills.air_dragon > 0 && (
+                                <Tippy 
+                                    content={
+                                        <p className="text-purple-500 font-bold">{blueTeamKills.air_dragon} Cloud Drake{blueTeamKills.air_dragon ? (blueTeamKills.air_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div className="flex items-center">
+                                        <img src={air_drakeicon} alt="air_drakeicon" className="h-6" />
+                                        <p className="text-xl">{blueTeamKills.air_dragon}</p>
+                                    </div>
+                                </Tippy>
+                            )}
+                            {blueTeamKills.earth_dragon > 0 && (
+                                <Tippy 
+                                    content={
+                                        <p className="text-purple-500 font-bold">{blueTeamKills.earth_dragon} Mountain Drake{blueTeamKills.earth_dragon ? (blueTeamKills.earth_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div className="flex items-center">
+                                        <img src={earth_drakeicon} alt="earth_drakeicon" className="h-6" />
+                                        <p className="text-xl">{blueTeamKills.earth_dragon}</p>
+                                    </div>
+                                </Tippy>
+                            )}
+                            {blueTeamKills.fire_dragon > 0 && (
+                                <Tippy 
+                                    content={
+                                        <p className="text-purple-500 font-bold">{blueTeamKills.fire_dragon} Infernal Drake{blueTeamKills.fire_dragon ? (blueTeamKills.fire_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div className="flex items-center">
+                                        <img src={fire_drakeicon} alt="fire_drakeicon" className="h-6" />
+                                        <p className="text-xl">{blueTeamKills.fire_dragon}</p>
+                                    </div>
+                                </Tippy>
+                            )}
+                            {blueTeamKills.water_dragon > 0 && (
+                                <Tippy 
+                                    content={
+                                        <p className="text-purple-500 font-bold">{blueTeamKills.water_dragon} Ocean Drake{blueTeamKills.water_dragon ? (blueTeamKills.water_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div className="flex items-center">
+                                        <img src={water_drakeicon} alt="water_drakeicon" className="h-6" />
+                                        <p className="text-xl">{blueTeamKills.water_dragon}</p>
+                                    </div>
+                                </Tippy>
+                            )}
+                            {blueTeamKills.chemtech_dragon > 0 && (
+                                <Tippy 
+                                    content={
+                                        <p className="text-purple-500 font-bold">{blueTeamKills.chemtech_dragon} Chemtech Drake{blueTeamKills.chemtech_dragon ? (blueTeamKills.chemtech_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div className="flex items-center">
+                                        <img src={chemtech_drakeicon} alt="chemtech_drakeicon" className="h-6" />
+                                        <p className="text-xl">{blueTeamKills.chemtech_dragon}</p>
+                                    </div>
+                                </Tippy>
+                            )}
+                            {blueTeamKills.hextech_dragon > 0 && (
+                                <Tippy 
+                                    content={
+                                        <p className="text-purple-500 font-bold">{blueTeamKills.hextech_dragon} Hextech Drake{blueTeamKills.hextech_dragon ? (blueTeamKills.hextech_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div className="flex items-center">
+                                        <img src={hextech_drakeicon} alt="hextech_drakeicon" className="h-6" />
+                                        <p className="text-xl">{blueTeamKills.hextech_dragon}</p>
+                                    </div>
+                                </Tippy>
+                            )}
+                            {((blueTeamKills.dragon ?? 0) + (blueTeamKills.dragon ?? 0) > 3) && (
+                                <Tippy 
+                                    content={
+                                        <p className="text-purple-500 font-bold">{blueTeamKills.elder_dragon} Elder Drake{blueTeamKills.elder_dragon ? (blueTeamKills.elder_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div className="flex items-center">
+                                        <img src={elder_drakeicon} alt="elder_drakeicon" className="h-10" />
+                                        <p>{blueTeamKills.elder_dragon}</p>
+                                    </div>
+                                </Tippy>
+                            )}
                             <Tippy 
                                 content={
-                                    <p className="text-purple-500 font-bold">{blueTeamKills.fire_dragon} Infernal Drake{blueTeamKills.fire_dragon ? (blueTeamKills.fire_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    <p className="text-purple-500 font-bold">{blueTeamKills.herald} Rift Herald{blueTeamKills.herald ? "" : "s"} killed</p>
                                 }
                                 allowHTML={true}
                                 interactive={false}
                                 placement="top"
                             >
                                 <div className="flex items-center">
-                                    <img src={fire_drakeicon} alt="fire_drakeicon" className="h-6" />
-                                    <p className="text-xl">{blueTeamKills.fire_dragon}</p>
+                                    <img src={heraldicon} alt="heraldicon" className="h-10" />
+                                    <p>{blueTeamKills.herald}</p>
                                 </div>
                             </Tippy>
-                        )}
-                        {blueTeamKills.water_dragon > 0 && (
                             <Tippy 
                                 content={
-                                    <p className="text-purple-500 font-bold">{blueTeamKills.water_dragon} Ocean Drake{blueTeamKills.water_dragon ? (blueTeamKills.water_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    <p className="text-purple-500 font-bold">{blueTeamKills.baron} Baron Nashor{blueTeamKills.baron ? (blueTeamKills.baron === 1 ? "" : "s") : "s"} killed</p>
                                 }
                                 allowHTML={true}
                                 interactive={false}
                                 placement="top"
                             >
                                 <div className="flex items-center">
-                                    <img src={water_drakeicon} alt="water_drakeicon" className="h-6" />
-                                    <p className="text-xl">{blueTeamKills.water_dragon}</p>
+                                    <img src={baronicon} alt="baronicon" className="h-10" />
+                                    <p>{blueTeamKills.baron}</p>
                                 </div>
                             </Tippy>
-                        )}
-                        {blueTeamKills.chemtech_dragon > 0 && (
                             <Tippy 
                                 content={
-                                    <p className="text-purple-500 font-bold">{blueTeamKills.chemtech_dragon} Chemtech Drake{blueTeamKills.chemtech_dragon ? (blueTeamKills.chemtech_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    <p className="text-purple-500 font-bold">{blueTeamKills.atakhan} Atakhan{blueTeamKills.atakhan ? "" : "s"} killed</p>
                                 }
                                 allowHTML={true}
                                 interactive={false}
                                 placement="top"
                             >
                                 <div className="flex items-center">
-                                    <img src={chemtech_drakeicon} alt="chemtech_drakeicon" className="h-6" />
-                                    <p className="text-xl">{blueTeamKills.chemtech_dragon}</p>
+                                    <img src={atakhanicon} alt="atakhanicon" className="h-10" />
+                                    <p>{blueTeamKills.atakhan}</p>
                                 </div>
                             </Tippy>
-                        )}
-                        {blueTeamKills.hextech_dragon > 0 && (
                             <Tippy 
                                 content={
-                                    <p className="text-purple-500 font-bold">{blueTeamKills.hextech_dragon} Hextech Drake{blueTeamKills.hextech_dragon ? (blueTeamKills.hextech_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    <p className="text-purple-500 font-bold">{blueTeamKills.turret} Turret{blueTeamKills.turret ? (blueTeamKills.turret === 1 ? "" : "s") : "s"} destroyed</p>
                                 }
                                 allowHTML={true}
                                 interactive={false}
                                 placement="top"
                             >
                                 <div className="flex items-center">
-                                    <img src={hextech_drakeicon} alt="hextech_drakeicon" className="h-6" />
-                                    <p className="text-xl">{blueTeamKills.hextech_dragon}</p>
+                                    <img src={turreticon} alt="turreticon" className="h-10" />
+                                    <p>{blueTeamKills.turret}</p>
                                 </div>
                             </Tippy>
-                        )}
-                        {((blueTeamKills.dragon ?? 0) + (blueTeamKills.dragon ?? 0) > 3) && (
                             <Tippy 
                                 content={
-                                    <p className="text-purple-500 font-bold">{blueTeamKills.elder_dragon} Elder Drake{blueTeamKills.elder_dragon ? (blueTeamKills.elder_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    <p className="text-purple-500 font-bold">{blueTeamKills.inhibitor} Inhibitor{blueTeamKills.inhibitor ? (blueTeamKills.inhibitor === 1 ? "" : "s") : "s"} destroyed</p>
                                 }
                                 allowHTML={true}
                                 interactive={false}
                                 placement="top"
                             >
                                 <div className="flex items-center">
-                                    <img src={elder_drakeicon} alt="elder_drakeicon" className="h-10" />
-                                    <p>{blueTeamKills.elder_dragon}</p>
+                                    <img src={inhibitoricon} alt="inhibitoricon" className="h-10" />
+                                    <p>{blueTeamKills.inhibitor}</p>
                                 </div>
                             </Tippy>
-                        )}
-                        <Tippy 
-                            content={
-                                <p className="text-purple-500 font-bold">{blueTeamKills.herald} Rift Herald{blueTeamKills.herald ? "" : "s"} killed</p>
-                            }
-                            allowHTML={true}
-                            interactive={false}
-                            placement="top"
-                        >
-                            <div className="flex items-center">
-                                <img src={heraldicon} alt="heraldicon" className="h-10" />
-                                <p>{blueTeamKills.herald}</p>
-                            </div>
-                        </Tippy>
-                        <Tippy 
-                            content={
-                                <p className="text-purple-500 font-bold">{blueTeamKills.baron} Baron Nashor{blueTeamKills.baron ? (blueTeamKills.baron === 1 ? "" : "s") : "s"} killed</p>
-                            }
-                            allowHTML={true}
-                            interactive={false}
-                            placement="top"
-                        >
-                            <div className="flex items-center">
-                                <img src={baronicon} alt="baronicon" className="h-10" />
-                                <p>{blueTeamKills.baron}</p>
-                            </div>
-                        </Tippy>
-                        <Tippy 
-                            content={
-                                <p className="text-purple-500 font-bold">{blueTeamKills.atakhan} Atakhan{blueTeamKills.atakhan ? "" : "s"} killed</p>
-                            }
-                            allowHTML={true}
-                            interactive={false}
-                            placement="top"
-                        >
-                            <div className="flex items-center">
-                                <img src={atakhanicon} alt="atakhanicon" className="h-10" />
-                                <p>{blueTeamKills.atakhan}</p>
-                            </div>
-                        </Tippy>
-                        <Tippy 
-                            content={
-                                <p className="text-purple-500 font-bold">{blueTeamKills.turret} Turret{blueTeamKills.turret ? (blueTeamKills.turret === 1 ? "" : "s") : "s"} destroyed</p>
-                            }
-                            allowHTML={true}
-                            interactive={false}
-                            placement="top"
-                        >
-                            <div className="flex items-center">
-                                <img src={turreticon} alt="turreticon" className="h-10" />
-                                <p>{blueTeamKills.turret}</p>
-                            </div>
-                        </Tippy>
-                        <Tippy 
-                            content={
-                                <p className="text-purple-500 font-bold">{blueTeamKills.inhibitor} Inhibitor{blueTeamKills.inhibitor ? (blueTeamKills.inhibitor === 1 ? "" : "s") : "s"} destroyed</p>
-                            }
-                            allowHTML={true}
-                            interactive={false}
-                            placement="top"
-                        >
-                            <div className="flex items-center">
-                                <img src={inhibitoricon} alt="inhibitoricon" className="h-10" />
-                                <p>{blueTeamKills.inhibitor}</p>
-                            </div>
-                        </Tippy>
+                        </div>
+                        <div className="flex flex-1 gap-2 justify-end">
+                            {info.teams.find((team) => team.teamId === 100)?.bans.map((ban) => (
+                                <div className="relative">
+                                    <ChampionImage championId={ban.championId} teamId={100} isTeamIdSame={true} classes="h-10" />
+                                    <img src={forbiddenlight} alt="forbidden" className="absolute h-5 bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/4" />
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
                 <div className={`${blueSideWon ? "bg-[#28344E]" : "bg-[#59343B]"} flex flex-col gap-2 text-sm p-2`}>
@@ -540,7 +551,7 @@ const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: stri
                     ))}
                 </div>
             </div>
-            <div>
+            <div className="mt-2">
                 <div className="flex gap-3 items-center">
                     {!blueSideWon ? 
                         <p className="text-blue-500 font-bold text-lg">Victory</p> 
@@ -548,203 +559,213 @@ const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: stri
                         <p className="text-red-500 font-bold text-lg">Defeat</p>
                     }
                     <p className="text-neutral-400 text-lg">(Red Side)</p>
-                    <div className="flex gap-3 font-normal text-2xl text-neutral-200 py-2">
-                        <Tippy 
-                            content={
-                                <p className="text-purple-500 font-bold">{redTeamKills.grubs} Voidgrub{redTeamKills.grubs ? (redTeamKills.grubs === 1 ? "" : "s") : "s"} killed</p>
-                            }
-                            allowHTML={true}
-                            interactive={false}
-                            placement="top"
-                        >
-                            <div className="flex items-center">
-                                <img src={grubsicon} alt="grubsicon" className="h-10" />
-                                <p>{redTeamKills.grubs}</p>
-                            </div>
-                        </Tippy>
-                        <Tippy 
-                            content={
-                                <p className="text-purple-500 font-bold">{redTeamKills.dragon} Drake{redTeamKills.dragon ? (redTeamKills.dragon === 1 ? "" : "s") : "s"} killed</p>
-                            }
-                            allowHTML={true}
-                            interactive={false}
-                            placement="top"
-                        >
-                            <div className="flex items-center">
-                                <img src={drakeicon} alt="drakeicon" className="h-10" />
-                                <p>{redTeamKills.dragon}</p>
-                            </div>
-                        </Tippy>
-                        {redTeamKills.air_dragon > 0 && (
+                    <div className="flex flex-1 items-center font-normal text-2xl text-neutral-200 py-2">
+                        <div className="flex gap-3">
                             <Tippy 
                                 content={
-                                    <p className="text-purple-500 font-bold">{redTeamKills.air_dragon} Cloud Drake{redTeamKills.air_dragon ? (redTeamKills.air_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    <p className="text-purple-500 font-bold">{redTeamKills.grubs} Voidgrub{redTeamKills.grubs ? (redTeamKills.grubs === 1 ? "" : "s") : "s"} killed</p>
                                 }
                                 allowHTML={true}
                                 interactive={false}
                                 placement="top"
                             >
                                 <div className="flex items-center">
-                                    <img src={air_drakeicon} alt="air_drakeicon" className="h-6" />
-                                    <p className="text-xl">{redTeamKills.air_dragon}</p>
+                                    <img src={grubsicon} alt="grubsicon" className="h-10" />
+                                    <p>{redTeamKills.grubs}</p>
                                 </div>
                             </Tippy>
-                        )}
-                        {redTeamKills.earth_dragon > 0 && (
                             <Tippy 
                                 content={
-                                    <p className="text-purple-500 font-bold">{redTeamKills.earth_dragon} Mountain Drake{redTeamKills.earth_dragon ? (redTeamKills.earth_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    <p className="text-purple-500 font-bold">{redTeamKills.dragon} Drake{redTeamKills.dragon ? (redTeamKills.dragon === 1 ? "" : "s") : "s"} killed</p>
                                 }
                                 allowHTML={true}
                                 interactive={false}
                                 placement="top"
                             >
                                 <div className="flex items-center">
-                                    <img src={earth_drakeicon} alt="earth_drakeicon" className="h-6" />
-                                    <p className="text-xl">{redTeamKills.earth_dragon}</p>
+                                    <img src={drakeicon} alt="drakeicon" className="h-10" />
+                                    <p>{redTeamKills.dragon}</p>
                                 </div>
                             </Tippy>
-                        )}
-                        {redTeamKills.fire_dragon > 0 && (
+                            {redTeamKills.air_dragon > 0 && (
+                                <Tippy 
+                                    content={
+                                        <p className="text-purple-500 font-bold">{redTeamKills.air_dragon} Cloud Drake{redTeamKills.air_dragon ? (redTeamKills.air_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div className="flex items-center">
+                                        <img src={air_drakeicon} alt="air_drakeicon" className="h-6" />
+                                        <p className="text-xl">{redTeamKills.air_dragon}</p>
+                                    </div>
+                                </Tippy>
+                            )}
+                            {redTeamKills.earth_dragon > 0 && (
+                                <Tippy 
+                                    content={
+                                        <p className="text-purple-500 font-bold">{redTeamKills.earth_dragon} Mountain Drake{redTeamKills.earth_dragon ? (redTeamKills.earth_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div className="flex items-center">
+                                        <img src={earth_drakeicon} alt="earth_drakeicon" className="h-6" />
+                                        <p className="text-xl">{redTeamKills.earth_dragon}</p>
+                                    </div>
+                                </Tippy>
+                            )}
+                            {redTeamKills.fire_dragon > 0 && (
+                                <Tippy 
+                                    content={
+                                        <p className="text-purple-500 font-bold">{redTeamKills.fire_dragon} Infernal Drake{redTeamKills.fire_dragon ? (redTeamKills.fire_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div className="flex items-center">
+                                        <img src={fire_drakeicon} alt="fire_drakeicon" className="h-6" />
+                                        <p className="text-xl">{redTeamKills.fire_dragon}</p>
+                                    </div>
+                                </Tippy>
+                            )}
+                            {redTeamKills.water_dragon > 0 && (
+                                <Tippy 
+                                    content={
+                                        <p className="text-purple-500 font-bold">{redTeamKills.water_dragon} Ocean Drake{redTeamKills.water_dragon ? (redTeamKills.water_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div className="flex items-center">
+                                        <img src={water_drakeicon} alt="water_drakeicon" className="h-6" />
+                                        <p className="text-xl">{redTeamKills.water_dragon}</p>
+                                    </div>
+                                </Tippy>
+                            )}
+                            {redTeamKills.chemtech_dragon > 0 && (
+                                <Tippy 
+                                    content={
+                                        <p className="text-purple-500 font-bold">{redTeamKills.chemtech_dragon} Chemtech Drake{redTeamKills.chemtech_dragon ? (redTeamKills.chemtech_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div className="flex items-center">
+                                        <img src={chemtech_drakeicon} alt="chemtech_drakeicon" className="h-6" />
+                                        <p className="text-xl">{redTeamKills.chemtech_dragon}</p>
+                                    </div>
+                                </Tippy>
+                            )}
+                            {redTeamKills.hextech_dragon > 0 && (
+                                <Tippy 
+                                    content={
+                                        <p className="text-purple-500 font-bold">{redTeamKills.hextech_dragon} Hextech Drake{redTeamKills.hextech_dragon ? (redTeamKills.hextech_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div className="flex items-center">
+                                        <img src={hextech_drakeicon} alt="hextech_drakeicon" className="h-6" />
+                                        <p className="text-xl">{redTeamKills.hextech_dragon}</p>
+                                    </div>
+                                </Tippy>
+                            )}
+                            {((blueTeamKills.dragon ?? 0) + (redTeamKills.dragon ?? 0) > 3) && (
+                                <Tippy 
+                                    content={
+                                        <p className="text-purple-500 font-bold">{redTeamKills.elder_dragon} Elder Drake{redTeamKills.elder_dragon ? (redTeamKills.elder_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div className="flex items-center">
+                                        <img src={elder_drakeicon} alt="elder_drakeicon" className="h-10" />
+                                        <p>{redTeamKills.elder_dragon}</p>
+                                    </div>
+                                </Tippy>
+                            )}
                             <Tippy 
                                 content={
-                                    <p className="text-purple-500 font-bold">{redTeamKills.fire_dragon} Infernal Drake{redTeamKills.fire_dragon ? (redTeamKills.fire_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    <p className="text-purple-500 font-bold">{redTeamKills.herald} Rift Herald{redTeamKills.herald ? "" : "s"} killed</p>
                                 }
                                 allowHTML={true}
                                 interactive={false}
                                 placement="top"
                             >
                                 <div className="flex items-center">
-                                    <img src={fire_drakeicon} alt="fire_drakeicon" className="h-6" />
-                                    <p className="text-xl">{redTeamKills.fire_dragon}</p>
+                                    <img src={heraldicon} alt="heraldicon" className="h-10" />
+                                    <p>{redTeamKills.herald}</p>
                                 </div>
                             </Tippy>
-                        )}
-                        {redTeamKills.water_dragon > 0 && (
                             <Tippy 
                                 content={
-                                    <p className="text-purple-500 font-bold">{redTeamKills.water_dragon} Ocean Drake{redTeamKills.water_dragon ? (redTeamKills.water_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    <p className="text-purple-500 font-bold">{redTeamKills.baron} Baron Nashor{redTeamKills.baron ? (redTeamKills.baron === 1 ? "" : "s") : "s"} killed</p>
                                 }
                                 allowHTML={true}
                                 interactive={false}
                                 placement="top"
                             >
                                 <div className="flex items-center">
-                                    <img src={water_drakeicon} alt="water_drakeicon" className="h-6" />
-                                    <p className="text-xl">{redTeamKills.water_dragon}</p>
+                                    <img src={baronicon} alt="baronicon" className="h-10" />
+                                    <p>{redTeamKills.baron}</p>
                                 </div>
                             </Tippy>
-                        )}
-                        {redTeamKills.chemtech_dragon > 0 && (
                             <Tippy 
                                 content={
-                                    <p className="text-purple-500 font-bold">{redTeamKills.chemtech_dragon} Chemtech Drake{redTeamKills.chemtech_dragon ? (redTeamKills.chemtech_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    <p className="text-purple-500 font-bold">{redTeamKills.atakhan} Atakhan{redTeamKills.atakhan ? "" : "s"} killed</p>
                                 }
                                 allowHTML={true}
                                 interactive={false}
                                 placement="top"
                             >
                                 <div className="flex items-center">
-                                    <img src={chemtech_drakeicon} alt="chemtech_drakeicon" className="h-6" />
-                                    <p className="text-xl">{redTeamKills.chemtech_dragon}</p>
+                                    <img src={atakhanicon} alt="atakhanicon" className="h-10" />
+                                    <p>{redTeamKills.atakhan}</p>
                                 </div>
                             </Tippy>
-                        )}
-                        {redTeamKills.hextech_dragon > 0 && (
                             <Tippy 
                                 content={
-                                    <p className="text-purple-500 font-bold">{redTeamKills.hextech_dragon} Hextech Drake{redTeamKills.hextech_dragon ? (redTeamKills.hextech_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    <p className="text-purple-500 font-bold">{redTeamKills.turret} Turret{redTeamKills.turret ? (redTeamKills.turret === 1 ? "" : "s") : "s"} destroyed</p>
                                 }
                                 allowHTML={true}
                                 interactive={false}
                                 placement="top"
                             >
                                 <div className="flex items-center">
-                                    <img src={hextech_drakeicon} alt="hextech_drakeicon" className="h-6" />
-                                    <p className="text-xl">{redTeamKills.hextech_dragon}</p>
+                                    <img src={turreticon} alt="turreticon" className="h-10" />
+                                    <p>{redTeamKills.turret}</p>
                                 </div>
                             </Tippy>
-                        )}
-                        {((blueTeamKills.dragon ?? 0) + (redTeamKills.dragon ?? 0) > 3) && (
                             <Tippy 
                                 content={
-                                    <p className="text-purple-500 font-bold">{redTeamKills.elder_dragon} Elder Drake{redTeamKills.elder_dragon ? (redTeamKills.elder_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                    <p className="text-purple-500 font-bold">{redTeamKills.inhibitor} Inhibitor{redTeamKills.inhibitor ? (redTeamKills.inhibitor === 1 ? "" : "s") : "s"} destroyed</p>
                                 }
                                 allowHTML={true}
                                 interactive={false}
                                 placement="top"
                             >
                                 <div className="flex items-center">
-                                    <img src={elder_drakeicon} alt="elder_drakeicon" className="h-10" />
-                                    <p>{redTeamKills.elder_dragon}</p>
+                                    <img src={inhibitoricon} alt="inhibitoricon" className="h-10" />
+                                    <p>{redTeamKills.inhibitor}</p>
                                 </div>
                             </Tippy>
-                        )}
-                        <Tippy 
-                            content={
-                                <p className="text-purple-500 font-bold">{redTeamKills.herald} Rift Herald{redTeamKills.herald ? "" : "s"} killed</p>
-                            }
-                            allowHTML={true}
-                            interactive={false}
-                            placement="top"
-                        >
-                            <div className="flex items-center">
-                                <img src={heraldicon} alt="heraldicon" className="h-10" />
-                                <p>{redTeamKills.herald}</p>
-                            </div>
-                        </Tippy>
-                        <Tippy 
-                            content={
-                                <p className="text-purple-500 font-bold">{redTeamKills.baron} Baron Nashor{redTeamKills.baron ? (redTeamKills.baron === 1 ? "" : "s") : "s"} killed</p>
-                            }
-                            allowHTML={true}
-                            interactive={false}
-                            placement="top"
-                        >
-                            <div className="flex items-center">
-                                <img src={baronicon} alt="baronicon" className="h-10" />
-                                <p>{redTeamKills.baron}</p>
-                            </div>
-                        </Tippy>
-                        <Tippy 
-                            content={
-                                <p className="text-purple-500 font-bold">{redTeamKills.atakhan} Atakhan{redTeamKills.atakhan ? "" : "s"} killed</p>
-                            }
-                            allowHTML={true}
-                            interactive={false}
-                            placement="top"
-                        >
-                            <div className="flex items-center">
-                                <img src={atakhanicon} alt="atakhanicon" className="h-10" />
-                                <p>{redTeamKills.atakhan}</p>
-                            </div>
-                        </Tippy>
-                        <Tippy 
-                            content={
-                                <p className="text-purple-500 font-bold">{redTeamKills.turret} Turret{redTeamKills.turret ? (redTeamKills.turret === 1 ? "" : "s") : "s"} destroyed</p>
-                            }
-                            allowHTML={true}
-                            interactive={false}
-                            placement="top"
-                        >
-                            <div className="flex items-center">
-                                <img src={turreticon} alt="turreticon" className="h-10" />
-                                <p>{redTeamKills.turret}</p>
-                            </div>
-                        </Tippy>
-                        <Tippy 
-                            content={
-                                <p className="text-purple-500 font-bold">{redTeamKills.inhibitor} Inhibitor{redTeamKills.inhibitor ? (redTeamKills.inhibitor === 1 ? "" : "s") : "s"} destroyed</p>
-                            }
-                            allowHTML={true}
-                            interactive={false}
-                            placement="top"
-                        >
-                            <div className="flex items-center">
-                                <img src={inhibitoricon} alt="inhibitoricon" className="h-10" />
-                                <p>{redTeamKills.inhibitor}</p>
-                            </div>
-                        </Tippy>
+                        </div>
+                        <div className="flex flex-1 gap-2 justify-end">
+                            {info.teams.find((team) => team.teamId === 200)?.bans.map((ban) => (
+                                <div className="relative">
+                                    <ChampionImage championId={ban.championId} teamId={200} isTeamIdSame={true} classes="h-10" />
+                                    <img src={forbiddenlight} alt="forbidden" className="absolute h-5 bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/4" />
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
                 <div className={`${!blueSideWon ? "bg-[#28344E]" : "bg-[#59343B]"} flex flex-col gap-2 text-sm p-2`}>
