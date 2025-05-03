@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 
 import MatchDetailsInfo from "../../interfaces/MatchDetailsInfo";
 import MatchParticipant from "../../interfaces/MatchParticipant";
-import ChampionImage from "../ChampionImage";
+import {ChampionImage} from "../ChampionData";
 
 import blueKaynIcon from "../../assets/blue-kayn-icon.png"
 import redKaynIcon from "../../assets/red-kayn-icon.png"

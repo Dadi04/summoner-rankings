@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-import RuneImage from "../RuneImage";
-import ChampionImage from "../ChampionImage";
-import SummonerSpellImage from "../SummonerSpellImage";
+import {RuneImage} from "../RuneData";
+import {ChampionImage} from "../ChampionData";
+import {SummonerSpellImage} from "../SummonerSpellData";
 import RunesList from "./RunesList";
 
 import Participant from "../../interfaces/LiveGameParticipant";

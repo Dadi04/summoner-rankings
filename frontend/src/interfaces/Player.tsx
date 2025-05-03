@@ -3,7 +3,15 @@ import ChampionStats from "./ChampionStats";
 import Match from "./Match";
 import Entry from "./Entry";
 import Mastery from "./Mastery";
-import SummonerInfo from "./SummonerInfo";
+
+interface Summoner {
+    accountId: string;
+    profileIconId: number;
+    revisionDate: number;
+    id: string;
+    puuid: string;
+    summonerLevel: number;
+};
 
 interface Player {
     summonerName: string;
@@ -11,7 +19,7 @@ interface Player {
     region: string;
     puuid: string;
     playerData: string;
-    summonerData: SummonerInfo;
+    summonerData: Summoner;
     entriesData: Entry[];
     masteriesData: Mastery[];
     totalMasteryScoreData: number;

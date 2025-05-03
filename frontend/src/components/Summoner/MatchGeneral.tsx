@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
+import Tippy from "@tippyjs/react";
+import "tippy.js/dist/tippy.css";
 
 import MatchDetailsInfo from "../../interfaces/MatchDetailsInfo";
-import ChampionImage from "../ChampionImage";
-import RuneImage from "../RuneImage";
-import SummonerSpellImage from "../SummonerSpellImage";
-import ItemImage from "../ItemImage";
+import {ChampionImage} from "../ChampionData";
+import {RuneImage, RuneName, RuneTooltip} from "../RuneData";
+import {SummonerSpellImage, SummonerSpellName, SummonerSpellTooltip} from "../SummonerSpellData";
+import {ItemImage, ItemName, ItemPlaintext, ItemDescription, ItemPrice} from "../ItemData";
 
 import grubsicon from "../../assets/monsters/icons/grubs.png";
 import drakeicon from "../../assets/monsters/icons/dragon.png";
@@ -103,76 +105,202 @@ const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: stri
                     }
                     <p className="text-neutral-400 text-lg">(Blue Side)</p>
                     <div className="flex gap-3 font-normal text-2xl text-neutral-200 py-2">
-                        <div className="flex items-center">
-                            <img src={grubsicon} alt="grubsicon" className="h-10" />
-                            <p>{blueTeamKills.grubs}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={drakeicon} alt="drakeicon" className="h-10" />
-                            <p>{blueTeamKills.dragon}</p>
-                        </div>
-                        {blueTeamKills.air_dragon > 0 && (
+                        <Tippy 
+                            content={
+                                <p className="text-purple-500 font-bold">{blueTeamKills.grubs} Voidgrub{blueTeamKills.grubs ? (blueTeamKills.grubs === 1 ? "" : "s") : "s"} killed</p>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
                             <div className="flex items-center">
-                                <img src={air_drakeicon} alt="air_drakeicon" className="h-6" />
-                                <p className="text-xl">{blueTeamKills.air_dragon}</p>
+                                <img src={grubsicon} alt="grubsicon" className="h-10" />
+                                <p>{blueTeamKills.grubs}</p>
                             </div>
+                        </Tippy>
+                        <Tippy 
+                            content={
+                                <p className="text-purple-500 font-bold">{blueTeamKills.dragon} Drake{blueTeamKills.dragon ? (blueTeamKills.dragon === 1 ? "" : "s") : "s"} killed</p>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div className="flex items-center">
+                                <img src={drakeicon} alt="drakeicon" className="h-10" />
+                                <p>{blueTeamKills.dragon}</p>
+                            </div>
+                        </Tippy>
+                        {blueTeamKills.air_dragon > 0 && (
+                            <Tippy 
+                                content={
+                                    <p className="text-purple-500 font-bold">{blueTeamKills.air_dragon} Cloud Drake{blueTeamKills.air_dragon ? (blueTeamKills.air_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                }
+                                allowHTML={true}
+                                interactive={false}
+                                placement="top"
+                            >
+                                <div className="flex items-center">
+                                    <img src={air_drakeicon} alt="air_drakeicon" className="h-6" />
+                                    <p className="text-xl">{blueTeamKills.air_dragon}</p>
+                                </div>
+                            </Tippy>
                         )}
                         {blueTeamKills.earth_dragon > 0 && (
-                            <div className="flex items-center">
-                                <img src={earth_drakeicon} alt="earth_drakeicon" className="h-6" />
-                                <p className="text-xl">{blueTeamKills.earth_dragon}</p>
-                            </div>
+                            <Tippy 
+                                content={
+                                    <p className="text-purple-500 font-bold">{blueTeamKills.earth_dragon} Mountain Drake{blueTeamKills.earth_dragon ? (blueTeamKills.earth_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                }
+                                allowHTML={true}
+                                interactive={false}
+                                placement="top"
+                            >
+                                <div className="flex items-center">
+                                    <img src={earth_drakeicon} alt="earth_drakeicon" className="h-6" />
+                                    <p className="text-xl">{blueTeamKills.earth_dragon}</p>
+                                </div>
+                            </Tippy>
                         )}
                         {blueTeamKills.fire_dragon > 0 && (
-                            <div className="flex items-center">
-                                <img src={fire_drakeicon} alt="fire_drakeicon" className="h-6" />
-                                <p className="text-xl">{blueTeamKills.fire_dragon}</p>
-                            </div>
+                            <Tippy 
+                                content={
+                                    <p className="text-purple-500 font-bold">{blueTeamKills.fire_dragon} Infernal Drake{blueTeamKills.fire_dragon ? (blueTeamKills.fire_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                }
+                                allowHTML={true}
+                                interactive={false}
+                                placement="top"
+                            >
+                                <div className="flex items-center">
+                                    <img src={fire_drakeicon} alt="fire_drakeicon" className="h-6" />
+                                    <p className="text-xl">{blueTeamKills.fire_dragon}</p>
+                                </div>
+                            </Tippy>
                         )}
                         {blueTeamKills.water_dragon > 0 && (
-                            <div className="flex items-center">
-                                <img src={water_drakeicon} alt="water_drakeicon" className="h-6" />
-                                <p className="text-xl">{blueTeamKills.water_dragon}</p>
-                            </div>
+                            <Tippy 
+                                content={
+                                    <p className="text-purple-500 font-bold">{blueTeamKills.water_dragon} Ocean Drake{blueTeamKills.water_dragon ? (blueTeamKills.water_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                }
+                                allowHTML={true}
+                                interactive={false}
+                                placement="top"
+                            >
+                                <div className="flex items-center">
+                                    <img src={water_drakeicon} alt="water_drakeicon" className="h-6" />
+                                    <p className="text-xl">{blueTeamKills.water_dragon}</p>
+                                </div>
+                            </Tippy>
                         )}
                         {blueTeamKills.chemtech_dragon > 0 && (
-                            <div className="flex items-center">
-                                <img src={chemtech_drakeicon} alt="chemtech_drakeicon" className="h-6" />
-                                <p className="text-xl">{blueTeamKills.chemtech_dragon}</p>
-                            </div>
+                            <Tippy 
+                                content={
+                                    <p className="text-purple-500 font-bold">{blueTeamKills.chemtech_dragon} Chemtech Drake{blueTeamKills.chemtech_dragon ? (blueTeamKills.chemtech_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                }
+                                allowHTML={true}
+                                interactive={false}
+                                placement="top"
+                            >
+                                <div className="flex items-center">
+                                    <img src={chemtech_drakeicon} alt="chemtech_drakeicon" className="h-6" />
+                                    <p className="text-xl">{blueTeamKills.chemtech_dragon}</p>
+                                </div>
+                            </Tippy>
                         )}
                         {blueTeamKills.hextech_dragon > 0 && (
-                            <div className="flex items-center">
-                                <img src={hextech_drakeicon} alt="hextech_drakeicon" className="h-6" />
-                                <p className="text-xl">{blueTeamKills.hextech_dragon}</p>
-                            </div>
+                            <Tippy 
+                                content={
+                                    <p className="text-purple-500 font-bold">{blueTeamKills.hextech_dragon} Hextech Drake{blueTeamKills.hextech_dragon ? (blueTeamKills.hextech_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                }
+                                allowHTML={true}
+                                interactive={false}
+                                placement="top"
+                            >
+                                <div className="flex items-center">
+                                    <img src={hextech_drakeicon} alt="hextech_drakeicon" className="h-6" />
+                                    <p className="text-xl">{blueTeamKills.hextech_dragon}</p>
+                                </div>
+                            </Tippy>
                         )}
-                        {((blueTeamKills.dragon ?? 0) + (redTeamKills.dragon ?? 0) > 3) && (
-                            <div className="flex items-center">
-                                <img src={elder_drakeicon} alt="elder_drakeicon" className="h-10" />
-                                <p>{blueTeamKills.elder_dragon}</p>
-                            </div>
+                        {((blueTeamKills.dragon ?? 0) + (blueTeamKills.dragon ?? 0) > 3) && (
+                            <Tippy 
+                                content={
+                                    <p className="text-purple-500 font-bold">{blueTeamKills.elder_dragon} Elder Drake{blueTeamKills.elder_dragon ? (blueTeamKills.elder_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                }
+                                allowHTML={true}
+                                interactive={false}
+                                placement="top"
+                            >
+                                <div className="flex items-center">
+                                    <img src={elder_drakeicon} alt="elder_drakeicon" className="h-10" />
+                                    <p>{blueTeamKills.elder_dragon}</p>
+                                </div>
+                            </Tippy>
                         )}
-                        <div className="flex items-center">
-                            <img src={heraldicon} alt="heraldicon" className="h-10" />
-                            <p>{blueTeamKills.herald}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={baronicon} alt="baronicon" className="h-10" />
-                            <p>{blueTeamKills.baron}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={atakhanicon} alt="atakhanicon" className="h-10" />
-                            <p>{blueTeamKills.atakhan}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={turreticon} alt="turreticon" className="h-10" />
-                            <p>{blueTeamKills.turret}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={inhibitoricon} alt="inhibitoricon" className="h-10" />
-                            <p>{blueTeamKills.inhibitor}</p>
-                        </div>
+                        <Tippy 
+                            content={
+                                <p className="text-purple-500 font-bold">{blueTeamKills.herald} Rift Herald{blueTeamKills.herald ? "" : "s"} killed</p>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div className="flex items-center">
+                                <img src={heraldicon} alt="heraldicon" className="h-10" />
+                                <p>{blueTeamKills.herald}</p>
+                            </div>
+                        </Tippy>
+                        <Tippy 
+                            content={
+                                <p className="text-purple-500 font-bold">{blueTeamKills.baron} Baron Nashor{blueTeamKills.baron ? (blueTeamKills.baron === 1 ? "" : "s") : "s"} killed</p>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div className="flex items-center">
+                                <img src={baronicon} alt="baronicon" className="h-10" />
+                                <p>{blueTeamKills.baron}</p>
+                            </div>
+                        </Tippy>
+                        <Tippy 
+                            content={
+                                <p className="text-purple-500 font-bold">{blueTeamKills.atakhan} Atakhan{blueTeamKills.atakhan ? "" : "s"} killed</p>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div className="flex items-center">
+                                <img src={atakhanicon} alt="atakhanicon" className="h-10" />
+                                <p>{blueTeamKills.atakhan}</p>
+                            </div>
+                        </Tippy>
+                        <Tippy 
+                            content={
+                                <p className="text-purple-500 font-bold">{blueTeamKills.turret} Turret{blueTeamKills.turret ? (blueTeamKills.turret === 1 ? "" : "s") : "s"} destroyed</p>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div className="flex items-center">
+                                <img src={turreticon} alt="turreticon" className="h-10" />
+                                <p>{blueTeamKills.turret}</p>
+                            </div>
+                        </Tippy>
+                        <Tippy 
+                            content={
+                                <p className="text-purple-500 font-bold">{blueTeamKills.inhibitor} Inhibitor{blueTeamKills.inhibitor ? (blueTeamKills.inhibitor === 1 ? "" : "s") : "s"} destroyed</p>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div className="flex items-center">
+                                <img src={inhibitoricon} alt="inhibitoricon" className="h-10" />
+                                <p>{blueTeamKills.inhibitor}</p>
+                            </div>
+                        </Tippy>
                     </div>
                 </div>
                 <div className={`${blueSideWon ? "bg-[#28344E]" : "bg-[#59343B]"} flex flex-col gap-2 text-sm p-2`}>
@@ -195,13 +323,68 @@ const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: stri
                                     <p className="absolute text-sm right-0 bottom-0 transform translate-x-[2px] translate-y-[2px] bg-neutral-800 border border-neutral-400 px-0.5">{participant.champLevel}</p>
                                 </div>
                                 <div className="flex flex-col gap-1">
-                                    <SummonerSpellImage spellId={participant.summoner1Id} classes="h-6" />
-                                    <SummonerSpellImage spellId={participant.summoner2Id} classes="h-6" />
+                                    <Tippy
+                                        content={
+                                            <div>
+                                                <SummonerSpellName spellId={participant.summoner1Id} classes="text-sm font-bold text-purple-500" />
+                                                <SummonerSpellTooltip spellId={participant.summoner1Id} classes="text-sm" />
+                                            </div>
+                                        }
+                                        allowHTML={true}
+                                        interactive={false}
+                                        placement="top"
+                                    >
+                                        <div>
+                                            <SummonerSpellImage spellId={participant.summoner1Id} classes="h-6" />
+                                        </div>
+                                    </Tippy>
+                                    <Tippy
+                                        content={
+                                            <div>
+                                                <SummonerSpellName spellId={participant.summoner2Id} classes="text-md font-bold text-purple-500" />
+                                                <SummonerSpellTooltip spellId={participant.summoner2Id} classes="text-sm" />
+                                            </div>
+                                        }
+                                        allowHTML={true}
+                                        interactive={false}
+                                        placement="top"
+                                    >
+                                        <div>
+                                            <SummonerSpellImage spellId={participant.summoner2Id} classes="h-6" />
+                                        </div>
+                                    </Tippy>
                                 </div>
                                 {participant.perks.styles[0].style ? (
                                     <div className="flex flex-col gap-1">
-                                        <RuneImage runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="h-6" />
-                                        <RuneImage runeTypeId={participant.perks.styles[1].style} classes="h-6" />
+                                        <Tippy
+                                            content={
+                                                <div>
+                                                    <RuneName runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="text-md font-bold text-purple-500" />
+                                                    <RuneTooltip runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="text-sm" />
+                                                </div>
+                                            }
+                                            allowHTML={true}
+                                            interactive={false}
+                                            placement="top"
+                                        >
+                                            <div>
+                                                <RuneImage runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="h-6" />
+                                            </div>
+                                        </Tippy>
+                                        <Tippy
+                                            content={
+                                                <div>
+                                                    <RuneName runeTypeId={participant.perks.styles[1].style} classes="text-md font-bold text-purple-500" />
+                                                </div>
+                                            }
+                                            allowHTML={true}
+                                            interactive={false}
+                                            placement="top"
+                                        >
+                                            <div>
+                                                <RuneImage runeTypeId={participant.perks.styles[1].style} classes="h-6" />
+                                            </div>
+                                        </Tippy>
                                     </div>
                                 ) : (
                                     <></>
@@ -233,13 +416,125 @@ const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: stri
                                 <p className="text-neutral-400">CS/min</p>
                             </div>
                             <div className="flex gap-2">
-                                <ItemImage itemId={participant.item0} matchWon={participant.win} classes="h-8" />
-                                <ItemImage itemId={participant.item1} matchWon={participant.win} classes="h-8" />
-                                <ItemImage itemId={participant.item2} matchWon={participant.win} classes="h-8" />
-                                <ItemImage itemId={participant.item3} matchWon={participant.win} classes="h-8" />
-                                <ItemImage itemId={participant.item4} matchWon={participant.win} classes="h-8" />
-                                <ItemImage itemId={participant.item5} matchWon={participant.win} classes="h-8" />
-                                <ItemImage itemId={participant.item6} matchWon={participant.win} classes="h-8" />
+                                <Tippy
+                                    content={
+                                        <div>
+                                            <ItemName itemId={participant.item0} classes="text-md font-bold text-purple-500" />
+                                            <ItemPlaintext itemId={participant.item0} classes="text-sm" />
+                                            <ItemDescription itemId={participant.item0} classes="text-sm" />
+                                            <ItemPrice itemId={participant.item0} classes="text-sm text-orange-500" />
+                                        </div>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div>
+                                        <ItemImage itemId={participant.item0} matchWon={participant.win} classes="h-8" />
+                                    </div>
+                                </Tippy>
+                                <Tippy
+                                    content={
+                                        <div>
+                                            <ItemName itemId={participant.item1} classes="text-md font-bold text-purple-500" />
+                                            <ItemPlaintext itemId={participant.item1} classes="text-sm" />
+                                            <ItemDescription itemId={participant.item1} classes="text-sm" />
+                                            <ItemPrice itemId={participant.item1} classes="text-sm text-orange-500" />
+                                        </div>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div>
+                                        <ItemImage itemId={participant.item1} matchWon={participant.win} classes="h-8" />
+                                    </div>
+                                </Tippy>
+                                <Tippy
+                                    content={
+                                        <div>
+                                            <ItemName itemId={participant.item2} classes="text-md font-bold text-purple-500" />
+                                            <ItemPlaintext itemId={participant.item2} classes="text-sm" />
+                                            <ItemDescription itemId={participant.item2} classes="text-sm" />
+                                            <ItemPrice itemId={participant.item2} classes="text-sm text-orange-500" />
+                                        </div>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div>
+                                        <ItemImage itemId={participant.item2} matchWon={participant.win} classes="h-8" />
+                                    </div>
+                                </Tippy>
+                                <Tippy
+                                    content={
+                                        <div>
+                                            <ItemName itemId={participant.item3} classes="text-md font-bold text-purple-500" />
+                                            <ItemPlaintext itemId={participant.item3} classes="text-sm" />
+                                            <ItemDescription itemId={participant.item3} classes="text-sm" />
+                                            <ItemPrice itemId={participant.item3} classes="text-sm text-orange-500" />
+                                        </div>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div>
+                                        <ItemImage itemId={participant.item3} matchWon={participant.win} classes="h-8" />
+                                    </div>
+                                </Tippy>
+                                <Tippy
+                                    content={
+                                        <div>
+                                            <ItemName itemId={participant.item4} classes="text-md font-bold text-purple-500" />
+                                            <ItemPlaintext itemId={participant.item4} classes="text-sm" />
+                                            <ItemDescription itemId={participant.item4} classes="text-sm" />
+                                            <ItemPrice itemId={participant.item4} classes="text-sm text-orange-500" />
+                                        </div>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div>
+                                        <ItemImage itemId={participant.item4} matchWon={participant.win} classes="h-8" />
+                                    </div>
+                                </Tippy>
+                                <Tippy
+                                    content={
+                                        <div>
+                                            <ItemName itemId={participant.item5} classes="text-md font-bold text-purple-500" />
+                                            <ItemPlaintext itemId={participant.item5} classes="text-sm" />
+                                            <ItemDescription itemId={participant.item5} classes="text-sm" />
+                                            <ItemPrice itemId={participant.item5} classes="text-sm text-orange-500" />
+                                        </div>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div>
+                                        <ItemImage itemId={participant.item5} matchWon={participant.win} classes="h-8" />
+                                    </div>
+                                </Tippy>
+                                <Tippy
+                                    content={
+                                        <div>
+                                            <ItemName itemId={participant.item6} classes="text-md font-bold text-purple-500" />
+                                            <ItemPlaintext itemId={participant.item6} classes="text-sm" />
+                                            <ItemDescription itemId={participant.item6} classes="text-sm" />
+                                            <ItemPrice itemId={participant.item6} classes="text-sm text-orange-500" />
+                                        </div>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div>
+                                        <ItemImage itemId={participant.item6} matchWon={participant.win} classes="h-8" />
+                                    </div>
+                                </Tippy>
                             </div>
                         </div>
                     ))}
@@ -254,76 +549,202 @@ const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: stri
                     }
                     <p className="text-neutral-400 text-lg">(Red Side)</p>
                     <div className="flex gap-3 font-normal text-2xl text-neutral-200 py-2">
-                        <div className="flex items-center">
-                            <img src={grubsicon} alt="grubsicon" className="h-10" />
-                            <p>{redTeamKills.grubs}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={drakeicon} alt="drakeicon" className="h-10" />
-                            <p>{redTeamKills.dragon}</p>
-                        </div>
-                        {redTeamKills.air_dragon > 0 && (
+                        <Tippy 
+                            content={
+                                <p className="text-purple-500 font-bold">{redTeamKills.grubs} Voidgrub{redTeamKills.grubs ? (redTeamKills.grubs === 1 ? "" : "s") : "s"} killed</p>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
                             <div className="flex items-center">
-                                <img src={air_drakeicon} alt="air_drakeicon" className="h-6" />
-                                <p className="text-xl">{redTeamKills.air_dragon}</p>
+                                <img src={grubsicon} alt="grubsicon" className="h-10" />
+                                <p>{redTeamKills.grubs}</p>
                             </div>
+                        </Tippy>
+                        <Tippy 
+                            content={
+                                <p className="text-purple-500 font-bold">{redTeamKills.dragon} Drake{redTeamKills.dragon ? (redTeamKills.dragon === 1 ? "" : "s") : "s"} killed</p>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div className="flex items-center">
+                                <img src={drakeicon} alt="drakeicon" className="h-10" />
+                                <p>{redTeamKills.dragon}</p>
+                            </div>
+                        </Tippy>
+                        {redTeamKills.air_dragon > 0 && (
+                            <Tippy 
+                                content={
+                                    <p className="text-purple-500 font-bold">{redTeamKills.air_dragon} Cloud Drake{redTeamKills.air_dragon ? (redTeamKills.air_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                }
+                                allowHTML={true}
+                                interactive={false}
+                                placement="top"
+                            >
+                                <div className="flex items-center">
+                                    <img src={air_drakeicon} alt="air_drakeicon" className="h-6" />
+                                    <p className="text-xl">{redTeamKills.air_dragon}</p>
+                                </div>
+                            </Tippy>
                         )}
                         {redTeamKills.earth_dragon > 0 && (
-                            <div className="flex items-center">
-                                <img src={earth_drakeicon} alt="earth_drakeicon" className="h-6" />
-                                <p className="text-xl">{redTeamKills.earth_dragon}</p>
-                            </div>
+                            <Tippy 
+                                content={
+                                    <p className="text-purple-500 font-bold">{redTeamKills.earth_dragon} Mountain Drake{redTeamKills.earth_dragon ? (redTeamKills.earth_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                }
+                                allowHTML={true}
+                                interactive={false}
+                                placement="top"
+                            >
+                                <div className="flex items-center">
+                                    <img src={earth_drakeicon} alt="earth_drakeicon" className="h-6" />
+                                    <p className="text-xl">{redTeamKills.earth_dragon}</p>
+                                </div>
+                            </Tippy>
                         )}
                         {redTeamKills.fire_dragon > 0 && (
-                            <div className="flex items-center">
-                                <img src={fire_drakeicon} alt="fire_drakeicon" className="h-6" />
-                                <p className="text-xl">{redTeamKills.fire_dragon}</p>
-                            </div>
+                            <Tippy 
+                                content={
+                                    <p className="text-purple-500 font-bold">{redTeamKills.fire_dragon} Infernal Drake{redTeamKills.fire_dragon ? (redTeamKills.fire_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                }
+                                allowHTML={true}
+                                interactive={false}
+                                placement="top"
+                            >
+                                <div className="flex items-center">
+                                    <img src={fire_drakeicon} alt="fire_drakeicon" className="h-6" />
+                                    <p className="text-xl">{redTeamKills.fire_dragon}</p>
+                                </div>
+                            </Tippy>
                         )}
                         {redTeamKills.water_dragon > 0 && (
-                            <div className="flex items-center">
-                                <img src={water_drakeicon} alt="water_drakeicon" className="h-6" />
-                                <p className="text-xl">{redTeamKills.water_dragon}</p>
-                            </div>
+                            <Tippy 
+                                content={
+                                    <p className="text-purple-500 font-bold">{redTeamKills.water_dragon} Ocean Drake{redTeamKills.water_dragon ? (redTeamKills.water_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                }
+                                allowHTML={true}
+                                interactive={false}
+                                placement="top"
+                            >
+                                <div className="flex items-center">
+                                    <img src={water_drakeicon} alt="water_drakeicon" className="h-6" />
+                                    <p className="text-xl">{redTeamKills.water_dragon}</p>
+                                </div>
+                            </Tippy>
                         )}
                         {redTeamKills.chemtech_dragon > 0 && (
-                            <div className="flex items-center">
-                                <img src={chemtech_drakeicon} alt="chemtech_drakeicon" className="h-6" />
-                                <p className="text-xl">{redTeamKills.chemtech_dragon}</p>
-                            </div>
+                            <Tippy 
+                                content={
+                                    <p className="text-purple-500 font-bold">{redTeamKills.chemtech_dragon} Chemtech Drake{redTeamKills.chemtech_dragon ? (redTeamKills.chemtech_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                }
+                                allowHTML={true}
+                                interactive={false}
+                                placement="top"
+                            >
+                                <div className="flex items-center">
+                                    <img src={chemtech_drakeicon} alt="chemtech_drakeicon" className="h-6" />
+                                    <p className="text-xl">{redTeamKills.chemtech_dragon}</p>
+                                </div>
+                            </Tippy>
                         )}
                         {redTeamKills.hextech_dragon > 0 && (
-                            <div className="flex items-center">
-                                <img src={hextech_drakeicon} alt="hextech_drakeicon" className="h-6" />
-                                <p className="text-xl">{redTeamKills.hextech_dragon}</p>
-                            </div>
+                            <Tippy 
+                                content={
+                                    <p className="text-purple-500 font-bold">{redTeamKills.hextech_dragon} Hextech Drake{redTeamKills.hextech_dragon ? (redTeamKills.hextech_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                }
+                                allowHTML={true}
+                                interactive={false}
+                                placement="top"
+                            >
+                                <div className="flex items-center">
+                                    <img src={hextech_drakeicon} alt="hextech_drakeicon" className="h-6" />
+                                    <p className="text-xl">{redTeamKills.hextech_dragon}</p>
+                                </div>
+                            </Tippy>
                         )}
                         {((blueTeamKills.dragon ?? 0) + (redTeamKills.dragon ?? 0) > 3) && (
-                            <div className="flex items-center">
-                                <img src={elder_drakeicon} alt="elder_drakeicon" className="h-10" />
-                                <p>{redTeamKills.elder_dragon}</p>
-                            </div>
+                            <Tippy 
+                                content={
+                                    <p className="text-purple-500 font-bold">{redTeamKills.elder_dragon} Elder Drake{redTeamKills.elder_dragon ? (redTeamKills.elder_dragon === 1 ? "" : "s") : "s"} killed</p>
+                                }
+                                allowHTML={true}
+                                interactive={false}
+                                placement="top"
+                            >
+                                <div className="flex items-center">
+                                    <img src={elder_drakeicon} alt="elder_drakeicon" className="h-10" />
+                                    <p>{redTeamKills.elder_dragon}</p>
+                                </div>
+                            </Tippy>
                         )}
-                        <div className="flex items-center">
-                            <img src={heraldicon} alt="heraldicon" className="h-10" />
-                            <p>{redTeamKills.herald}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={baronicon} alt="baronicon" className="h-10" />
-                            <p>{redTeamKills.baron}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={atakhanicon} alt="atakhanicon" className="h-10" />
-                            <p>{redTeamKills.atakhan}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={turreticon} alt="turreticon" className="h-10" />
-                            <p>{redTeamKills.turret}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <img src={inhibitoricon} alt="inhibitoricon" className="h-10" />
-                            <p>{redTeamKills.inhibitor}</p>
-                        </div>
+                        <Tippy 
+                            content={
+                                <p className="text-purple-500 font-bold">{redTeamKills.herald} Rift Herald{redTeamKills.herald ? "" : "s"} killed</p>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div className="flex items-center">
+                                <img src={heraldicon} alt="heraldicon" className="h-10" />
+                                <p>{redTeamKills.herald}</p>
+                            </div>
+                        </Tippy>
+                        <Tippy 
+                            content={
+                                <p className="text-purple-500 font-bold">{redTeamKills.baron} Baron Nashor{redTeamKills.baron ? (redTeamKills.baron === 1 ? "" : "s") : "s"} killed</p>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div className="flex items-center">
+                                <img src={baronicon} alt="baronicon" className="h-10" />
+                                <p>{redTeamKills.baron}</p>
+                            </div>
+                        </Tippy>
+                        <Tippy 
+                            content={
+                                <p className="text-purple-500 font-bold">{redTeamKills.atakhan} Atakhan{redTeamKills.atakhan ? "" : "s"} killed</p>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div className="flex items-center">
+                                <img src={atakhanicon} alt="atakhanicon" className="h-10" />
+                                <p>{redTeamKills.atakhan}</p>
+                            </div>
+                        </Tippy>
+                        <Tippy 
+                            content={
+                                <p className="text-purple-500 font-bold">{redTeamKills.turret} Turret{redTeamKills.turret ? (redTeamKills.turret === 1 ? "" : "s") : "s"} destroyed</p>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div className="flex items-center">
+                                <img src={turreticon} alt="turreticon" className="h-10" />
+                                <p>{redTeamKills.turret}</p>
+                            </div>
+                        </Tippy>
+                        <Tippy 
+                            content={
+                                <p className="text-purple-500 font-bold">{redTeamKills.inhibitor} Inhibitor{redTeamKills.inhibitor ? (redTeamKills.inhibitor === 1 ? "" : "s") : "s"} destroyed</p>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div className="flex items-center">
+                                <img src={inhibitoricon} alt="inhibitoricon" className="h-10" />
+                                <p>{redTeamKills.inhibitor}</p>
+                            </div>
+                        </Tippy>
                     </div>
                 </div>
                 <div className={`${!blueSideWon ? "bg-[#28344E]" : "bg-[#59343B]"} flex flex-col gap-2 text-sm p-2`}>
@@ -346,13 +767,68 @@ const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: stri
                                     <p className="absolute text-sm right-0 bottom-0 transform translate-x-[2px] translate-y-[2px] bg-neutral-800 border border-neutral-400 px-0.5">{participant.champLevel}</p>
                                 </div>
                                 <div className="flex flex-col gap-1">
-                                    <SummonerSpellImage spellId={participant.summoner1Id} classes="h-6" />
-                                    <SummonerSpellImage spellId={participant.summoner2Id} classes="h-6" />
+                                    <Tippy
+                                        content={
+                                            <div>
+                                                <SummonerSpellName spellId={participant.summoner1Id} classes="text-sm font-bold text-purple-500" />
+                                                <SummonerSpellTooltip spellId={participant.summoner1Id} classes="text-sm" />
+                                            </div>
+                                        }
+                                        allowHTML={true}
+                                        interactive={false}
+                                        placement="top"
+                                    >
+                                        <div>
+                                            <SummonerSpellImage spellId={participant.summoner1Id} classes="h-6" />
+                                        </div>
+                                    </Tippy>
+                                    <Tippy
+                                        content={
+                                            <div>
+                                                <SummonerSpellName spellId={participant.summoner2Id} classes="text-md font-bold text-purple-500" />
+                                                <SummonerSpellTooltip spellId={participant.summoner2Id} classes="text-sm" />
+                                            </div>
+                                        }
+                                        allowHTML={true}
+                                        interactive={false}
+                                        placement="top"
+                                    >
+                                        <div>
+                                            <SummonerSpellImage spellId={participant.summoner2Id} classes="h-6" />
+                                        </div>
+                                    </Tippy>
                                 </div>
                                 {participant.perks.styles[0].style ? (
                                     <div className="flex flex-col gap-1">
-                                        <RuneImage runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="h-6" />
-                                        <RuneImage runeTypeId={participant.perks.styles[1].style} classes="h-6" />
+                                        <Tippy
+                                            content={
+                                                <div>
+                                                    <RuneName runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="text-md font-bold text-purple-500" />
+                                                    <RuneTooltip runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="text-sm" />
+                                                </div>
+                                            }
+                                            allowHTML={true}
+                                            interactive={false}
+                                            placement="top"
+                                        >
+                                            <div>
+                                                <RuneImage runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="h-6" />
+                                            </div>
+                                        </Tippy>
+                                        <Tippy
+                                            content={
+                                                <div>
+                                                    <RuneName runeTypeId={participant.perks.styles[1].style} classes="text-md font-bold text-purple-500" />
+                                                </div>
+                                            }
+                                            allowHTML={true}
+                                            interactive={false}
+                                            placement="top"
+                                        >
+                                            <div>
+                                                <RuneImage runeTypeId={participant.perks.styles[1].style} classes="h-6" />
+                                            </div>
+                                        </Tippy>
                                     </div>
                                 ) : (
                                     <></>
@@ -384,13 +860,125 @@ const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: stri
                                 <p className="text-neutral-400">CS/min</p>
                             </div>
                             <div className="flex gap-2">
-                                <ItemImage itemId={participant.item0} matchWon={participant.win} classes="h-8" />
-                                <ItemImage itemId={participant.item1} matchWon={participant.win} classes="h-8" />
-                                <ItemImage itemId={participant.item2} matchWon={participant.win} classes="h-8" />
-                                <ItemImage itemId={participant.item3} matchWon={participant.win} classes="h-8" />
-                                <ItemImage itemId={participant.item4} matchWon={participant.win} classes="h-8" />
-                                <ItemImage itemId={participant.item5} matchWon={participant.win} classes="h-8" />
-                                <ItemImage itemId={participant.item6} matchWon={participant.win} classes="h-8" />
+                                <Tippy
+                                    content={
+                                        <div>
+                                            <ItemName itemId={participant.item0} classes="text-md font-bold text-purple-500" />
+                                            <ItemPlaintext itemId={participant.item0} classes="text-sm" />
+                                            <ItemDescription itemId={participant.item0} classes="text-sm" />
+                                            <ItemPrice itemId={participant.item0} classes="text-sm text-orange-500" />
+                                        </div>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div>
+                                        <ItemImage itemId={participant.item0} matchWon={participant.win} classes="h-8" />
+                                    </div>
+                                </Tippy>
+                                <Tippy
+                                    content={
+                                        <div>
+                                            <ItemName itemId={participant.item1} classes="text-md font-bold text-purple-500" />
+                                            <ItemPlaintext itemId={participant.item1} classes="text-sm" />
+                                            <ItemDescription itemId={participant.item1} classes="text-sm" />
+                                            <ItemPrice itemId={participant.item1} classes="text-sm text-orange-500" />
+                                        </div>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div>
+                                        <ItemImage itemId={participant.item1} matchWon={participant.win} classes="h-8" />
+                                    </div>
+                                </Tippy>
+                                <Tippy
+                                    content={
+                                        <div>
+                                            <ItemName itemId={participant.item2} classes="text-md font-bold text-purple-500" />
+                                            <ItemPlaintext itemId={participant.item2} classes="text-sm" />
+                                            <ItemDescription itemId={participant.item2} classes="text-sm" />
+                                            <ItemPrice itemId={participant.item2} classes="text-sm text-orange-500" />
+                                        </div>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div>
+                                        <ItemImage itemId={participant.item2} matchWon={participant.win} classes="h-8" />
+                                    </div>
+                                </Tippy>
+                                <Tippy
+                                    content={
+                                        <div>
+                                            <ItemName itemId={participant.item3} classes="text-md font-bold text-purple-500" />
+                                            <ItemPlaintext itemId={participant.item3} classes="text-sm" />
+                                            <ItemDescription itemId={participant.item3} classes="text-sm" />
+                                            <ItemPrice itemId={participant.item3} classes="text-sm text-orange-500" />
+                                        </div>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div>
+                                        <ItemImage itemId={participant.item3} matchWon={participant.win} classes="h-8" />
+                                    </div>
+                                </Tippy>
+                                <Tippy
+                                    content={
+                                        <div>
+                                            <ItemName itemId={participant.item4} classes="text-md font-bold text-purple-500" />
+                                            <ItemPlaintext itemId={participant.item4} classes="text-sm" />
+                                            <ItemDescription itemId={participant.item4} classes="text-sm" />
+                                            <ItemPrice itemId={participant.item4} classes="text-sm text-orange-500" />
+                                        </div>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div>
+                                        <ItemImage itemId={participant.item4} matchWon={participant.win} classes="h-8" />
+                                    </div>
+                                </Tippy>
+                                <Tippy
+                                    content={
+                                        <div>
+                                            <ItemName itemId={participant.item5} classes="text-md font-bold text-purple-500" />
+                                            <ItemPlaintext itemId={participant.item5} classes="text-sm" />
+                                            <ItemDescription itemId={participant.item5} classes="text-sm" />
+                                            <ItemPrice itemId={participant.item5} classes="text-sm text-orange-500" />
+                                        </div>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div>
+                                        <ItemImage itemId={participant.item5} matchWon={participant.win} classes="h-8" />
+                                    </div>
+                                </Tippy>
+                                <Tippy
+                                    content={
+                                        <div>
+                                            <ItemName itemId={participant.item6} classes="text-md font-bold text-purple-500" />
+                                            <ItemPlaintext itemId={participant.item6} classes="text-sm" />
+                                            <ItemDescription itemId={participant.item6} classes="text-sm" />
+                                            <ItemPrice itemId={participant.item6} classes="text-sm text-orange-500" />
+                                        </div>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div>
+                                        <ItemImage itemId={participant.item6} matchWon={participant.win} classes="h-8" />
+                                    </div>
+                                </Tippy>
                             </div>
                         </div>
                     ))}

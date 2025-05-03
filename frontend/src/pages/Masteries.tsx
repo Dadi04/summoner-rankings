@@ -5,7 +5,7 @@ import "tippy.js/dist/tippy.css";
 import { DD_VERSION } from "../version";
 
 import SummonerProfileHeader from "../components/ProfileHeader";
-import ChampionImage from "../components/ChampionImage";
+import {ChampionImage} from "../components/ChampionData";
 
 import Player from "../interfaces/Player";
 import Mastery from "../interfaces/Mastery";

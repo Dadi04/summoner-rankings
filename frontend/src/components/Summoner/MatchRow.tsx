@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import Tippy from "@tippyjs/react";
+import "tippy.js/dist/tippy.css";
 
-import ChampionImage from "../ChampionImage";
-import SummonerSpellImage from "../SummonerSpellImage";
-import RuneImage from "../RuneImage";
-import ItemImage from "../ItemImage";
+import {ChampionImage} from "../ChampionData";
+import {SummonerSpellImage, SummonerSpellTooltip, SummonerSpellName} from "../SummonerSpellData";
+import {RuneImage, RuneTooltip, RuneName} from "../RuneData";
+import {ItemImage, ItemName, ItemPlaintext, ItemDescription, ItemPrice} from "../ItemData";
 import MatchParticipantList from "./MatchParticipantList";
 import MatchGeneral from "./MatchGeneral";
 import MatchPerformance from "./MatchPerformance";
@@ -114,13 +116,68 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                             <p className="absolute text-sm right-0 bottom-0 transform translate-x-[4px] translate-y-[4px] bg-neutral-800 border border-neutral-400 px-0.5">{participant.champLevel}</p>
                         </div>
                         <div className="flex flex-col gap-1">
-                            <SummonerSpellImage spellId={participant.summoner1Id} classes="h-7" />
-                            <SummonerSpellImage spellId={participant.summoner2Id} classes="h-7" />
+                            <Tippy
+                                content={
+                                    <div>
+                                        <SummonerSpellName spellId={participant.summoner1Id} classes="text-sm font-bold text-purple-500" />
+                                        <SummonerSpellTooltip spellId={participant.summoner1Id} classes="text-sm" />
+                                    </div>
+                                }
+                                allowHTML={true}
+                                interactive={false}
+                                placement="top"
+                            >
+                                <div>
+                                    <SummonerSpellImage spellId={participant.summoner1Id} classes="h-7" />
+                                </div>
+                            </Tippy>
+                            <Tippy
+                                content={
+                                    <div>
+                                        <SummonerSpellName spellId={participant.summoner2Id} classes="text-md font-bold text-purple-500" />
+                                        <SummonerSpellTooltip spellId={participant.summoner2Id} classes="text-sm" />
+                                    </div>
+                                }
+                                allowHTML={true}
+                                interactive={false}
+                                placement="top"
+                            >
+                                <div>
+                                    <SummonerSpellImage spellId={participant.summoner2Id} classes="h-7" />
+                                </div>
+                            </Tippy>
                         </div>
                         {participant.perks.styles[0].style ? (
                             <div className="flex flex-col gap-1">
-                                <RuneImage runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="h-7" />
-                                <RuneImage runeTypeId={participant.perks.styles[1].style} classes="h-7" />
+                                <Tippy
+                                    content={
+                                        <div>
+                                            <RuneName runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="text-md font-bold text-purple-500" />
+                                            <RuneTooltip runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="text-sm" />
+                                        </div>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div>
+                                        <RuneImage runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="h-7" />
+                                    </div>
+                                </Tippy>
+                                <Tippy
+                                    content={
+                                        <div>
+                                            <RuneName runeTypeId={participant.perks.styles[1].style} classes="text-md font-bold text-purple-500" />
+                                        </div>
+                                    }
+                                    allowHTML={true}
+                                    interactive={false}
+                                    placement="top"
+                                >
+                                    <div>
+                                        <RuneImage runeTypeId={participant.perks.styles[1].style} classes="h-7" />
+                                    </div>
+                                </Tippy>
                             </div>
                         ) : (
                             <></>
@@ -147,13 +204,125 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <ItemImage itemId={participant.item0} matchWon={participant.win} classes="h-8" />
-                        <ItemImage itemId={participant.item1} matchWon={participant.win} classes="h-8" />
-                        <ItemImage itemId={participant.item2} matchWon={participant.win} classes="h-8" />
-                        <ItemImage itemId={participant.item3} matchWon={participant.win} classes="h-8" />
-                        <ItemImage itemId={participant.item4} matchWon={participant.win} classes="h-8" />
-                        <ItemImage itemId={participant.item5} matchWon={participant.win} classes="h-8" />
-                        <ItemImage itemId={participant.item6} matchWon={participant.win} classes="h-8" />
+                        <Tippy
+                            content={
+                                <div>
+                                    <ItemName itemId={participant.item0} classes="text-md font-bold text-purple-500" />
+                                    <ItemPlaintext itemId={participant.item0} classes="text-sm" />
+                                    <ItemDescription itemId={participant.item0} classes="text-sm" />
+                                    <ItemPrice itemId={participant.item0} classes="text-sm text-orange-500" />
+                                </div>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div>
+                                <ItemImage itemId={participant.item0} matchWon={participant.win} classes="h-8" />
+                            </div>
+                        </Tippy>
+                        <Tippy
+                            content={
+                                <div>
+                                    <ItemName itemId={participant.item1} classes="text-md font-bold text-purple-500" />
+                                    <ItemPlaintext itemId={participant.item1} classes="text-sm" />
+                                    <ItemDescription itemId={participant.item1} classes="text-sm" />
+                                    <ItemPrice itemId={participant.item1} classes="text-sm text-orange-500" />
+                                </div>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div>
+                                <ItemImage itemId={participant.item1} matchWon={participant.win} classes="h-8" />
+                            </div>
+                        </Tippy>
+                        <Tippy
+                            content={
+                                <div>
+                                    <ItemName itemId={participant.item2} classes="text-md font-bold text-purple-500" />
+                                    <ItemPlaintext itemId={participant.item2} classes="text-sm" />
+                                    <ItemDescription itemId={participant.item2} classes="text-sm" />
+                                    <ItemPrice itemId={participant.item2} classes="text-sm text-orange-500" />
+                                </div>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div>
+                                <ItemImage itemId={participant.item2} matchWon={participant.win} classes="h-8" />
+                            </div>
+                        </Tippy>
+                        <Tippy
+                            content={
+                                <div>
+                                    <ItemName itemId={participant.item3} classes="text-md font-bold text-purple-500" />
+                                    <ItemPlaintext itemId={participant.item3} classes="text-sm" />
+                                    <ItemDescription itemId={participant.item3} classes="text-sm" />
+                                    <ItemPrice itemId={participant.item3} classes="text-sm text-orange-500" />
+                                </div>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div>
+                                <ItemImage itemId={participant.item3} matchWon={participant.win} classes="h-8" />
+                            </div>
+                        </Tippy>
+                        <Tippy
+                            content={
+                                <div>
+                                    <ItemName itemId={participant.item4} classes="text-md font-bold text-purple-500" />
+                                    <ItemPlaintext itemId={participant.item4} classes="text-sm" />
+                                    <ItemDescription itemId={participant.item4} classes="text-sm" />
+                                    <ItemPrice itemId={participant.item4} classes="text-sm text-orange-500" />
+                                </div>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div>
+                                <ItemImage itemId={participant.item4} matchWon={participant.win} classes="h-8" />
+                            </div>
+                        </Tippy>
+                        <Tippy
+                            content={
+                                <div>
+                                    <ItemName itemId={participant.item5} classes="text-md font-bold text-purple-500" />
+                                    <ItemPlaintext itemId={participant.item5} classes="text-sm" />
+                                    <ItemDescription itemId={participant.item5} classes="text-sm" />
+                                    <ItemPrice itemId={participant.item5} classes="text-sm text-orange-500" />
+                                </div>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div>
+                                <ItemImage itemId={participant.item5} matchWon={participant.win} classes="h-8" />
+                            </div>
+                        </Tippy>
+                        <Tippy
+                            content={
+                                <div>
+                                    <ItemName itemId={participant.item6} classes="text-md font-bold text-purple-500" />
+                                    <ItemPlaintext itemId={participant.item6} classes="text-sm" />
+                                    <ItemDescription itemId={participant.item6} classes="text-sm" />
+                                    <ItemPrice itemId={participant.item6} classes="text-sm text-orange-500" />
+                                </div>
+                            }
+                            allowHTML={true}
+                            interactive={false}
+                            placement="top"
+                        >
+                            <div>
+                                <ItemImage itemId={participant.item6} matchWon={participant.win} classes="h-8" />
+                            </div>
+                        </Tippy>
                     </div>
                 </div>
                 <div className="flex flex-col gap-0.5 text-sm p-2">

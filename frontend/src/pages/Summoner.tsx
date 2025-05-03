@@ -3,8 +3,8 @@ import { useParams, Link, useLocation } from "react-router-dom";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { DD_VERSION, LOL_VERSION } from "../version";
 
-import GameTimer from "../components/GameTime";
-import ChampionImage from "../components/ChampionImage";
+import GameTimer from "../components/GameTimer";
+import {ChampionImage} from "../components/ChampionData";
 import ProfileHeader from "../components/ProfileHeader";
 import MatchRow from "../components/Summoner/MatchRow";
 

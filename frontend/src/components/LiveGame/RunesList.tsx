@@ -31,11 +31,11 @@ const RunesList: React.FC<{runes: Perk}> = ({runes}) => {
                     <p className="font-bold text-lg text-neutral-100">{runePrimaryTypeData.name}</p>
                 </div>
                 <div className="flex flex-col gap-5 items-center mt-4">
-                    <RuneSlot runes={slotPrimary0.runes} perkIds={runes.perkIds} height="h-17" />
+                    <RuneSlot runes={slotPrimary0.runes} perkIds={runes.perkIds} runeTypeId={runePrimaryTypeData.id} height="h-17" />
                     <hr className="w-full text-neutral-300" />
-                    <RuneSlot runes={slotPrimary1.runes} perkIds={runes.perkIds} height="h-12" />
-                    <RuneSlot runes={slotPrimary2.runes} perkIds={runes.perkIds} height="h-12" />
-                    <RuneSlot runes={slotPrimary3.runes} perkIds={runes.perkIds} height="h-12" />
+                    <RuneSlot runes={slotPrimary1.runes} perkIds={runes.perkIds} runeTypeId={runePrimaryTypeData.id} height="h-12" />
+                    <RuneSlot runes={slotPrimary2.runes} perkIds={runes.perkIds} runeTypeId={runePrimaryTypeData.id} height="h-12" />
+                    <RuneSlot runes={slotPrimary3.runes} perkIds={runes.perkIds} runeTypeId={runePrimaryTypeData.id} height="h-12" />
                 </div>
             </div>
 
@@ -45,9 +45,9 @@ const RunesList: React.FC<{runes: Perk}> = ({runes}) => {
                     <p className="font-bold text-lg text-neutral-100">{runeSecondaryTypeData.name}</p>
                 </div>
                 <div className="flex flex-col gap-2 items-center mt-4 mb-4">
-                    <RuneSlot runes={slotSecondary1.runes} perkIds={runes.perkIds} height="h-12" />
-                    <RuneSlot runes={slotSecondary2.runes} perkIds={runes.perkIds} height="h-12" />
-                    <RuneSlot runes={slotSecondary3.runes} perkIds={runes.perkIds} height="h-12" />
+                    <RuneSlot runes={slotSecondary1.runes} perkIds={runes.perkIds} runeTypeId={runeSecondaryTypeData.id} height="h-12" />
+                    <RuneSlot runes={slotSecondary2.runes} perkIds={runes.perkIds} runeTypeId={runeSecondaryTypeData.id} height="h-12" />
+                    <RuneSlot runes={slotSecondary3.runes} perkIds={runes.perkIds} runeTypeId={runeSecondaryTypeData.id} height="h-12" />
                 </div>
                 <hr className="text-neutral-300" />
                 <div className="flex flex-col items-center mt-3 gap-1">

@@ -1,5 +1,5 @@
-import ChampionImage from "./ChampionImage";
-import forbiddenlight from "../assets/forbidden-light.png"
+import {ChampionImage} from "../ChampionData";
+import forbiddenlight from "../../assets/forbidden-light.png"
 
 interface BannedChampion {
     championId: number; 

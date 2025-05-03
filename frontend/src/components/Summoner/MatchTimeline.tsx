@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 
-import ChampionImage from "../ChampionImage";
-import ItemImage from "../ItemImage";
+import {ChampionImage} from "../ChampionData";
+import {ItemImage} from "../ItemData";
 
 import MatchDetailsInfo from "../../interfaces/MatchDetailsInfo";
 import MatchParticipant from "../../interfaces/MatchParticipant";

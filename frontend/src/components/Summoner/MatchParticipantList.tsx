@@ -1,6 +1,6 @@
 import MatchInfo from "../../interfaces/MatchDetailsInfo";
 
-import ChampionImage from "../ChampionImage";
+import {ChampionImage} from "../ChampionData";
 
 import blueKaynIcon from "../../assets/blue-kayn-icon.png"
 import redKaynIcon from "../../assets/red-kayn-icon.png"

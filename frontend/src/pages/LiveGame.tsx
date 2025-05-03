@@ -2,8 +2,8 @@ import React, {useState, useEffect, } from "react";
 import { useLocation, useParams } from "react-router-dom"
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
-import BannedChampionsList from "../components/BannedChampionList";
-import GameTimer from "../components/GameTime";
+import BannedChampionsList from "../components/LiveGame/BannedChampionList";
+import GameTimer from "../components/GameTimer";
 import ProfileHeader from "../components/ProfileHeader";
 import LiveGameRow from "../components/LiveGame/LiveGameRow";
 

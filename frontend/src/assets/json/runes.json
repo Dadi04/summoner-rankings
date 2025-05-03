@@ -289,7 +289,7 @@
               "icon": "perk-images/Styles/Precision/AbsorbLife/AbsorbLife.png",
               "name": "Absorb Life",
               "shortDesc": "Killing a target heals you.",
-              "longDesc": "Killing a target heals you for @HealAmount@."
+              "longDesc": "Killing a target heals you for 1-23 (based on level)."
             },
             {
               "id": 9111,
