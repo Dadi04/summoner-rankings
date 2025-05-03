@@ -1,6 +1,6 @@
 import React, {useState, useEffect, } from "react";
 import { useLocation, useParams } from "react-router-dom"
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 import BannedChampionsList from "../components/LiveGame/BannedChampionList";
 import GameTimer from "../components/GameTimer";
@@ -12,7 +12,7 @@ import Player from "../interfaces/Player";
 
 import queueJson from "../assets/json/queues.json";
 
-import loadingAnimation from '../assets/animations/loading.lottie';
+import loadingAnimation from "../assets/animations/loading.lottie";
 
 const LiveGame: React.FC = () => {
     const location = useLocation();
@@ -33,7 +33,7 @@ const LiveGame: React.FC = () => {
             const cachedData = localStorage.getItem(cacheKey);
             return cachedData ? JSON.parse(cachedData) : null;
         } catch (error) {
-            console.error('Error retrieving cached data:', error);
+            console.error("Error retrieving cached data:", error);
             return null;
         }
     };
@@ -46,7 +46,7 @@ const LiveGame: React.FC = () => {
             try {
                 localStorage.setItem(cacheKey, JSON.stringify(newData));
             } catch (error) {
-                console.error('Error caching data:', error);
+                console.error("Error caching data:", error);
             }
         }
     }, [newData, cacheKey]);

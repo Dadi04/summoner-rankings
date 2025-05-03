@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useLocation, useParams } from "react-router-dom";
 
-import ProfileHeader from '../components/ProfileHeader';
+import ProfileHeader from "../components/ProfileHeader";
 
-import Player from '../interfaces/Player';
+import Player from "../interfaces/Player";
 
 const Champions: React.FC = () => {
     const location = useLocation();
@@ -28,7 +28,7 @@ const Champions: React.FC = () => {
             const cachedData = localStorage.getItem(cacheKey);
             return cachedData ? JSON.parse(cachedData) : null;
         } catch (error) {
-            console.error('Error retrieving cached data:', error);
+            console.error("Error retrieving cached data:", error);
             return null;
         }
     };
@@ -53,10 +53,10 @@ const Champions: React.FC = () => {
                 try {
                     localStorage.setItem(cacheKey, JSON.stringify(data));
                 } catch (error) {
-                    console.error('Error caching data:', error);
+                    console.error("Error caching data:", error);
                 }
             } catch (error) {
-                console.error('Error fetching API data:', error);
+                console.error("Error fetching API data:", error);
             } finally {
                 setLoading(false);
             }

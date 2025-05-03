@@ -12,7 +12,7 @@ import ChampionStats from "../../interfaces/ChampionStats";
 import Player from "../../interfaces/Player";
 import Entry from "../../interfaces/Entry";
 
-import arrowDownDark from '../../assets/arrow-down-dark.png'
+import arrowDownDark from "../../assets/arrow-down-dark.png"
 
 interface RoleAccumulator {
     data: PreferredRole;
@@ -115,13 +115,13 @@ const LiveGameRow: React.FC<{participant: Participant; isBeingWatched: boolean; 
                     <RuneImage runeTypeId={participant.perks.perkSubStyle} classes="h-6" />
                 </div>
                 <div>
-                    <Link to={`/lol/profile/${region}/${participant.riotId.replace(/#/g, '-')}`} className="cursor-pointer hover:underline">
+                    <Link to={`/lol/profile/${region}/${participant.riotId.replace(/#/g, "-")}`} className="cursor-pointer hover:underline">
                         <p className={`font-normal text-lg ml-3 ${isBeingWatched ? "text-purple-400" : ""}`}>
                             {participant.riotId}
                         </p>
                     </Link>
                     <p className="font-normal text-sm ml-3 text-neutral-400">
-                        {summoner.summonerLevel ? `Level ${summoner.summonerLevel}` : 'Level N/A'}
+                        {summoner.summonerLevel ? `Level ${summoner.summonerLevel}` : "Level N/A"}
                     </p>
                 </div>
             </div>

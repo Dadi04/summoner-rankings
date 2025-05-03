@@ -5,7 +5,7 @@ import IconImage from "./IconImage";
 import {RuneName, RuneTooltip} from "./RuneData";
 
 const RuneSlot: React.FC<{runes: { id: number; icon: string; name: string }[]; perkIds: number[]; runeTypeId: number; height: string;}> = ({runes, perkIds, runeTypeId, height}) => {
-    console.log(runes, perkIds)
+    
     return(
         <div className="w-[80%] flex justify-evenly">
             {runes.map((rune) => (

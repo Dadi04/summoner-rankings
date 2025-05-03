@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
-import logodark from '../assets/logo-dark.png';
-import arrowdown from '../assets/arrow-down-dark.png'
+import React, { useState, useRef, useEffect, FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import logodark from "../assets/logo-dark.png";
+import arrowdown from "../assets/arrow-down-dark.png"
 
 interface RegionItem {
     name: string;
@@ -10,27 +10,27 @@ interface RegionItem {
 }
 
 const REGION_ITEMS: RegionItem[] = [
-    { name: 'North America', abbr: 'NA', code: 'na1' },
-    { name: 'Europe West', abbr: 'EUW', code: 'euw1' },
-    { name: 'Europe Nordic & East', abbr: 'EUN', code: 'eun1' },
-    { name: 'Korea', abbr: 'KR', code: 'kr' },
-    { name: 'Oceania', abbr: 'OCE', code: 'oc1' },
-    { name: 'Brazil', abbr: 'BR', code: 'br1' },
-    { name: 'Latin America North', abbr: 'LAN', code: 'la1' },
-    { name: 'Latin America South', abbr: 'LAS', code: 'la2' },
-    { name: 'Japan', abbr: 'JP', code: 'jp1' },
-    { name: 'Russia', abbr: 'RU', code: 'ru' },
-    { name: 'Türkiye', abbr: 'TR', code: 'tr1' },
-    { name: 'Southeast Asia', abbr: 'SEA', code: 'sg2' },
-    { name: 'Taiwan', abbr: 'TW', code: 'tw2' },
-    { name: 'Vietnam', abbr: 'VN', code: 'vn2' },
-    { name: 'Middle East', abbr: 'ME', code: 'me1' },
+    { name: "North America", abbr: "NA", code: "na1" },
+    { name: "Europe West", abbr: "EUW", code: "euw1" },
+    { name: "Europe Nordic & East", abbr: "EUN", code: "eun1" },
+    { name: "Korea", abbr: "KR", code: "kr" },
+    { name: "Oceania", abbr: "OCE", code: "oc1" },
+    { name: "Brazil", abbr: "BR", code: "br1" },
+    { name: "Latin America North", abbr: "LAN", code: "la1" },
+    { name: "Latin America South", abbr: "LAS", code: "la2" },
+    { name: "Japan", abbr: "JP", code: "jp1" },
+    { name: "Russia", abbr: "RU", code: "ru" },
+    { name: "Türkiye", abbr: "TR", code: "tr1" },
+    { name: "Southeast Asia", abbr: "SEA", code: "sg2" },
+    { name: "Taiwan", abbr: "TW", code: "tw2" },
+    { name: "Vietnam", abbr: "VN", code: "vn2" },
+    { name: "Middle East", abbr: "ME", code: "me1" },
 ];
 
 const Home: React.FC = () => {
     const [showRegion, setShowRegion] = useState(false);
     const [selectedRegion, setSelectedRegion] = useState<RegionItem>(REGION_ITEMS[0]);
-    const [summonerInput, setSummonerInput] = useState('');
+    const [summonerInput, setSummonerInput] = useState("");
     const dropdownToggleRef = useRef<HTMLDivElement>(null);
     const dropdownListRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
@@ -55,7 +55,7 @@ const Home: React.FC = () => {
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        const formattedSummonerName = summonerInput.replace('#', '-');
+        const formattedSummonerName = summonerInput.replace("#", "-");
         const encodedSummoner = encodeURIComponent(formattedSummonerName);
 
         navigate(`/lol/profile/${selectedRegion.code}/${encodedSummoner}`, {state: {region: selectedRegion, summoner: encodedSummoner}});

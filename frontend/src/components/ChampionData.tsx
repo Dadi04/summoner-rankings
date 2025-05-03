@@ -1,4 +1,3 @@
-import parse, {domToReact, HTMLReactParserOptions, Element, DOMNode} from 'html-react-parser';
 import { DD_VERSION } from "../version";
 
 import championJson from "../assets/json/champion.json";
@@ -27,23 +26,27 @@ export const ChampionSpellName: React.FC<{spell: any; classes?: string;}> = ({sp
 export const ChampionSpellCooldowns: React.FC<{spell: any; classes?: string;}> = ({spell, classes}) => {
 
     return (
-        <p className={classes}>Cooldown: {spell.cooldown.join('/')}</p>
+        <p className={classes}>Cooldown: {spell.cooldown.modifiers[0].values.join("/")}</p>
     );
 };
 
 export const ChampionSpellTooltip: React.FC<{spell: any; classes?: string;}> = ({spell, classes}) => {
 
-    const options: HTMLReactParserOptions = {
-        replace(domNode) {
-            if (domNode instanceof Element && domNode.tagName === 'lol-uikit-tooltipped-keyword') {
-                return (
-                    <span className="tooltip-keyword">{domToReact(domNode.children as DOMNode[], options)}</span>
-                );
-            }
-        }
-    };
+    return (
+        <>
+            {spell.effects.map((effect: any, index: number) => (
+                <div key={index} >
+                    <p className={classes}>{effect.description}</p>
+                    {index < spell.effects.length - 1 && <br />}
+                </div>
+            ))}
+        </>
+    );
+};
+
+export const ChampionSpellNotes: React.FC<{spell: any; classes?: string;}> = ({spell, classes}) => {
 
     return (
-        <p className={classes}>{parse(spell.tooltip, options)}</p>
+        <p className={classes}>{spell.notes}</p>
     );
 };

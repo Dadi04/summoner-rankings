@@ -1,5 +1,5 @@
-import parse, {domToReact, HTMLReactParserOptions, Element, DOMNode} from 'html-react-parser';
-import { DD_VERSION } from '../version';
+import parse, {domToReact, HTMLReactParserOptions, Element, DOMNode} from "html-react-parser";
+import { DD_VERSION } from "../version";
 
 import summonerSpellsJson from "../assets/json/summonerSpells.json";
 
@@ -26,7 +26,7 @@ export const SummonerSpellTooltip: React.FC<{spellId: number; classes?: string;}
 
     const options: HTMLReactParserOptions = {
         replace(domNode) {
-            if (domNode instanceof Element && domNode.tagName === 'lol-uikit-tooltipped-keyword') {
+            if (domNode instanceof Element && domNode.tagName === "lol-uikit-tooltipped-keyword") {
                 return (
                     <span className="tooltip-keyword">{domToReact(domNode.children as DOMNode[], options)}</span>
                 );

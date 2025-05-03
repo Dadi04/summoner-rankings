@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
-import { DD_VERSION } from '../version';
+import { useState } from "react";
+import { NavLink } from "react-router-dom";
+import { DD_VERSION } from "../version";
 
 import UpdateButton from "./UpdateButton";
 
-import Player from '../interfaces/Player';
+import Player from "../interfaces/Player";
 
 const ProfileHeader: React.FC<{data: Player; regionCode: string; encodedSummoner: string; setData: React.Dispatch<React.SetStateAction<any>>;}> = ({data, regionCode, encodedSummoner, setData}) => {
     const summonerData = data.summonerData;

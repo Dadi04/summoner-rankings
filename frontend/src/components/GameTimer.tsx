@@ -16,7 +16,7 @@ const GameTimer: React.FC<{gameLength: number; gameStartTime: number; classes: s
 
     const minutes = Math.floor(time / 60);
     const seconds = time % 60;
-    const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    const formattedTime = `${minutes}:${seconds.toString().padStart(2, "0")}`;
 
     return (
         <h1 className={classes}>{formattedTime}</h1>

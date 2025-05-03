@@ -15,18 +15,18 @@ import arrowDownLight from "../assets/arrow-down-light.png"
 import noneicon from "../assets/none.jpg";
 
 const masteryOptions = [
-    { label: 'Mastery level', value: 'level' },
-    { label: 'Mastery points', value: 'points' },
-    { label: 'Recently played', value: 'recent' },
-    { label: 'Alphabetical', value: 'alpha' },
+    { label: "Mastery level", value: "level" },
+    { label: "Mastery points", value: "points" },
+    { label: "Recently played", value: "recent" },
+    { label: "Alphabetical", value: "alpha" },
 ];
   
 const championsOptions = [
-    { label: 'All champions', value: '' },
-    { label: 'Mastery champion', value: 'mastery' },
-    { label: 'Non-mastery champ', value: 'non-mastery' },
-    { label: 'Chest available', value: 'available' },
-    { label: 'Chest received', value: 'received' },
+    { label: "All champions", value: "" },
+    { label: "Mastery champion", value: "mastery" },
+    { label: "Non-mastery champ", value: "non-mastery" },
+    { label: "Chest available", value: "available" },
+    { label: "Chest received", value: "received" },
 ];
   
 
@@ -40,8 +40,8 @@ const Select: React.FC<{options: Array<{label: string, value: string}>; value: s
                 setOpen(false);
             }
         }
-        document.addEventListener('mousedown', onClickOutside);
-        return () => document.removeEventListener('mousedown', onClickOutside);
+        document.addEventListener("mousedown", onClickOutside);
+        return () => document.removeEventListener("mousedown", onClickOutside);
     }, [])
 
     const selectedOption = options.find(o => o.value === value);
@@ -50,12 +50,12 @@ const Select: React.FC<{options: Array<{label: string, value: string}>; value: s
         <div ref={ref} className={`relative ${classes}`}>
             <div onClick={() => setOpen(prev => !prev)} className="flex items-center justify-between bg-neutral-900 cursor-pointer rounded p-2">
                 <span>{selectedOption ? selectedOption.label : placeholder}</span>
-                <img src={arrowDownLight} alt="toggle dropdown" className={`h-5 transform transition-transform duration-200 ${open ? 'rotate-180' : 'rotate-0'}`} />
+                <img src={arrowDownLight} alt="toggle dropdown" className={`h-5 transform transition-transform duration-200 ${open ? "rotate-180" : "rotate-0"}`} />
             </div>
             {open && (
                 <div className="absolute left-0 right-0 mt-1 bg-neutral-900 shadow-lg rounded z-20 overflow-hidden">
                     {options.map(opt => (
-                        <div key={opt.value} onClick={() => {onChange(opt.value); setOpen(false);}} className={`p-2 hover:bg-neutral-700 cursor-pointer ${opt.value === value ? 'bg-neutral-800' : ''}`}>
+                        <div key={opt.value} onClick={() => {onChange(opt.value); setOpen(false);}} className={`p-2 hover:bg-neutral-700 cursor-pointer ${opt.value === value ? "bg-neutral-800" : ""}`}>
                             {opt.label}
                         </div>
                     ))}
@@ -288,7 +288,7 @@ const Masteries: React.FC = () => {
                         </div>
                         <div ref={dropdownChampionsRef} className={`z-100 absolute top-full left-0 w-full bg-neutral-800 transition-all duration-300 border border-purple-500 overflow-y-auto shadow-lg max-h-[400px]
                                 ${showSelectChampions ? "opacity-100 visible" : "opacity-0 invisible"} custom-scrollbar`}>
-                            <div onClick={() => {setSelectedChampion("All Champions"); setSearchChampionsFilter('All Champions'); setShowSelectChampions(false)}} className={`flex items-center text-lg justify-between pl-4 pr-4 pt-0.5 pb-0.5 cursor-pointer transition-all duration-100 hover:text-neutral-300 ${selectedChampion === "All Champions" ? "bg-neutral-700" : ""}`}>
+                            <div onClick={() => {setSelectedChampion("All Champions"); setSearchChampionsFilter("All Champions"); setShowSelectChampions(false)}} className={`flex items-center text-lg justify-between pl-4 pr-4 pt-0.5 pb-0.5 cursor-pointer transition-all duration-100 hover:text-neutral-300 ${selectedChampion === "All Champions" ? "bg-neutral-700" : ""}`}>
                                 <img src={noneicon} alt="none-icon" className="h-12" />
                                 <span>All Champions</span>
                             </div>

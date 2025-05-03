@@ -1,13 +1,13 @@
-import parse, {domToReact, HTMLReactParserOptions, Element, DOMNode} from 'html-react-parser';
+import parse, {domToReact, HTMLReactParserOptions, Element, DOMNode} from "html-react-parser";
 import { DD_VERSION } from "../version";
 
 import itemJson from "../assets/json/items.json";
 
 function removeConsecutiveBrTags(html: string): string {
     return html
-        .replace(/(<mainText>)?(?:\s*<br\s*\/?>\s*)+/gi, '$1')
-        .replace(/(<br\s*\/?>\s*){2,}/gi, '<br /><br />')
-        .replace(/(<br\s*\/?>\s*)+(?=<\/mainText>)/gi, '')
+        .replace(/(<mainText>)?(?:\s*<br\s*\/?>\s*)+/gi, "$1")
+        .replace(/(<br\s*\/?>\s*){2,}/gi, "<br /><br />")
+        .replace(/(<br\s*\/?>\s*)+(?=<\/mainText>)/gi, "")
         .trim();
 }
 
@@ -52,7 +52,7 @@ export const ItemPlaintext: React.FC<{itemId: number; classes: string}> = ({item
 
     const options: HTMLReactParserOptions = {
         replace(domNode) {
-            if (domNode instanceof Element && domNode.tagName === 'lol-uikit-tooltipped-keyword') {
+            if (domNode instanceof Element && domNode.tagName === "lol-uikit-tooltipped-keyword") {
                 return (
                     <span className="tooltip-keyword">{domToReact(domNode.children as DOMNode[], options)}</span>
                 );
@@ -83,7 +83,7 @@ export const ItemDescription: React.FC<{itemId: number; classes: string}> = ({it
 
     const options: HTMLReactParserOptions = {
         replace(domNode) {
-            if (domNode instanceof Element && domNode.tagName === 'lol-uikit-tooltipped-keyword') {
+            if (domNode instanceof Element && domNode.tagName === "lol-uikit-tooltipped-keyword") {
                 return (
                     <span className="tooltip-keyword">{domToReact(domNode.children as DOMNode[], options)}</span>
                 );

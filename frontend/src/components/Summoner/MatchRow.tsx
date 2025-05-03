@@ -24,7 +24,7 @@ import redKaynIcon from "../../assets/red-kayn-icon.png"
 
 const SUMMONERS_RIFT_WITH_ROLES = [400, 420, 430, 440, 480, 490, 700, 870, 880, 890];
 
-const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: any; champions: any[]; puuid: string; region: string; classes?: string;}> = ({info, timelineJson, items, champions, puuid, region, classes}) => {
+const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: any; puuid: string; region: string; classes?: string;}> = ({info, timelineJson, items, puuid, region, classes}) => {
     const [showDetailsDiv, setShowDetailsDiv] = useState<boolean>(false);
     const [chooseTab, setChooseTab] = useState<string>("General");
 
@@ -415,7 +415,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                         {(SUMMONERS_RIFT_WITH_ROLES.includes(info.queueId)) ? (
                             <div className="mt-2 mb-1">
                                 <MatchParticipantList info={info} choosePlayerDetails={choosePlayerDetails} setChoosePlayerDetails={setChoosePlayerDetails} kaynTransformation={kaynTransformation} />
-                                <MatchDetails info={info} timeline={timeline} selectedPlayer={selectedPlayer} champions={champions} />
+                                <MatchDetails info={info} timeline={timeline} selectedPlayer={selectedPlayer} />
                             </div>
                         ) : (
                             <div className="text-center text-2xl p-3">

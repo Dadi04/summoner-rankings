@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import logolight from '../assets/logo-light.png';
-import close from '../assets/close.png';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import logolight from "../assets/logo-light.png";
+import close from "../assets/close.png";
 
 const NavBar: React.FC = () => {
     const [showSignInForm, setShowSignInForm] = useState(false);
@@ -46,7 +46,7 @@ const NavBar: React.FC = () => {
                             <button type="submit" className="w-full cursor-pointer bg-neutral-900 text-white p-2 rounded transition duration-300 hover:bg-neutral-800">Submit</button>
                         </form>
                         <div className="border-t-1 mt-4 w-full p-4 text-center">
-                            <span>Don't have an account? </span>
+                            <span>Don"t have an account? </span>
                             <button onClick={() => {setShowSignInForm(false); setShowSignUpForm(true)}} className="text-neutral-500 underline cursor-pointer hover:text-neutral-700 transition duration-300">Sign up</button>
                         </div>
                     </div>

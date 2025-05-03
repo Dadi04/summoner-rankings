@@ -32,7 +32,7 @@ const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: stri
     const redTeamObjectives = info.teams.find(team => team.teamId === 200)?.objectives;
     let teamThatKilledAtakhan = null;
 
-    const dragonTypes = ['AIR_DRAGON', 'EARTH_DRAGON', 'FIRE_DRAGON', 'WATER_DRAGON', 'CHEMTECH_DRAGON', 'HEXTECH_DRAGON', 'ELDER_DRAGON'];
+    const dragonTypes = ["AIR_DRAGON", "EARTH_DRAGON", "FIRE_DRAGON", "WATER_DRAGON", "CHEMTECH_DRAGON", "HEXTECH_DRAGON", "ELDER_DRAGON"];
     const dragonKills = {
         blue: Object.fromEntries(dragonTypes.map(type => [type.toLowerCase(), [] as any[]])),
         red: Object.fromEntries(dragonTypes.map(type => [type.toLowerCase(), [] as any[]]))
@@ -48,7 +48,7 @@ const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: stri
 
         for (const event of frame.events) {
             if (event.type === "ELITE_MONSTER_KILL" && event.monsterType === "DRAGON") {
-                const team = event.killerTeamId === 100 ? 'blue' : (event.killerTeamId === 200 ? 'red' : null);
+                const team = event.killerTeamId === 100 ? "blue" : (event.killerTeamId === 200 ? "red" : null);
                 if (team && dragonTypes.includes(event.monsterSubType)) {
                     const dragonType = event.monsterSubType.toLowerCase();
                     dragonKills[team][dragonType].push(event);

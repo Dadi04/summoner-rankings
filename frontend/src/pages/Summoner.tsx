@@ -17,6 +17,7 @@ import Player from "../interfaces/Player";
 import Match from "../interfaces/Match";
 
 import queueJson from "../assets/json/queues.json";
+import championsFull from "../assets/json/championsFull.json";
 
 import performance from "../assets/performance.png";
 import goldMedal from "../assets/gold-medal.png";
@@ -93,8 +94,7 @@ const Summoner: React.FC = () => {
     const [selectedChampion, setSelectedChampion] = useState<string>("All Champions");
     const [showFilter, setShowFilter] = useState<boolean>(false);
     const [showPatch, setShowPatch] = useState<boolean>(false);
-    const [filterChampions, setFilterChampions] = useState('');
-    const [champions, setChampions] = useState<any[]>([]);
+    const [filterChampions, setFilterChampions] = useState("");
     const [items, setItems] = useState<any>({});
     const [showSelectChampions, setShowSelectChampions] = useState<boolean>(false);
     const [paginatorPage, setPaginatorPage] = useState<number>(1);
@@ -108,7 +108,7 @@ const Summoner: React.FC = () => {
             const cachedData = localStorage.getItem(cacheKey);
             return cachedData ? JSON.parse(cachedData) : null;
         } catch (error) {
-            console.error('Error retrieving cached data:', error);
+            console.error("Error retrieving cached data:", error);
             return null;
         }
     };
@@ -121,7 +121,7 @@ const Summoner: React.FC = () => {
     });
     const [loading, setLoading] = useState(!apiData);
 
-    const [major, minor] = LOL_VERSION.split('.').map(Number);
+    const [major, minor] = LOL_VERSION.split(".").map(Number);
     const versions = Array.from({length: minor - 0}, (_, i) => `${major}.${minor - i}`);
 
     const filteredMatches = useMemo(() => {
@@ -162,7 +162,7 @@ const Summoner: React.FC = () => {
         const pageMatches = sorted.slice(start, end);
         
         const grouped = pageMatches.reduce<Record<string, Match[]>>((acc, match) => {
-            const date = new Date(match.details.info.gameStartTimestamp).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+            const date = new Date(match.details.info.gameStartTimestamp).toLocaleDateString("en-US", { day: "numeric", month: "short" });
             (acc[date] ??= []).push(match);
             return acc;
         }, {});
@@ -270,20 +270,6 @@ const Summoner: React.FC = () => {
     })
 
     useEffect(() => {
-        const fetchChampions = async () => {
-            try {
-                const response = await fetch(`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/data/en_US/championFull.json`);
-                const data = await response.json();
-                const championsArray = Object.values(data.data);
-                setChampions(championsArray);
-            } catch (error) {
-                console.error("Error fetching champions", error);
-            }
-        };
-        fetchChampions();
-    }, [DD_VERSION]);
-
-    useEffect(() => {
         const fetchItems = async () => {
             try {
                 const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/data/en_US/item.json`);
@@ -301,7 +287,7 @@ const Summoner: React.FC = () => {
             try {
                 localStorage.setItem(cacheKey, JSON.stringify(apiData));
             } catch (error) {
-                console.error('Error caching data:', error);
+                console.error("Error caching data:", error);
             }
         }
     }, [apiData, cacheKey]);
@@ -320,7 +306,7 @@ const Summoner: React.FC = () => {
                 const data = await response.json();
                 setApiData(data);
             } catch (error) {
-                console.error('Error fetching API data:', error);
+                console.error("Error fetching API data:", error);
             } finally {
                 setLoading(false);
             }
@@ -442,7 +428,7 @@ const Summoner: React.FC = () => {
                                     </div>
                                 </div>
                             )}
-                            <div className="absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100" style={{background: 'linear-gradient(to right, rgba(0, 0, 0, 0) 10%, #262626 40%, #262626 100%)'}} />                        
+                            <div className="absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100" style={{background: "linear-gradient(to right, rgba(0, 0, 0, 0) 10%, #262626 40%, #262626 100%)"}} />                        
                             <div className="absolute right-0 top-0 bottom-0 flex items-center pr-4 opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100">
                                 <span className="text-white text-2xl font-bold">LIVE DETAILS</span>
                             </div>
@@ -799,14 +785,14 @@ const Summoner: React.FC = () => {
                                     </div>
                                     <div ref={dropdownChampionsRef} className={`z-100 absolute top-full left-0 w-full bg-neutral-800 transition-all duration-300 border border-purple-500 overflow-y-auto shadow-lg max-h-[400px]
                                          ${showSelectChampions ? "opacity-100 visible" : "opacity-0 invisible"} custom-scrollbar`}>
-                                        <div onClick={() => {setSelectedChampion("All Champions"); setFilterChampions('All Champions'); setShowSelectChampions(false)}} className={`flex items-center text-lg justify-between pl-4 pr-4 pt-0.5 pb-0.5 cursor-pointer transition-all duration-100 hover:text-neutral-300 ${selectedChampion === "All Champions" ? "bg-neutral-700" : ""}`}>
+                                        <div onClick={() => {setSelectedChampion("All Champions"); setFilterChampions("All Champions"); setShowSelectChampions(false)}} className={`flex items-center text-lg justify-between pl-4 pr-4 pt-0.5 pb-0.5 cursor-pointer transition-all duration-100 hover:text-neutral-300 ${selectedChampion === "All Champions" ? "bg-neutral-700" : ""}`}>
                                             <img src={noneicon} alt="none-icon" className="h-12" />
                                             <span>All Champions</span>
                                         </div>
                                         <div>
-                                            {champions.filter(champ =>champ.name.toLowerCase().startsWith(filterChampions.toLowerCase())).map((champion) => (
+                                            {Object.values(championsFull).filter((champ: any) => champ.key.toLowerCase().startsWith(filterChampions.toLowerCase())).map((champion: any) => (
                                                 <div key={champion.id} onClick={() => {setSelectedChampion(champion.name); setFilterChampions(champion.name); setShowSelectChampions(false);}} className={`flex items-center text-lg justify-between pl-4 pr-4 pt-0.5 pb-0.5 cursor-pointer transition-all duration-100 hover:text-neutral-300 ${selectedChampion === champion.name ? "bg-neutral-700" : ""} `}>
-                                                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/champion/${champion.id}.png`} alt={champion.name} className="h-12" />
+                                                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/champion/${champion.key}.png`} alt={champion.name} className="h-12" />
                                                     <span>{champion.name}</span>
                                                 </div>
                                             ))}
@@ -826,7 +812,6 @@ const Summoner: React.FC = () => {
                                                 info={match.details.info}
                                                 timelineJson={match.timelineJson}
                                                 items={items}
-                                                champions={champions}
                                                 puuid={apiData.puuid}
                                                 region={regionCode}
                                                 classes="mb-1 px-2"

@@ -1,4 +1,4 @@
-import parse, {domToReact, HTMLReactParserOptions, Element, DOMNode} from 'html-react-parser';
+import parse, {domToReact, HTMLReactParserOptions, Element, DOMNode} from "html-react-parser";
 import IconImage from "./IconImage";
 
 import runesJson from "../assets/json/runes.json";
@@ -45,7 +45,7 @@ export const RuneTooltip: React.FC<{runeTypeId: number; runeId?: number; classes
 
     const options: HTMLReactParserOptions = {
         replace(domNode) {
-            if (domNode instanceof Element && domNode.tagName === 'lol-uikit-tooltipped-keyword') {
+            if (domNode instanceof Element && domNode.tagName === "lol-uikit-tooltipped-keyword") {
                 return (
                     <span className="tooltip-keyword">{domToReact(domNode.children as DOMNode[], options)}</span>
                 );

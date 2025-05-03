@@ -1,13 +1,14 @@
 import Tippy from "@tippyjs/react";
 import "tippy.js/dist/tippy.css";
-import { DD_VERSION } from "../../version";
 
 import {ItemImage, ItemName, ItemPlaintext, ItemDescription, ItemPrice} from "../ItemData";
 import {SummonerSpellImage, SummonerSpellName, SummonerSpellTooltip} from "../SummonerSpellData";
-import {ChampionSpellName, ChampionSpellCooldowns, ChampionSpellTooltip} from "../ChampionData";
+import {ChampionSpellName, ChampionSpellCooldowns, ChampionSpellTooltip, ChampionSpellNotes} from "../ChampionData";
 
 import MatchDetailsInfo from "../../interfaces/MatchDetailsInfo";
 import MatchParticipant from "../../interfaces/MatchParticipant";
+
+import champions from "../../assets/json/championsFull.json";
 
 import allInPing from "../../assets/pings/allInPing.webp";
 import assistMePing from "../../assets/pings/assistMePing.webp";
@@ -19,21 +20,30 @@ import needVisionPing from "../../assets/pings/needVisionPing.webp";
 import onMyWayPing from "../../assets/pings/onMyWayPing.webp";
 import pushPing from "../../assets/pings/pushPing.webp";
 
-const MatchDetails: React.FC<{info: MatchDetailsInfo, timeline: any, selectedPlayer: MatchParticipant, champions: any[]}> = ({info, timeline, selectedPlayer, champions}) => {
+const MatchDetails: React.FC<{info: MatchDetailsInfo, timeline: any, selectedPlayer: MatchParticipant}> = ({info, timeline, selectedPlayer}) => {
     console.log(timeline, info)
-    const champ = champions.find(c => c.id.toLowerCase() === selectedPlayer.championName.toLowerCase());
+    const champ = Object.values(champions).find(c => c.key.toLowerCase() === selectedPlayer.championName.toLowerCase());
     if (!champ) return <div>Champion not found</div>;
-    const { spells,  } = champ;
+    const { abilities,  } = champ;
+
+    const slots = ["Q","W","E","R"];
+    const casts = [
+        selectedPlayer.spell1Casts,
+        selectedPlayer.spell2Casts,
+        selectedPlayer.spell3Casts,
+        selectedPlayer.spell4Casts,
+    ];
+    const spells = slots.map(slot => abilities[slot]?.[0]).filter((s): s is { name: string; icon: string } => !!s);
 
     const centerPing = { icon: genericPing, count: selectedPlayer.commandPings };
     const edgePings = [
-        { icon: getBackPing,     count: selectedPlayer.getBackPings },
-        { icon: pushPing,        count: selectedPlayer.pushPings },
-        { icon: onMyWayPing,     count: selectedPlayer.onMyWayPings },
-        { icon: allInPing,       count: selectedPlayer.allInPings },
-        { icon: assistMePing,    count: selectedPlayer.assistMePings },
-        { icon: needVisionPing,  count: selectedPlayer.needVisionPings },
-        { icon: enemyMissingPing,count: selectedPlayer.enemyMissingPings },
+        { icon: getBackPing, count: selectedPlayer.getBackPings },
+        { icon: pushPing, count: selectedPlayer.pushPings },
+        { icon: onMyWayPing, count: selectedPlayer.onMyWayPings },
+        { icon: allInPing, count: selectedPlayer.allInPings },
+        { icon: assistMePing, count: selectedPlayer.assistMePings },
+        { icon: needVisionPing, count: selectedPlayer.needVisionPings },
+        { icon: enemyMissingPing, count: selectedPlayer.enemyMissingPings },
         { icon: enemyVisionPing, count: selectedPlayer.enemyVisionPings },
     ];
     
@@ -221,8 +231,8 @@ const MatchDetails: React.FC<{info: MatchDetailsInfo, timeline: any, selectedPla
                                                 placement="top"
                                             >
                                                 <div>
-                                                    <ItemImage itemId={item.itemId} classes={item.type === 'ITEM_SOLD' ? 'h-10 filter grayscale brightness-70' : 'h-10'} />
-                                                    {item.type === 'ITEM_SOLD' && (
+                                                    <ItemImage itemId={item.itemId} classes={item.type === "ITEM_SOLD" ? "h-10 filter grayscale brightness-70" : "h-10"} />
+                                                    {item.type === "ITEM_SOLD" && (
                                                         <svg className="absolute bottom-0 left-0 h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                             <line x1="4" y1="4" x2="20" y2="20" stroke="red" strokeWidth="3" />
                                                             <line x1="20" y1="4" x2="4" y2="20" stroke="red" strokeWidth="3" />
@@ -247,7 +257,7 @@ const MatchDetails: React.FC<{info: MatchDetailsInfo, timeline: any, selectedPla
             <div className="bg-neutral-700 my-2 p-2 pb-4">
                 <h1 className="text-xl text-neutral-300 mb-2">SKILL ORDER</h1>
                 <div className="w-full flex flex-col gap-2">
-                    {spells.map((spell: any, i: number) => {
+                    {slots.map(slot => abilities[slot]?.[0]).filter(Boolean).map((spell: any, i: number) => {
                         const slot = i + 1;
                         const takenAtLevels = levelsBySlot[slot] || [];
 
@@ -259,15 +269,29 @@ const MatchDetails: React.FC<{info: MatchDetailsInfo, timeline: any, selectedPla
                                             <ChampionSpellName spell={spell} classes="text-md font-bold text-purple-500" />
                                             <ChampionSpellCooldowns spell={spell} classes="text-sm text-neutral-400" />
                                             <ChampionSpellTooltip spell={spell} classes="text-sm" />
+                                            <div className="mt-2">
+                                                <Tippy
+                                                    content={<ChampionSpellNotes spell={spell} classes="text-sm" />}
+                                                    interactive={true}
+                                                    placement="right"
+                                                    appendTo="parent"
+                                                    maxWidth={500}
+                                                >
+                                                    <div className="w-fit ml-auto text-lg underline cursor-pointer text-neutral-400">
+                                                        <p>Notes</p>
+                                                    </div>
+                                                </Tippy>
+                                            </div>
                                         </div>
                                     }
                                     allowHTML={true}
-                                    interactive={false}
+                                    interactive={true}
                                     placement="top"
+                                    maxWidth={600}
                                 >
                                     <div className="relative w-fit">
-                                        <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spell.image.full}`} alt={spell.image.full} className="h-12"/>
-                                        <p className="absolute bottom-0 right-0 transform px-1 text-md bg-black rounded-full">{['Q','W','E','R'][i]}</p>
+                                        <img src={spell.icon} alt={spell.name} className="h-12"/>
+                                        <p className="absolute bottom-0 right-0 transform px-1 text-md bg-black rounded-full">{slots[i]}</p>
                                     </div>
                                 </Tippy>
                                 <div className="flex gap-2">
@@ -276,7 +300,7 @@ const MatchDetails: React.FC<{info: MatchDetailsInfo, timeline: any, selectedPla
                                         const isTakenHere = takenAtLevels.includes(level);
 
                                         return (
-                                            <div key={idx} className={`h-12 w-12 ${isTakenHere ? 'bg-purple-600 text-white flex items-center justify-center' : 'bg-neutral-800'}`}>
+                                            <div key={idx} className={`h-12 w-12 ${isTakenHere ? "bg-purple-600 text-white flex items-center justify-center" : "bg-neutral-800"}`}>
                                                 {isTakenHere ? level : null}
                                             </div>
                                         );
@@ -292,98 +316,47 @@ const MatchDetails: React.FC<{info: MatchDetailsInfo, timeline: any, selectedPla
                     <div className="bg-neutral-700 p-2 pb-7">
                         <h1 className="text-xl text-neutral-300 mb-4">SPELLS CASTED</h1>
                         <div className="flex justify-around">
-                            <div>
-                                <Tippy
-                                    content={
-                                        <div>
-                                            <ChampionSpellName spell={spells[0]} classes="text-md font-bold text-purple-500" />
-                                            <ChampionSpellCooldowns spell={spells[0]} classes="text-sm text-neutral-400" />
-                                            <ChampionSpellTooltip spell={spells[0]} classes="text-sm" />
+                            {spells.map((spell, i) => (
+                                <div key={spell.name} className="flex flex-col items-center">
+                                    <Tippy
+                                        content={
+                                            <div>
+                                                <ChampionSpellName spell={spell} classes="text-md font-bold text-purple-500" />
+                                                <ChampionSpellCooldowns spell={spell} classes="text-sm text-neutral-400" />
+                                                <ChampionSpellTooltip spell={spell} classes="text-sm" />
+                                                <div className="mt-2">
+                                                    <Tippy
+                                                        content={<ChampionSpellNotes spell={spell} classes="text-sm" />}
+                                                        interactive={true}
+                                                        placement="right"
+                                                        appendTo="parent"
+                                                        maxWidth={500}
+                                                    >
+                                                        <div className="w-fit ml-auto text-lg underline cursor-pointer text-neutral-400">
+                                                            <p>Notes</p>
+                                                        </div>
+                                                    </Tippy>
+                                                </div>
+                                            </div>
+                                        }
+                                        allowHTML={true}
+                                        interactive={true}
+                                        placement="top"
+                                        maxWidth={600}
+                                    >
+                                        <div className="relative">
+                                            <img src={spell.icon} alt={spell.name} className="h-16" />
+                                            <p className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/3 bg-black px-1 text-lg rounded-full text-white">
+                                                {slots[i]}
+                                            </p>
                                         </div>
-                                    }
-                                    allowHTML={true}
-                                    interactive={false}
-                                    placement="top"
-                                >
-                                    <div className="relative">
-                                        <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[0].image.full}`} alt={spells[0].image.full} />
-                                        <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">Q</p>
+                                    </Tippy>
+                                    <div className="text-center mt-4">
+                                        <p className="font-bold">{casts[i]}</p>
+                                        <p className="text-neutral-400">times</p>
                                     </div>
-                                </Tippy>
-                                <div className="text-center mt-4">
-                                    <p className="font-bold">{selectedPlayer.spell1Casts}</p>
-                                    <p className="text-neutral-400">times</p>
                                 </div>
-                            </div>
-                            <div>
-                                <Tippy
-                                    content={
-                                        <div>
-                                            <ChampionSpellName spell={spells[1]} classes="text-md font-bold text-purple-500" />
-                                            <ChampionSpellCooldowns spell={spells[1]} classes="text-sm text-neutral-400" />
-                                            <ChampionSpellTooltip spell={spells[1]} classes="text-sm" />
-                                        </div>
-                                    }
-                                    allowHTML={true}
-                                    interactive={false}
-                                    placement="top"
-                                >
-                                    <div className="relative">
-                                        <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[1].image.full}`} alt={spells[1].image.full} />
-                                        <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">Q</p>
-                                    </div>
-                                </Tippy>
-                                <div className="text-center mt-4">
-                                    <p className="font-bold">{selectedPlayer.spell2Casts}</p>
-                                    <p className="text-neutral-400">times</p>
-                                </div>
-                            </div>
-                            <div>
-                                <Tippy
-                                    content={
-                                        <div>
-                                            <ChampionSpellName spell={spells[2]} classes="text-md font-bold text-purple-500" />
-                                            <ChampionSpellCooldowns spell={spells[2]} classes="text-sm text-neutral-400" />
-                                            <ChampionSpellTooltip spell={spells[2]} classes="text-sm" />
-                                        </div>
-                                    }
-                                    allowHTML={true}
-                                    interactive={false}
-                                    placement="top"
-                                >
-                                    <div className="relative">
-                                        <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[2].image.full}`} alt={spells[2].image.full} />
-                                        <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">Q</p>
-                                    </div>
-                                </Tippy>
-                                <div className="text-center mt-4">
-                                    <p className="font-bold">{selectedPlayer.spell3Casts}</p>
-                                    <p className="text-neutral-400">times</p>
-                                </div>
-                            </div>
-                            <div>
-                                <Tippy
-                                    content={
-                                        <div>
-                                            <ChampionSpellName spell={spells[3]} classes="text-md font-bold text-purple-500" />
-                                            <ChampionSpellCooldowns spell={spells[3]} classes="text-sm text-neutral-400" />
-                                            <ChampionSpellTooltip spell={spells[3]} classes="text-sm" />
-                                        </div>
-                                    }
-                                    allowHTML={true}
-                                    interactive={false}
-                                    placement="top"
-                                >
-                                    <div className="relative">
-                                        <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spells[3].image.full}`} alt={spells[3].image.full} />
-                                        <p className="w-fit px-1 text-lg bg-black rounded-full absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/3">Q</p>
-                                    </div>
-                                </Tippy>
-                                <div className="text-center mt-4">
-                                    <p className="font-bold">{selectedPlayer.spell4Casts}</p>
-                                    <p className="text-neutral-400">times</p>
-                                </div>
-                            </div>
+                            ))}
                         </div>
                     </div>
                     <div className="bg-neutral-700 p-2 pb-6">

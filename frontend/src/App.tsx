@@ -1,16 +1,16 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import NavBar from './components/NavBar';
-import Footer from './components/Footer';
-import Home from './pages/Home';
-import Summoner from './pages/Summoner'
-import Champions from './pages/Champions';
-import Masteries from './pages/Masteries';
-import LiveGame from './pages/LiveGame';
-import Races from './pages/Races';
-import Leaderboard from './pages/Leaderboard';
-import Clash from './pages/Clash';
-import SignIn from './pages/SignIn';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import NavBar from "./components/NavBar";
+import Footer from "./components/Footer";
+import Home from "./pages/Home";
+import Summoner from "./pages/Summoner"
+import Champions from "./pages/Champions";
+import Masteries from "./pages/Masteries";
+import LiveGame from "./pages/LiveGame";
+import Races from "./pages/Races";
+import Leaderboard from "./pages/Leaderboard";
+import Clash from "./pages/Clash";
+import SignIn from "./pages/SignIn";
 
 const App: React.FC = () => {
   return (

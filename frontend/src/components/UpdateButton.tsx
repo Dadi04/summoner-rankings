@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const UpdateButton: React.FC<{regionCode: string; encodedSummoner: string; api: string; buttonText: string; setData: React.Dispatch<React.SetStateAction<any>>;}> = ({regionCode, encodedSummoner, api, buttonText, setData}) => {
     const [cooldown, setCooldown] = useState(false);
