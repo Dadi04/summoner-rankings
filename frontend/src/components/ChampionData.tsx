@@ -24,9 +24,11 @@ export const ChampionSpellName: React.FC<{spell: any; classes?: string;}> = ({sp
 };
 
 export const ChampionSpellCooldowns: React.FC<{spell: any; classes?: string;}> = ({spell, classes}) => {
+    const raw = spell.cooldown?.modifiers?.[0]?.values;
+    const text = raw ? raw.join("/") : "N/A";
 
     return (
-        <p className={classes}>Cooldown: {spell.cooldown.modifiers[0].values.join("/")}</p>
+        <p className={classes}>Cooldown: {text}</p>
     );
 };
 
