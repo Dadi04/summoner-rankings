@@ -371,7 +371,7 @@ const Masteries: React.FC = () => {
                     })}
                 </div>
             ) : (
-                <div className="h-[200px] bg-neutral-800 text-2xl mb-2 p-4 flex items-center justify-center">No Masteries found</div>
+                <div className="h-[200px] bg-neutral-800 text-neutral-50 text-2xl mb-2 p-4 flex items-center justify-center">No Masteries found</div>
             )}
         </div>
     );

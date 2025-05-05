@@ -214,7 +214,7 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                             <div>
                                 {(event.type === "CHAMPION_KILL") && (
                                     <>
-                                        {(event.killerId > 0 && event.victimId > 0) ? (
+                                        {(event.killerId > 0 && event.victimId > 0) && (
                                             <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
                                                 <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
                                                 <div key={dotKey} className={`flex w-full p-2 gap-2 transition ${(timelineFilter[2] && info.participants[event.killerId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.killerId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
@@ -263,434 +263,218 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                                     )}
                                                 </div>
                                             </div>
-                                        ) : (
-                                            <div>Unknown event</div>
                                         )}
                                     </>
                                 )}
                                 {event.type === "ITEM_PURCHASED" && (
-                                    <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
-                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
-                                        <div key={dotKey} className={`flex w-full p-2 gap-2 transition items-center ${(timelineFilter[2] && info.participants[event.participantId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.participantId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
-                                            <div className="flex gap-1 items-center">
-                                                {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
-                                                    <>
-                                                        {kaynTransformation.transformType === "SLAYER" && (
-                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                    <>
+                                        {event.participantId > 0 && (
+                                            <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
+                                                <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                                <div key={dotKey} className={`flex w-full p-2 gap-2 transition items-center ${(timelineFilter[2] && info.participants[event.participantId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.participantId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
+                                                    <div className="flex gap-1 items-center">
+                                                        {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                            <>
+                                                                {kaynTransformation.transformType === "SLAYER" && (
+                                                                    <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                )}
+                                                                {kaynTransformation.transformType === "ASSASSIN" && (
+                                                                    <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                )}
+                                                            </>
+                                                        ): (
+                                                            <ChampionImage championId={info.participants[event.participantId-1].championId} teamId={info.participants[event.participantId-1].teamId} isTeamIdSame={false} classes="h-10" />
                                                         )}
-                                                        {kaynTransformation.transformType === "ASSASSIN" && (
-                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
-                                                        )}
-                                                    </>
-                                                ): (
-                                                    <ChampionImage championId={info.participants[event.participantId-1].championId} teamId={info.participants[event.participantId-1].teamId} isTeamIdSame={false} classes="h-10" />
-                                                )}
-                                                <p className="text-sm text-gray-200">{info.participants[event.participantId-1].riotIdGameName}</p>
+                                                        <p className="text-sm text-gray-200">{info.participants[event.participantId-1].riotIdGameName}</p>
+                                                    </div>
+                                                    <p className="text-sm text-white">purchased</p>
+                                                    <ItemImage itemId={event.itemId} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
+                                                    <p className="text-sm text-gray-200">{items[event.itemId]?.name || "Unknown Item"}</p>
+                                                </div>
                                             </div>
-                                            <p className="text-sm text-white">purchased</p>
-                                            <ItemImage itemId={event.itemId} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
-                                            <p className="text-sm text-gray-200">{items[event.itemId]?.name || "Unknown Item"}</p>
-                                        </div>
-                                    </div>
+                                        )}
+                                    </>
                                 )}
                                 {event.type === "ITEM_SOLD" && (
-                                    <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
-                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
-                                        <div key={dotKey} className={`flex w-full p-2 gap-2 transition items-center ${(timelineFilter[2] && info.participants[event.participantId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.participantId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
-                                            <div className="flex gap-1 items-center">
-                                                {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
-                                                    <>
-                                                        {kaynTransformation.transformType === "SLAYER" && (
-                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                    <>
+                                        {event.participantId > 0 && (
+                                            <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
+                                                <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                                <div key={dotKey} className={`flex w-full p-2 gap-2 transition items-center ${(timelineFilter[2] && info.participants[event.participantId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.participantId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
+                                                    <div className="flex gap-1 items-center">
+                                                        {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                            <>
+                                                                {kaynTransformation.transformType === "SLAYER" && (
+                                                                    <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                )}
+                                                                {kaynTransformation.transformType === "ASSASSIN" && (
+                                                                    <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                )}
+                                                            </>
+                                                        ): (
+                                                            <ChampionImage championId={info.participants[event.participantId-1].championId} teamId={info.participants[event.participantId-1].teamId} isTeamIdSame={false} classes="h-10" />
                                                         )}
-                                                        {kaynTransformation.transformType === "ASSASSIN" && (
-                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
-                                                        )}
-                                                    </>
-                                                ): (
-                                                    <ChampionImage championId={info.participants[event.participantId-1].championId} teamId={info.participants[event.participantId-1].teamId} isTeamIdSame={false} classes="h-10" />
-                                                )}
-                                                <p className="text-sm text-gray-200">{info.participants[event.participantId-1].riotIdGameName}</p>
+                                                        <p className="text-sm text-gray-200">{info.participants[event.participantId-1].riotIdGameName}</p>
+                                                    </div>
+                                                    <p className="text-sm text-white">sold</p>
+                                                    <div className="relative">
+                                                        <ItemImage itemId={event.itemId} matchWon={info.participants[event.participantId-1].win} classes="h-10 filter grayscale brightness-70" />
+                                                        <svg className="absolute bottom-0 left-0 h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                            <line x1="4" y1="4" x2="20" y2="20" stroke="red" strokeWidth="3" />
+                                                            <line x1="20" y1="4" x2="4" y2="20" stroke="red" strokeWidth="3" />
+                                                        </svg>
+                                                    </div>
+                                                    <p className="text-sm text-gray-200">{items[event.itemId]?.name || "Unknown Item"}</p>
+                                                </div>
                                             </div>
-                                            <p className="text-sm text-white">sold</p>
-                                            <div className="relative">
-                                                <ItemImage itemId={event.itemId} matchWon={info.participants[event.participantId-1].win} classes="h-10 filter grayscale brightness-70" />
-                                                <svg className="absolute bottom-0 left-0 h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                    <line x1="4" y1="4" x2="20" y2="20" stroke="red" strokeWidth="3" />
-                                                    <line x1="20" y1="4" x2="4" y2="20" stroke="red" strokeWidth="3" />
-                                                </svg>
-                                            </div>
-                                            <p className="text-sm text-gray-200">{items[event.itemId]?.name || "Unknown Item"}</p>
-                                        </div>
-                                    </div>
+                                        )}
+                                    </>
                                 )}
                                 {event.type === "ITEM_DESTROYED" && (
-                                    <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
-                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
-                                        <div key={dotKey} className={`flex w-full p-2 gap-2 transition items-center ${(timelineFilter[2] && info.participants[event.participantId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.participantId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
-                                            <div className="flex gap-1 items-center">
-                                                {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
-                                                    <>
-                                                        {kaynTransformation.transformType === "SLAYER" && (
-                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                    <>
+                                        {event.participantId > 0 && (
+                                            <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
+                                                <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                                <div key={dotKey} className={`flex w-full p-2 gap-2 transition items-center ${(timelineFilter[2] && info.participants[event.participantId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.participantId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
+                                                    <div className="flex gap-1 items-center">
+                                                        {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                            <>
+                                                                {kaynTransformation.transformType === "SLAYER" && (
+                                                                    <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                )}
+                                                                {kaynTransformation.transformType === "ASSASSIN" && (
+                                                                    <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                )}
+                                                            </>
+                                                        ): (
+                                                            <ChampionImage championId={info.participants[event.participantId-1].championId} teamId={info.participants[event.participantId-1].teamId} isTeamIdSame={false} classes="h-10" />
                                                         )}
-                                                        {kaynTransformation.transformType === "ASSASSIN" && (
-                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.participantId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
-                                                        )}
-                                                    </>
-                                                ): (
-                                                    <ChampionImage championId={info.participants[event.participantId-1].championId} teamId={info.participants[event.participantId-1].teamId} isTeamIdSame={false} classes="h-10" />
-                                                )}
-                                                <p className="text-sm text-gray-200">{info.participants[event.participantId-1].riotIdGameName}</p>
-                                            </div>
-                                            {event.itemId === 3003 && (
-                                                <>  
-                                                    <p className="text-sm text-white">completed a quest for</p>
-                                                    <ItemImage itemId={3040} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
-                                                    <p className="text-sm text-gray-200">Seraph's Embrace</p>
-                                                </>
-                                            )}
-                                            {event.itemId === 3004 && (
-                                                <>  
-                                                    <p className="text-sm text-white">completed a quest for</p>
-                                                    <ItemImage itemId={3042} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
-                                                    <p className="text-sm text-gray-200">Muramana</p>
-                                                </>
-                                            )}
-                                            {event.itemId === 3119 && (
-                                                <>  
-                                                    <p className="text-sm text-white">completed a quest for</p>
-                                                    <ItemImage itemId={3121} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
-                                                    <p className="text-sm text-gray-200">Fimbulwinter</p>
-                                                </>
-                                            )}
-                                            {event.itemId === 3865 && (
-                                                <>  
-                                                    <p className="text-sm text-white">completed a quest for</p>
-                                                    <ItemImage itemId={event.itemId+1} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
-                                                    <p className="text-sm text-gray-200">Runic Compass</p>
-                                                </>
-                                            )}
-                                            {event.itemId === 3866 && (
-                                                <>
-                                                    <p className="text-sm text-white">completed a quest for</p>
-                                                    <ItemImage itemId={event.itemId+1} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
-                                                    <p className="text-sm text-gray-200">Bounty of Worlds</p>
-                                                </>
-                                            )}
-                                            {event.itemId === 3867 && (
-                                                <>
-                                                    <p className="text-sm text-white">chose</p>
-                                                    <ItemImage itemId={info.participants[event.participantId-1].teamId === 100 ? blueTeamSupportItemId : redTeamSupportItemId} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
-                                                    <p className="text-sm text-gray-200">{items[info.participants[event.participantId-1].teamId === 100 ? blueTeamSupportItemId : redTeamSupportItemId]?.name || "Unknown Item"}</p>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                                {event.type === "WARD_PLACED" && (
-                                    <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
-                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
-                                        <div key={dotKey} className={`flex w-full p-2 gap-2 transition items-center ${(timelineFilter[2] && info.participants[event.creatorId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.creatorId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
-                                            <div className="flex gap-1 items-center">
-                                                {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
-                                                    <>
-                                                        {kaynTransformation.transformType === "SLAYER" && (
-                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.creatorId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
-                                                        )}
-                                                        {kaynTransformation.transformType === "ASSASSIN" && (
-                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.creatorId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
-                                                        )}
-                                                    </>
-                                                ): (
-                                                    <ChampionImage championId={info.participants[event.creatorId-1].championId} teamId={info.participants[event.creatorId-1].teamId} isTeamIdSame={false} classes="h-10" />
-                                                )}
-                                                <p className="text-sm text-gray-200">{info.participants[event.creatorId-1].riotIdGameName}</p>
-                                            </div>
-                                            <p className="text-sm text-white">placed</p>
-                                            {event.wardType === "YELLOW_TRINKET" && (
-                                                <>
-                                                    <ItemImage itemId={3340} matchWon={info.participants[event.creatorId-1].win} classes="h-10" />
-                                                    <p className="text-sm text-gray-200">Stealth Ward</p>
-                                                </>
-                                            )}
-                                            {event.wardType === "CONTROL_WARD" && (
-                                                <>
-                                                    <ItemImage itemId={2055} matchWon={info.participants[event.creatorId-1].win} classes="h-10" />
-                                                    <p className="text-sm text-gray-200">Control Ward</p>
-                                                </>
-                                            )}
-                                            {event.wardType === "BLUE_TRINKET" && (
-                                                <>
-                                                    <ItemImage itemId={3363} matchWon={info.participants[event.creatorId-1].win} classes="h-10" />
-                                                    <p className="text-sm text-gray-200">Farsight Alteration</p>
-                                                </>
-                                            )}
-                                            {event.wardType === "SIGHT_WARD" && (() => {
-                                                const player = info.participants[event.creatorId - 1];
-                                                const prog = player.teamId === 100 ? blueTeamSupportItemProgression : redTeamSupportItemProgression;
-                                                if (prog.length === 0) return null;
-
-                                                let displayItem;
-                                                if (prog[0].timestamp < event.timestamp && prog[1] && prog[1].timestamp > event.timestamp) {
-                                                    displayItem = prog[1];
-                                                } else if (prog[1] && prog[1].timestamp < event.timestamp && prog[2] && prog[2].timestamp > event.timestamp) {
-                                                    displayItem = prog[2];
-                                                } else if (prog[2] && prog[2].timestamp < event.timestamp) {
-                                                    displayItem = { itemId: player.teamId === 100 ? blueTeamSupportItemId : redTeamSupportItemId };
-                                                } else {
-                                                    return null;
-                                                }
-
-                                                return (
-                                                    <>
-                                                        <ItemImage itemId={displayItem.itemId} matchWon={player.win} classes="h-10" />
-                                                        <p className="text-sm text-gray-200">
-                                                            {items[displayItem.itemId]?.name || "Unknown Item"} Ward
-                                                        </p>
-                                                    </>
-                                                )
-                                            })()}
-                                        </div>
-                                    </div>
-                                )}
-                                {event.type === "WARD_KILL" && (
-                                    <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
-                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
-                                        <div key={dotKey} className={`flex w-full p-2 gap-2 transition items-center ${(timelineFilter[2] && info.participants[event.killerId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.killerId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
-                                            <div className="flex gap-1 items-center">
-                                                {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
-                                                    <>
-                                                        {kaynTransformation.transformType === "SLAYER" && (
-                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
-                                                        )}
-                                                        {kaynTransformation.transformType === "ASSASSIN" && (
-                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
-                                                        )}
-                                                    </>
-                                                ): (
-                                                    <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
-                                                )}
-                                                <p className="text-sm text-gray-200">{info.participants[event.killerId-1].riotIdGameName}</p>
-                                            </div>
-                                            <p className="text-sm text-white">destroyed</p>
-                                            {event.wardType === "YELLOW_TRINKET" && (
-                                                <>
-                                                    <ItemImage itemId={3340} matchWon={info.participants[event.killerId-1].win} classes="h-10" />
-                                                    <p className="text-sm text-gray-200">Stealth Ward</p>
-                                                </>
-                                            )}
-                                            {event.wardType === "CONTROL_WARD" && (
-                                                <>
-                                                    <ItemImage itemId={2055} matchWon={info.participants[event.killerId-1].win} classes="h-10" />
-                                                    <p className="text-sm text-gray-200">Control Ward</p>
-                                                </>
-                                            )}
-                                            {event.wardType === "BLUE_TRINKET" && (
-                                                <>
-                                                    <ItemImage itemId={3363} matchWon={info.participants[event.killerId-1].win} classes="h-10" />
-                                                    <p className="text-sm text-gray-200">Farsight Alteration</p>
-                                                </>
-                                            )}
-                                            {event.wardType === "SIGHT_WARD" && (() => {
-                                                const player = info.participants[event.killerId - 1];
-                                                const prog = player.teamId === 100 ? redTeamSupportItemProgression : blueTeamSupportItemProgression;
-
-                                                if (prog.length === 0) return null;
-
-                                                let displayItem;
-                                                if (prog[0].timestamp < event.timestamp && prog[1] && prog[1].timestamp > event.timestamp) {
-                                                    displayItem = prog[1];
-                                                } else if (prog[1] && prog[1].timestamp < event.timestamp && prog[2] && prog[2].timestamp > event.timestamp) {
-                                                    displayItem = prog[2];
-                                                } else if (prog[2] && prog[2].timestamp < event.timestamp) {
-                                                    displayItem = { itemId: player.teamId === 100 ? redTeamSupportItemId : blueTeamSupportItemId };
-                                                } else {
-                                                    return null;
-                                                }
-
-                                                return (
-                                                    <>
-                                                        <ItemImage itemId={displayItem.itemId} matchWon={player.win} classes="h-10" />
-                                                        <p className="text-sm text-gray-200">
-                                                            {items[displayItem.itemId]?.name || "Unknown Item"} Ward
-                                                        </p>
-                                                    </>
-                                                )
-                                            })()}
-                                        </div>
-                                    </div>
-                                )}
-                                {event.type === "CHAMPION_TRANSFORM" && (
-                                    <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
-                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
-                                        <div key={dotKey} className={`flex w-full p-2 gap-2 transition items-center ${(timelineFilter[2] && info.participants[event.participantId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.participantId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
-                                            <div className="flex gap-1 items-center">
-                                                <ChampionImage championId={info.participants[event.participantId-1].championId} teamId={info.participants[event.participantId-1].teamId} isTeamIdSame={false} classes="h-10" />
-                                                <p className="text-sm text-gray-200">{info.participants[event.participantId-1].riotIdGameName}</p>
-                                            </div>
-                                            <p className="text-sm text-white">finished the transformation and chose</p>
-                                            {event.transformType === "ASSASSIN" && (
-                                                <>
-                                                    <img src={blueKaynIcon} alt="blueKaynIcon" className="h-10" />
-                                                    <p className="text-sm text-gray-200">Shadow Assassin</p>
-                                                </>
-                                            )}
-                                            {event.transformType === "SLAYER" && (
-                                                <>
-                                                    <img src={redKaynIcon} alt="redKaynIcon" className="h-10" />
-                                                    <p className="text-sm text-gray-200">Darkin</p>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                                {event.type === "BUILDING_KILL" && (
-                                    <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
-                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
-                                        <div key={dotKey} className={`flex w-full p-2 gap-2 transition ${(timelineFilter[2] && info.participants[event.killerId-1]?.participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : event.teamId === 100 ? "bg-[#59343B] hover:bg-[#703C47]" : "bg-[#28344E] hover:bg-[#2F436E]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
-                                            <div className="flex gap-2 items-center">
-                                                <div className="flex gap-1 items-center">
-                                                    {event.killerId !== 0 ? (
-                                                        <>
-                                                            {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
-                                                                <>
-                                                                    {kaynTransformation.transformType === "SLAYER" && (
-                                                                        <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
-                                                                    )}
-                                                                    {kaynTransformation.transformType === "ASSASSIN" && (
-                                                                        <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
-                                                                    )}
-                                                                </>
-                                                            ): (
-                                                                <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
-                                                            )}
-                                                            <p className="text-sm text-gray-200">{info.participants[event.killerId-1].riotIdGameName}</p>
+                                                        <p className="text-sm text-gray-200">{info.participants[event.participantId-1].riotIdGameName}</p>
+                                                    </div>
+                                                    {event.itemId === 3003 && (
+                                                        <>  
+                                                            <p className="text-sm text-white">completed a quest for</p>
+                                                            <ItemImage itemId={3040} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
+                                                            <p className="text-sm text-gray-200">Seraph's Embrace</p>
                                                         </>
-                                                    ) : (
+                                                    )}
+                                                    {event.itemId === 3004 && (
+                                                        <>  
+                                                            <p className="text-sm text-white">completed a quest for</p>
+                                                            <ItemImage itemId={3042} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
+                                                            <p className="text-sm text-gray-200">Muramana</p>
+                                                        </>
+                                                    )}
+                                                    {event.itemId === 3119 && (
+                                                        <>  
+                                                            <p className="text-sm text-white">completed a quest for</p>
+                                                            <ItemImage itemId={3121} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
+                                                            <p className="text-sm text-gray-200">Fimbulwinter</p>
+                                                        </>
+                                                    )}
+                                                    {event.itemId === 3865 && (
+                                                        <>  
+                                                            <p className="text-sm text-white">completed a quest for</p>
+                                                            <ItemImage itemId={event.itemId+1} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
+                                                            <p className="text-sm text-gray-200">Runic Compass</p>
+                                                        </>
+                                                    )}
+                                                    {event.itemId === 3866 && (
                                                         <>
-                                                            {event.teamId === 100 ? (
-                                                                <>
-                                                                    <img src={redTeamMinion} alt="redTeamMinion" className="h-10 border border-red-500" />
-                                                                    <p className="text-sm text-gray-200">Red Team's minions</p>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <img src={blueTeamMinion} alt="blueTeamMinion" className="h-10 border border-blue-500" />
-                                                                    <p className="text-sm text-gray-200">Blue Team's minions</p>
-                                                                </>
-                                                            )}
+                                                            <p className="text-sm text-white">completed a quest for</p>
+                                                            <ItemImage itemId={event.itemId+1} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
+                                                            <p className="text-sm text-gray-200">Bounty of Worlds</p>
+                                                        </>
+                                                    )}
+                                                    {event.itemId === 3867 && (
+                                                        <>
+                                                            <p className="text-sm text-white">chose</p>
+                                                            <ItemImage itemId={info.participants[event.participantId-1].teamId === 100 ? blueTeamSupportItemId : redTeamSupportItemId} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
+                                                            <p className="text-sm text-gray-200">{items[info.participants[event.participantId-1].teamId === 100 ? blueTeamSupportItemId : redTeamSupportItemId]?.name || "Unknown Item"}</p>
                                                         </>
                                                     )}
                                                 </div>
-                                                <p className="text-sm text-white">destroyed</p>
-                                                {event.buildingType === "TOWER_BUILDING" && (
-                                                    <>
-                                                        {event.teamId === 200 ? (
-                                                            <div className="flex-none flex items-center justify-center w-10 h-10 bg-neutral-700 border border-red-500">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 13 20" className="h-7 [&_path]:fill-[#EF4444]"> 
-                                                                    <path fill="#3273fa" d="M3.452 3.137l1.156.513.627.277 1.265.561 1.266-.56.627-.279 1.155-.512L6.5 0zm1.424 1.351l1.62 2.551 1.618-2.55-.009-.015-1.61.719-1.61-.719zm1.624 3.8L3.737 3.965 1.62 3.026 0 3.971l1.854 2.085L6.5 11.278l4.646-5.222L13 3.97l-1.619-.945-2.118.94zM1.398 20h10.204L9.95 18.418H3.052zm1.99-2.31h6.234l1.404-10.323-4.52 5.076-4.522-5.076z" />
-                                                                </svg>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="flex-none flex items-center justify-center w-10 h-10 bg-neutral-700 border border-blue-500">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 13 20" className="h-7 [&_path]:fill-[#3B82F6]"> 
-                                                                    <path fill="#3273fa" d="M3.452 3.137l1.156.513.627.277 1.265.561 1.266-.56.627-.279 1.155-.512L6.5 0zm1.424 1.351l1.62 2.551 1.618-2.55-.009-.015-1.61.719-1.61-.719zm1.624 3.8L3.737 3.965 1.62 3.026 0 3.971l1.854 2.085L6.5 11.278l4.646-5.222L13 3.97l-1.619-.945-2.118.94zM1.398 20h10.204L9.95 18.418H3.052zm1.99-2.31h6.234l1.404-10.323-4.52 5.076-4.522-5.076z" />
-                                                                </svg>
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                )}
-                                                {event.buildingType === "INHIBITOR_BUILDING" && (
-                                                    <>
-                                                        {event.teamId === 200 ? (
-                                                            <div className="flex-none flex items-center justify-center w-10 h-10 bg-neutral-700 border border-red-500">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" className="h-7 [&_path]:fill-[#EF4444]">
-                                                                    <path d="M10 0l3 3h4v4l3 3-3 3v4h-4l-3 3-3-3H3v-4l-3-3 3-3V3h4zM10 5a5 5 0 100 10 5 5 0 000-10z" />
-                                                                </svg>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="flex-none flex items-center justify-center w-10 h-10 bg-neutral-700 border border-blue-500">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" className="h-7 [&_path]:fill-[#3B82F6]">
-                                                                    <path d="M10 0l3 3h4v4l3 3-3 3v4h-4l-3 3-3-3H3v-4l-3-3 3-3V3h4zM10 5a5 5 0 100 10 5 5 0 000-10z" />
-                                                                </svg>
-                                                            </div>
-                                                        )}
-                                                        <p className="text-sm text-gray-200">Inhibitor</p>
-                                                    </>
-                                                )}
-                                                {event.buildingType === "NEXUS_BUILDING" && (
-                                                    <>
-                                                        {event.teamId === 200 ? (
-                                                            <div className="flex-none flex items-center justify-center w-10 h-10 bg-neutral-700 border border-red-500">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-7 [&_path]:fill-[#EF4444]">
-                                                                    <path fill="#3B82F6" d="M12 0l3.5 5.5 5 2-2 4.5-6.5 7.5-6.5-7.5-2-4.5 5-2L12 0zm0 3l-2.5 4-4 1.5 1.5 3.5 5 5.5 5-5.5 1.5-3.5-4-1.5L12 3zm-4 14l1.5 3H14.5l1.5-3H8z" />
-                                                                </svg>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="flex-none flex items-center justify-center w-10 h-10 bg-neutral-700 border border-blue-500">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-7 [&_path]:fill-[#3B82F6]">
-                                                                    <path fill="#3B82F6" d="M12 0l3.5 5.5 5 2-2 4.5-6.5 7.5-6.5-7.5-2-4.5 5-2L12 0zm0 3l-2.5 4-4 1.5 1.5 3.5 5 5.5 5-5.5 1.5-3.5-4-1.5L12 3zm-4 14l1.5 3H14.5l1.5-3H8z" />
-                                                                </svg>
-                                                            </div>
-                                                        )}
-                                                        <p className="text-sm text-gray-200">Nexus</p>
-                                                    </>
-                                                )}
-                                                {event.towerType === "OUTER_TURRET" && (
-                                                    <p className="text-sm text-gray-200">Outer Tower</p>
-                                                )}
-                                                {event.towerType === "INNER_TURRET" && (
-                                                    <p className="text-sm text-gray-200">Inner Tower</p>
-                                                )}
-                                                {event.towerType === "BASE_TURRET" && (
-                                                    <p className="text-sm text-gray-200">Inhibitor Tower</p>
-                                                )}
-                                                {event.towerType === "NEXUS_TURRET" && (
-                                                    <p className="text-sm text-gray-200">Nexus Tower</p>
-                                                )}
-                                                {event.laneType === "TOP_LANE" && (
-                                                    <>
-                                                        <p className="text-sm text-gray-200">on</p>
-                                                        <img src={`https://dpm.lol/position/TOP.svg`} alt="TOP" className="h-10" />
-                                                        <p className="text-sm text-gray-200">lane</p>
-                                                    </>
-                                                )}
-                                                {event.laneType === "MID_LANE" && (
-                                                    <>
-                                                        <p className="text-sm text-gray-200">on</p>
-                                                        <img src={`https://dpm.lol/position/MIDDLE.svg`} alt="MIDDLE" className="h-10" />
-                                                        <p className="text-sm text-gray-200">lane</p>
-                                                    </>
-                                                )}
-                                                {event.laneType === "BOT_LANE" && (
-                                                    <>
-                                                        <p className="text-sm text-gray-200">on</p>
-                                                        <img src={`https://dpm.lol/position/BOTTOM.svg`} alt="BOTTOM" className="h-10" />
-                                                        <p className="text-sm text-gray-200">lane</p>
-                                                    </>
-                                                )}
                                             </div>
-                                            {event.assistingParticipantIds && (
-                                                <div className="flex items-end gap-1">
-                                                    <p className="text-xs">assists:</p>
-                                                    {event.assistingParticipantIds.map((id: number, assistIndex: number) => (
-                                                        <div key={`assist-${event.timestamp}-${id}-${assistIndex}`}>
-                                                            <ChampionImage championId={info.participants[id-1].championId} teamId={info.participants[id-1].teamId} isTeamIdSame={false} classes="h-5" />
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                        )}
+                                    </>
                                 )}
-                                {event.type === "TURRET_PLATE_DESTROYED" && (
-                                    <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
-                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
-                                        <div key={dotKey} className={`flex w-full p-2 gap-2 transition items-center ${(timelineFilter[2] && info.participants[event.killerId-1]?.participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : event.teamId === 100 ? "bg-[#59343B]" : "bg-[#28344E]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
-                                            <div className="flex gap-1 items-center">
-                                                {event.killerId !== 0 ? (
-                                                    <>
+                                {event.type === "WARD_PLACED" && (
+                                    <>
+                                        {event.creatorId > 0 && (
+                                            <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
+                                                <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                                <div key={dotKey} className={`flex w-full p-2 gap-2 transition items-center ${(timelineFilter[2] && info.participants[event.creatorId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.creatorId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
+                                                    <div className="flex gap-1 items-center">
+                                                        {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                            <>
+                                                                {kaynTransformation.transformType === "SLAYER" && (
+                                                                    <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.creatorId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                )}
+                                                                {kaynTransformation.transformType === "ASSASSIN" && (
+                                                                    <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.creatorId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                )}
+                                                            </>
+                                                        ): (
+                                                            <ChampionImage championId={info.participants[event.creatorId-1].championId} teamId={info.participants[event.creatorId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                        )}
+                                                        <p className="text-sm text-gray-200">{info.participants[event.creatorId-1].riotIdGameName}</p>
+                                                    </div>
+                                                    <p className="text-sm text-white">placed</p>
+                                                    {event.wardType === "YELLOW_TRINKET" && (
+                                                        <>
+                                                            <ItemImage itemId={3340} matchWon={info.participants[event.creatorId-1].win} classes="h-10" />
+                                                            <p className="text-sm text-gray-200">Stealth Ward</p>
+                                                        </>
+                                                    )}
+                                                    {event.wardType === "CONTROL_WARD" && (
+                                                        <>
+                                                            <ItemImage itemId={2055} matchWon={info.participants[event.creatorId-1].win} classes="h-10" />
+                                                            <p className="text-sm text-gray-200">Control Ward</p>
+                                                        </>
+                                                    )}
+                                                    {event.wardType === "BLUE_TRINKET" && (
+                                                        <>
+                                                            <ItemImage itemId={3363} matchWon={info.participants[event.creatorId-1].win} classes="h-10" />
+                                                            <p className="text-sm text-gray-200">Farsight Alteration</p>
+                                                        </>
+                                                    )}
+                                                    {event.wardType === "SIGHT_WARD" && (() => {
+                                                        const player = info.participants[event.creatorId - 1];
+                                                        const prog = player.teamId === 100 ? blueTeamSupportItemProgression : redTeamSupportItemProgression;
+                                                        if (prog.length === 0) return null;
+
+                                                        let displayItem;
+                                                        if (prog[0].timestamp < event.timestamp && prog[1] && prog[1].timestamp > event.timestamp) {
+                                                            displayItem = prog[1];
+                                                        } else if (prog[1] && prog[1].timestamp < event.timestamp && prog[2] && prog[2].timestamp > event.timestamp) {
+                                                            displayItem = prog[2];
+                                                        } else if (prog[2] && prog[2].timestamp < event.timestamp) {
+                                                            displayItem = { itemId: player.teamId === 100 ? blueTeamSupportItemId : redTeamSupportItemId };
+                                                        } else {
+                                                            return null;
+                                                        }
+
+                                                        return (
+                                                            <>
+                                                                <ItemImage itemId={displayItem.itemId} matchWon={player.win} classes="h-10" />
+                                                                <p className="text-sm text-gray-200">
+                                                                    {items[displayItem.itemId]?.name || "Unknown Item"} Ward
+                                                                </p>
+                                                            </>
+                                                        )
+                                                    })()}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                                {event.type === "WARD_KILL" && (
+                                    <>
+                                        {event.killerId > 0 && (
+                                            <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
+                                                <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                                <div key={dotKey} className={`flex w-full p-2 gap-2 transition items-center ${(timelineFilter[2] && info.participants[event.killerId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.killerId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
+                                                    <div className="flex gap-1 items-center">
                                                         {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
                                                             <>
                                                                 {kaynTransformation.transformType === "SLAYER" && (
@@ -704,48 +488,294 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                                             <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
                                                         )}
                                                         <p className="text-sm text-gray-200">{info.participants[event.killerId-1].riotIdGameName}</p>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        {event.teamId === 100 ? (
+                                                    </div>
+                                                    <p className="text-sm text-white">destroyed</p>
+                                                    {event.wardType === "YELLOW_TRINKET" && (
+                                                        <>
+                                                            <ItemImage itemId={3340} matchWon={info.participants[event.killerId-1].win} classes="h-10" />
+                                                            <p className="text-sm text-gray-200">Stealth Ward</p>
+                                                        </>
+                                                    )}
+                                                    {event.wardType === "CONTROL_WARD" && (
+                                                        <>
+                                                            <ItemImage itemId={2055} matchWon={info.participants[event.killerId-1].win} classes="h-10" />
+                                                            <p className="text-sm text-gray-200">Control Ward</p>
+                                                        </>
+                                                    )}
+                                                    {event.wardType === "BLUE_TRINKET" && (
+                                                        <>
+                                                            <ItemImage itemId={3363} matchWon={info.participants[event.killerId-1].win} classes="h-10" />
+                                                            <p className="text-sm text-gray-200">Farsight Alteration</p>
+                                                        </>
+                                                    )}
+                                                    {event.wardType === "SIGHT_WARD" && (() => {
+                                                        const player = info.participants[event.killerId - 1];
+                                                        const prog = player.teamId === 100 ? redTeamSupportItemProgression : blueTeamSupportItemProgression;
+
+                                                        if (prog.length === 0) return null;
+
+                                                        let displayItem;
+                                                        if (prog[0].timestamp < event.timestamp && prog[1] && prog[1].timestamp > event.timestamp) {
+                                                            displayItem = prog[1];
+                                                        } else if (prog[1] && prog[1].timestamp < event.timestamp && prog[2] && prog[2].timestamp > event.timestamp) {
+                                                            displayItem = prog[2];
+                                                        } else if (prog[2] && prog[2].timestamp < event.timestamp) {
+                                                            displayItem = { itemId: player.teamId === 100 ? redTeamSupportItemId : blueTeamSupportItemId };
+                                                        } else {
+                                                            return null;
+                                                        }
+
+                                                        return (
                                                             <>
-                                                                <img src={redTeamMinion} alt="redTeamMinion" className="h-10 border border-red-500" />
-                                                                <p className="text-sm text-gray-200">Red Team's minions</p>
+                                                                <ItemImage itemId={displayItem.itemId} matchWon={player.win} classes="h-10" />
+                                                                <p className="text-sm text-gray-200">
+                                                                    {items[displayItem.itemId]?.name || "Unknown Item"} Ward
+                                                                </p>
+                                                            </>
+                                                        )
+                                                    })()}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                                {event.type === "CHAMPION_TRANSFORM" && (
+                                    <>
+                                        {event.participantId > 0 && (
+                                            <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
+                                                <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                                <div key={dotKey} className={`flex w-full p-2 gap-2 transition items-center ${(timelineFilter[2] && info.participants[event.participantId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.participantId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
+                                                    <div className="flex gap-1 items-center">
+                                                        <ChampionImage championId={info.participants[event.participantId-1].championId} teamId={info.participants[event.participantId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                        <p className="text-sm text-gray-200">{info.participants[event.participantId-1].riotIdGameName}</p>
+                                                    </div>
+                                                    <p className="text-sm text-white">finished the transformation and chose</p>
+                                                    {event.transformType === "ASSASSIN" && (
+                                                        <>
+                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className="h-10" />
+                                                            <p className="text-sm text-gray-200">Shadow Assassin</p>
+                                                        </>
+                                                    )}
+                                                    {event.transformType === "SLAYER" && (
+                                                        <>
+                                                            <img src={redKaynIcon} alt="redKaynIcon" className="h-10" />
+                                                            <p className="text-sm text-gray-200">Darkin</p>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                                {event.type === "BUILDING_KILL" && (
+                                    <>
+                                        {event.killerId > 0 && (
+                                            <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
+                                                <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                                <div key={dotKey} className={`flex w-full p-2 gap-2 transition ${(timelineFilter[2] && info.participants[event.killerId-1]?.participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : event.teamId === 100 ? "bg-[#59343B] hover:bg-[#703C47]" : "bg-[#28344E] hover:bg-[#2F436E]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
+                                                    <div className="flex gap-2 items-center">
+                                                        <div className="flex gap-1 items-center">
+                                                            {event.killerId !== 0 ? (
+                                                                <>
+                                                                    {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                                        <>
+                                                                            {kaynTransformation.transformType === "SLAYER" && (
+                                                                                <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                            )}
+                                                                            {kaynTransformation.transformType === "ASSASSIN" && (
+                                                                                <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                            )}
+                                                                        </>
+                                                                    ): (
+                                                                        <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                                    )}
+                                                                    <p className="text-sm text-gray-200">{info.participants[event.killerId-1].riotIdGameName}</p>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    {event.teamId === 100 ? (
+                                                                        <>
+                                                                            <img src={redTeamMinion} alt="redTeamMinion" className="h-10 border border-red-500" />
+                                                                            <p className="text-sm text-gray-200">Red Team's minions</p>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <img src={blueTeamMinion} alt="blueTeamMinion" className="h-10 border border-blue-500" />
+                                                                            <p className="text-sm text-gray-200">Blue Team's minions</p>
+                                                                        </>
+                                                                    )}
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-sm text-white">destroyed</p>
+                                                        {event.buildingType === "TOWER_BUILDING" && (
+                                                            <>
+                                                                {event.teamId === 200 ? (
+                                                                    <div className="flex-none flex items-center justify-center w-10 h-10 bg-neutral-700 border border-red-500">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 13 20" className="h-7 [&_path]:fill-[#EF4444]"> 
+                                                                            <path fill="#3273fa" d="M3.452 3.137l1.156.513.627.277 1.265.561 1.266-.56.627-.279 1.155-.512L6.5 0zm1.424 1.351l1.62 2.551 1.618-2.55-.009-.015-1.61.719-1.61-.719zm1.624 3.8L3.737 3.965 1.62 3.026 0 3.971l1.854 2.085L6.5 11.278l4.646-5.222L13 3.97l-1.619-.945-2.118.94zM1.398 20h10.204L9.95 18.418H3.052zm1.99-2.31h6.234l1.404-10.323-4.52 5.076-4.522-5.076z" />
+                                                                        </svg>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="flex-none flex items-center justify-center w-10 h-10 bg-neutral-700 border border-blue-500">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 13 20" className="h-7 [&_path]:fill-[#3B82F6]"> 
+                                                                            <path fill="#3273fa" d="M3.452 3.137l1.156.513.627.277 1.265.561 1.266-.56.627-.279 1.155-.512L6.5 0zm1.424 1.351l1.62 2.551 1.618-2.55-.009-.015-1.61.719-1.61-.719zm1.624 3.8L3.737 3.965 1.62 3.026 0 3.971l1.854 2.085L6.5 11.278l4.646-5.222L13 3.97l-1.619-.945-2.118.94zM1.398 20h10.204L9.95 18.418H3.052zm1.99-2.31h6.234l1.404-10.323-4.52 5.076-4.522-5.076z" />
+                                                                        </svg>
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                        {event.buildingType === "INHIBITOR_BUILDING" && (
+                                                            <>
+                                                                {event.teamId === 200 ? (
+                                                                    <div className="flex-none flex items-center justify-center w-10 h-10 bg-neutral-700 border border-red-500">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" className="h-7 [&_path]:fill-[#EF4444]">
+                                                                            <path d="M10 0l3 3h4v4l3 3-3 3v4h-4l-3 3-3-3H3v-4l-3-3 3-3V3h4zM10 5a5 5 0 100 10 5 5 0 000-10z" />
+                                                                        </svg>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="flex-none flex items-center justify-center w-10 h-10 bg-neutral-700 border border-blue-500">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" className="h-7 [&_path]:fill-[#3B82F6]">
+                                                                            <path d="M10 0l3 3h4v4l3 3-3 3v4h-4l-3 3-3-3H3v-4l-3-3 3-3V3h4zM10 5a5 5 0 100 10 5 5 0 000-10z" />
+                                                                        </svg>
+                                                                    </div>
+                                                                )}
+                                                                <p className="text-sm text-gray-200">Inhibitor</p>
+                                                            </>
+                                                        )}
+                                                        {event.buildingType === "NEXUS_BUILDING" && (
+                                                            <>
+                                                                {event.teamId === 200 ? (
+                                                                    <div className="flex-none flex items-center justify-center w-10 h-10 bg-neutral-700 border border-red-500">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-7 [&_path]:fill-[#EF4444]">
+                                                                            <path fill="#3B82F6" d="M12 0l3.5 5.5 5 2-2 4.5-6.5 7.5-6.5-7.5-2-4.5 5-2L12 0zm0 3l-2.5 4-4 1.5 1.5 3.5 5 5.5 5-5.5 1.5-3.5-4-1.5L12 3zm-4 14l1.5 3H14.5l1.5-3H8z" />
+                                                                        </svg>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="flex-none flex items-center justify-center w-10 h-10 bg-neutral-700 border border-blue-500">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-7 [&_path]:fill-[#3B82F6]">
+                                                                            <path fill="#3B82F6" d="M12 0l3.5 5.5 5 2-2 4.5-6.5 7.5-6.5-7.5-2-4.5 5-2L12 0zm0 3l-2.5 4-4 1.5 1.5 3.5 5 5.5 5-5.5 1.5-3.5-4-1.5L12 3zm-4 14l1.5 3H14.5l1.5-3H8z" />
+                                                                        </svg>
+                                                                    </div>
+                                                                )}
+                                                                <p className="text-sm text-gray-200">Nexus</p>
+                                                            </>
+                                                        )}
+                                                        {event.towerType === "OUTER_TURRET" && (
+                                                            <p className="text-sm text-gray-200">Outer Tower</p>
+                                                        )}
+                                                        {event.towerType === "INNER_TURRET" && (
+                                                            <p className="text-sm text-gray-200">Inner Tower</p>
+                                                        )}
+                                                        {event.towerType === "BASE_TURRET" && (
+                                                            <p className="text-sm text-gray-200">Inhibitor Tower</p>
+                                                        )}
+                                                        {event.towerType === "NEXUS_TURRET" && (
+                                                            <p className="text-sm text-gray-200">Nexus Tower</p>
+                                                        )}
+                                                        {event.laneType === "TOP_LANE" && (
+                                                            <>
+                                                                <p className="text-sm text-gray-200">on</p>
+                                                                <img src={`https://dpm.lol/position/TOP.svg`} alt="TOP" className="h-10" />
+                                                                <p className="text-sm text-gray-200">lane</p>
+                                                            </>
+                                                        )}
+                                                        {event.laneType === "MID_LANE" && (
+                                                            <>
+                                                                <p className="text-sm text-gray-200">on</p>
+                                                                <img src={`https://dpm.lol/position/MIDDLE.svg`} alt="MIDDLE" className="h-10" />
+                                                                <p className="text-sm text-gray-200">lane</p>
+                                                            </>
+                                                        )}
+                                                        {event.laneType === "BOT_LANE" && (
+                                                            <>
+                                                                <p className="text-sm text-gray-200">on</p>
+                                                                <img src={`https://dpm.lol/position/BOTTOM.svg`} alt="BOTTOM" className="h-10" />
+                                                                <p className="text-sm text-gray-200">lane</p>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                    {event.assistingParticipantIds && (
+                                                        <div className="flex items-end gap-1">
+                                                            <p className="text-xs">assists:</p>
+                                                            {event.assistingParticipantIds.map((id: number, assistIndex: number) => (
+                                                                <div key={`assist-${event.timestamp}-${id}-${assistIndex}`}>
+                                                                    <ChampionImage championId={info.participants[id-1].championId} teamId={info.participants[id-1].teamId} isTeamIdSame={false} classes="h-5" />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                                {event.type === "TURRET_PLATE_DESTROYED" && (
+                                    <>
+                                        {(event.killerId > 0) && (
+                                            <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
+                                                <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                                <div key={dotKey} className={`flex w-full p-2 gap-2 transition items-center ${(timelineFilter[2] && info.participants[event.killerId-1]?.participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : event.teamId === 100 ? "bg-[#59343B]" : "bg-[#28344E]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
+                                                    <div className="flex gap-1 items-center">
+                                                        {event.killerId !== 0 ? (
+                                                            <>
+                                                                {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                                    <>
+                                                                        {kaynTransformation.transformType === "SLAYER" && (
+                                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                        )}
+                                                                        {kaynTransformation.transformType === "ASSASSIN" && (
+                                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                        )}
+                                                                    </>
+                                                                ): (
+                                                                    <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
+                                                                )}
+                                                                <p className="text-sm text-gray-200">{info.participants[event.killerId-1].riotIdGameName}</p>
                                                             </>
                                                         ) : (
                                                             <>
-                                                                <img src={blueTeamMinion} alt="blueTeamMinion" className="h-10 border border-blue-500" />
-                                                                <p className="text-sm text-gray-200">Blue Team's minions</p>
+                                                                {event.teamId === 100 ? (
+                                                                    <>
+                                                                        <img src={redTeamMinion} alt="redTeamMinion" className="h-10 border border-red-500" />
+                                                                        <p className="text-sm text-gray-200">Red Team's minions</p>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <img src={blueTeamMinion} alt="blueTeamMinion" className="h-10 border border-blue-500" />
+                                                                        <p className="text-sm text-gray-200">Blue Team's minions</p>
+                                                                    </>
+                                                                )}
                                                             </>
                                                         )}
-                                                    </>
-                                                )}
+                                                    </div>
+                                                    <p className="text-sm text-white">destroyed a Turret Plate on</p>
+                                                    {event.laneType === "TOP_LANE" && (
+                                                        <>
+                                                            <img src={`https://dpm.lol/position/TOP.svg`} alt="TOP" className="h-10" />
+                                                            <p className="text-sm text-gray-200">lane</p>
+                                                        </>
+                                                    )}
+                                                    {event.laneType === "MID_LANE" && (
+                                                        <>
+                                                            <img src={`https://dpm.lol/position/MIDDLE.svg`} alt="MIDDLE" className="h-10" />
+                                                            <p className="text-sm text-gray-200">lane</p>
+                                                        </>
+                                                    )}
+                                                    {event.laneType === "BOT_LANE" && (
+                                                        <>
+                                                            <img src={`https://dpm.lol/position/BOTTOM.svg`} alt="BOTTOM" className="h-10" />
+                                                            <p className="text-sm text-gray-200">lane</p>
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <p className="text-sm text-white">destroyed a Turret Plate on</p>
-                                            {event.laneType === "TOP_LANE" && (
-                                                <>
-                                                    <img src={`https://dpm.lol/position/TOP.svg`} alt="TOP" className="h-10" />
-                                                    <p className="text-sm text-gray-200">lane</p>
-                                                </>
-                                            )}
-                                            {event.laneType === "MID_LANE" && (
-                                                <>
-                                                    <img src={`https://dpm.lol/position/MIDDLE.svg`} alt="MIDDLE" className="h-10" />
-                                                    <p className="text-sm text-gray-200">lane</p>
-                                                </>
-                                            )}
-                                            {event.laneType === "BOT_LANE" && (
-                                                <>
-                                                    <img src={`https://dpm.lol/position/BOTTOM.svg`} alt="BOTTOM" className="h-10" />
-                                                    <p className="text-sm text-gray-200">lane</p>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
+                                        )}
+                                    </>
                                 )}
                                 {event.type === "ELITE_MONSTER_KILL" && (
                                     <>
-                                        {(event.killerId > 0) ? (
+                                        {(event.killerId > 0) && (
                                             <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
                                                 <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
                                                 <div key={dotKey} className={`flex w-full p-2 gap-2 transition ${(timelineFilter[2] && info.participants[event.killerId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.killerId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
@@ -845,53 +875,55 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                                     )}
                                                 </div>
                                             </div>
-                                        ) : (
-                                            <div>Unknown event</div>
                                         )}
                                     </>
                                 )}
                                 {event.type === "CHAMPION_SPECIAL_KILL" && (
-                                    <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
-                                        <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
-                                        <div key={dotKey} className={`flex w-full p-2 gap-2 transition items-center ${(timelineFilter[2] && info.participants[event.killerId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.killerId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
-                                            <div className="flex gap-1 items-center">
-                                                {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
-                                                    <>
-                                                        {kaynTransformation.transformType === "SLAYER" && (
-                                                            <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                    <>
+                                        {event.killerId > 0 && (
+                                            <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
+                                                <p className="text-sm font-medium text-gray-300 w-10 text-center">{minutes}m</p>
+                                                <div key={dotKey} className={`flex w-full p-2 gap-2 transition items-center ${(timelineFilter[2] && info.participants[event.killerId-1].participantId === selectedPlayer.participantId) ? "bg-purple-800 hover:bg-purple-700" : info.participants[event.killerId-1].teamId === 100 ? "bg-[#28344E] hover:bg-[#2F436E]" : "bg-[#59343B] hover:bg-[#703C47]"} relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-black/0 before:to-black/40 before:pointer-events-none`}>
+                                                    <div className="flex gap-1 items-center">
+                                                        {(selectedPlayer.championName === "Kayn" && kaynTransformation && event.timestamp >= kaynTransformation.timestamp) ? (
+                                                            <>
+                                                                {kaynTransformation.transformType === "SLAYER" && (
+                                                                    <img src={redKaynIcon} alt="redKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                )}
+                                                                {kaynTransformation.transformType === "ASSASSIN" && (
+                                                                    <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
+                                                                )}
+                                                            </>
+                                                        ): (
+                                                            <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
                                                         )}
-                                                        {kaynTransformation.transformType === "ASSASSIN" && (
-                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className={`h-10 border ${info.participants[event.killerId-1].teamId === 100 ? "border-blue-500" : "border-red-500"}`} />
-                                                        )}
-                                                    </>
-                                                ): (
-                                                    <ChampionImage championId={info.participants[event.killerId-1].championId} teamId={info.participants[event.killerId-1].teamId} isTeamIdSame={false} classes="h-10" />
-                                                )}
-                                                <p className="text-sm text-gray-200">{info.participants[event.killerId-1].riotIdGameName}</p>
+                                                        <p className="text-sm text-gray-200">{info.participants[event.killerId-1].riotIdGameName}</p>
+                                                    </div>
+                                                    {event.killType === "KILL_FIRST_BLOOD" && (
+                                                        <p className="text-sm text-white">got First Blood</p>
+                                                    )}
+                                                    {event.killType === "KILL_ACE" && (
+                                                        <p className="text-sm text-white">got Kill Ace</p>
+                                                    )}
+                                                    {event.multiKillLength === 2 && (
+                                                        <p className="text-sm text-white">got Double Kill</p>
+                                                    )}
+                                                    {event.multiKillLength === 3 && (
+                                                        <p className="text-sm text-white">got Triple Kill</p>
+                                                    )}
+                                                    {event.multiKillLength === 4 && (
+                                                        <p className="text-sm text-white">got Quadra Kill</p>
+                                                    )}
+                                                    {event.multiKillLength === 5 && (
+                                                        <p className="text-sm text-white">got Penta Kill</p>
+                                                    )}
+                                                    {event.multiKillLength > 5 && (
+                                                        <p className="text-sm text-white">killed {event.multiKillLength} Players</p>
+                                                    )}
+                                                </div>
                                             </div>
-                                            {event.killType === "KILL_FIRST_BLOOD" && (
-                                                <p className="text-sm text-white">got First Blood</p>
-                                            )}
-                                            {event.killType === "KILL_ACE" && (
-                                                <p className="text-sm text-white">got Kill Ace</p>
-                                            )}
-                                            {event.multiKillLength === 2 && (
-                                                <p className="text-sm text-white">got Double Kill</p>
-                                            )}
-                                            {event.multiKillLength === 3 && (
-                                                <p className="text-sm text-white">got Triple Kill</p>
-                                            )}
-                                            {event.multiKillLength === 4 && (
-                                                <p className="text-sm text-white">got Quadra Kill</p>
-                                            )}
-                                            {event.multiKillLength === 5 && (
-                                                <p className="text-sm text-white">got Penta Kill</p>
-                                            )}
-                                            {event.multiKillLength > 5 && (
-                                                <p className="text-sm text-white">killed {event.multiKillLength} Players</p>
-                                            )}
-                                        </div>
-                                    </div>
+                                        )}
+                                    </>
                                 )}
                                 {event.type === "FEAT_UPDATE" && (
                                     <div onMouseEnter={() => setHoveredDotKey(dotKey)} onMouseLeave={() => setHoveredDotKey(null)} className={`flex items-center mb-1 gap-2`}>
