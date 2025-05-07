@@ -32,21 +32,15 @@ import arrowDownLight from "../assets/arrow-down-light.png";
 import noneicon from "../assets/none.jpg";
 import arrowGoingUp from "../assets/arrow-going-up.png";
 
-type Role = "TOP" | "JUNGLE" | "MIDDLE" | "BOTTOM" | "UTILITY";  
-const roleLabels: { role: Role; label: string }[] = [
+const roleLabels: { role: string; label: string }[] = [
     { role: "TOP", label: "Top" },
     { role: "JUNGLE", label: "Jungle" },
     { role: "MIDDLE", label: "Middle" },
     { role: "BOTTOM", label: "Bottom" },
     { role: "UTILITY", label: "Support" },
-];  
+];
 
-type QueueDef = {
-    key: string;
-    label: string;
-    modeIds: number[] | null;
-};
-const queueDefs: QueueDef[] = [
+const queueDefs: { key: string; label: string; modeIds: number[] | null }[] = [
     { key: "all-queues", label: "All", modeIds: null },
     { key: "solo-duo", label: "Solo Duo", modeIds: [420] },
     { key: "flex", label: "Flex", modeIds: [440] },
@@ -127,7 +121,7 @@ const Summoner: React.FC = () => {
     const filteredMatches = useMemo(() => {
         if (!apiData) return [];
         return apiData.allMatchesData.filter(match => {
-            if (selectedRole !== "fill" && match.details.info.participants.find(p => p.puuid === apiData.puuid)?.teamPosition.toLowerCase() !== selectedRole) {
+            if (selectedRole !== "fill" && match.details.info.participants.find(p => p.puuid === apiData.puuid)?.teamPosition.toLowerCase() !== selectedRole.toLowerCase()) {
                 return false;
             }
 
@@ -144,7 +138,7 @@ const Summoner: React.FC = () => {
             if (selectedChampion !== "All Champions" && match.details.info.participants.find(p => p.puuid === apiData.puuid)?.championName !== selectedChampion) {
                 return false;
             }
-            // setPaginatorPage(1)
+            
             return true;
         })
     }, [apiData, selectedRole, selectedQueue, selectedPatch, selectedChampion])
@@ -239,17 +233,17 @@ const Summoner: React.FC = () => {
         const roleCounts = roleLabels.reduce((acc, {role}) => {
             acc[role] = 0;
             return acc;
-        }, {} as Record<Role, number>);
+        }, {} as Record<string, number>);
         matches.forEach(match => {
             const p = match.details.info.participants.find(p => p.puuid === apiData?.puuid);
             if (p) {
-                roleCounts[p.teamPosition as Role]++;
+                roleCounts[p.teamPosition]++;
             }
         });
         const rolePercents = roleLabels.reduce((acc, {role}) => {
             acc[role] = totalGames > 0 ? Math.round((roleCounts[role] / totalGames) * 100) : 0;
             return acc;
-        }, {} as Record<Role, number>);
+        }, {} as Record<string, number>);
 
         return { totalGames, allWins, allLosses, winrate, avgKDA, avgKP, top3, totalKills, totalDeaths, totalAssists, rolePercents };
     }, [pageMatches, apiData?.puuid]);
@@ -722,25 +716,22 @@ const Summoner: React.FC = () => {
                         </div>
                         <div className="flex justify-between items-center mb-2">
                             <div className="flex bg-neutral-700 rounded-xl gap-3 p-2 border border-purple-500">
-                            {["fill","top","jungle","middle","bottom","utility"].map((role) => (
-                                <>
-                                    {role === "fill" ? (
-                                        <img key="fill" 
-                                            onClick={() => setSelectedRole(role)}
-                                            src={fill} 
-                                            alt={role} 
-                                            className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === role ? "bg-neutral-800" : ""}`} 
-                                        />
-                                    ) : (
-                                        <img key={role} 
-                                            onClick={() => setSelectedRole(role)}
-                                            src={`https://dpm.lol/position/${role.toUpperCase()}.svg`} 
-                                            alt={role} 
-                                            className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === role ? "bg-neutral-800" : ""}`} 
-                                        />
-                                    )}
-                                </>
-                            ))}
+                                <img key="fill" 
+                                    onClick={() => setSelectedRole("fill")}
+                                    src={fill} 
+                                    alt="fill"
+                                    className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === "fill" ? "bg-neutral-800" : ""}`} 
+                                />
+                                {roleLabels.map(({ role, label }) => (
+                                    <img
+                                        key={role}
+                                        onClick={() => setSelectedRole(role)}
+                                        src={`https://dpm.lol/position/${role}.svg`}
+                                        alt={label}
+                                        title={label}
+                                        className={`h-[35px] cursor-pointer transition-all duration-200 hover:scale-110 ${selectedRole === role ? 'bg-neutral-800' : ''}`}
+                                    />
+                                ))}
                             </div>
                             <div>
                                 <div 
