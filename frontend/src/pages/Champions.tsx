@@ -9,6 +9,7 @@ import { ChampionImage, ChampionSpellName, ChampionSpellCooldowns, ChampionSpell
 
 import Player from "../interfaces/Player";
 import ChampionStats from "../interfaces/ChampionStats";
+import ChampionSynergy from "../interfaces/ChampionSynergy";
 
 import champions from "../assets/json/championsFull.json";
 
@@ -76,6 +77,7 @@ const Champions: React.FC = () => {
     const [primarySortBy, setPrimarySortBy] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: "games", direction: "desc" });
     const [secondarySortBy, setSecondarySortBy] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: "games", direction: "desc" });
     const [selectedChampionsMode, setSelectedChampionsMode] = useState<string>("Champions General");
+    const [selectedChampion, setSelectedChampion] = useState<string>("all-champions")
 
     const summoner = decodeURIComponent(encodedSummoner);
     const cacheKey = `summoner_${regionCode}_${summoner}`;
@@ -293,6 +295,41 @@ const Champions: React.FC = () => {
     const allTripleKills = groupedChampionMatchups.reduce((sum, m) => sum + m.totalTripleKills, 0);
     const allQuadraKills = groupedChampionMatchups.reduce((sum, m) => sum + m.totalQuadraKills, 0);
     const allPentaKills = groupedChampionMatchups.reduce((sum, m) => sum + m.totalPentaKills, 0);
+
+    const selectedChampionStats = selectedChampion !== 'all-champions' ? championStats.find(champion => champion.championName === selectedChampion) : null;
+    const roleSynergiesMap: Record<string, ChampionSynergy[]> = roleLabels.reduce((acc, { role }) => {
+        let synergies: ChampionSynergy[] = [];
+        if (selectedChampion === 'all-champions') {
+            const flat = championStats.flatMap(c => c.championSynergies[role] || []);
+            const grouped = flat.reduce((map, s) => {
+                const key = s.championId;
+                if (!map[key]) {
+                    map[key] = { ...s };
+                } else {
+                    map[key].games += s.games;
+                    map[key].wins += s.wins;
+                }
+                return map;
+            }, {} as Record<number, ChampionSynergy>);
+
+            synergies = Object.values(grouped).map(s => ({
+                championId: s.championId,
+                championName: s.championName,
+                games: s.games,
+                wins: s.wins,
+                winrate: (s.wins / s.games) * 100,
+            }))
+        } else {
+            synergies = selectedChampionStats?.championSynergies[role] || [];
+        }
+        acc[role] = synergies;
+        return acc;
+    },{} as Record<string, ChampionSynergy[]>);
+    
+    const sortSynergies = (a: ChampionSynergy, b: ChampionSynergy) => {
+        const gamesDiff = b.games - a.games;
+        return gamesDiff !== 0 ? gamesDiff : b.winrate - a.winrate;
+    };
 
     function getWinrateColor(winrate: number) {
         if (winrate == -1) return "";
@@ -691,34 +728,50 @@ const Champions: React.FC = () => {
             )}
             {selectedChampionsMode === "Champions Synergy" && (
                 <>
-                    <div className="flex flex-wrap bg-neutral-800 text-neutral-50 p-2 gap-2">
-                        <div className="flex flex-col w-fit bg-neutral-700 border border-neutral-50 p-2 gap-2 cursor-pointer transition-all hover:bg-neutral-800">
+                    <div className="flex flex-nowrap overflow-x-auto bg-neutral-800 text-neutral-50 p-2 gap-2 custom-scrollbar">
+                        <div onClick={() => setSelectedChampion("all-champions")} className={`flex flex-col flex-shrink-0 ${selectedChampion === "all-champions" ? "bg-neutral-800" : "bg-neutral-700"} border border-neutral-50 p-2 gap-2 cursor-pointer transition-all hover:bg-neutral-900`}>
                             <img src={fill} alt="fill" className="h-16" />
                             <p className="text-lg text-center">ALL</p>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                            {sortedOpponentMatchupsStats.map(stat => (
-                                <div className="flex flex-col w-fit bg-neutral-700 border border-neutral-50 p-2 gap-2 text-lg text-center cursor-pointer transition-all hover:bg-neutral-800">
-                                    <ChampionImage championId={stat.championId} isTeamIdSame={true} classes="h-16" />
-                                    <p>{stat.games}</p>
-                                    <p className={`${getWinrateColor(stat.winrate)}`}>{Math.round(stat.winrate*100)/100}%</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="w-full flex justify-between bg-neutral-800 text-neutral-50 p-2">
-                        {roleLabels.map(({ role, label }) => (
-                            <div className="w-[19%] flex justify-center items-center bg-neutral-700 border border-neutral-50 rounded-t-3xl gap-2 py-1 ">
-                                <img
-                                    key={role}
-                                    src={`https://dpm.lol/position/${role}.svg`}
-                                    alt={label}
-                                    title={label}
-                                    className="h-[35px] cursor-pointer"
-                                />
-                                <p className="text-lg">{label}</p>
+                        {sortedOpponentMatchupsStats.map(stat => (
+                            <div onClick={() => setSelectedChampion(stat.championName)} className={`flex flex-col flex-shrink-0 ${selectedChampion === stat.championName ? "bg-neutral-800" : "bg-neutral-700"} border border-neutral-50 p-2 gap-2 text-lg text-center cursor-pointer transition-all hover:bg-neutral-900`}>
+                                <ChampionImage championId={stat.championId} isTeamIdSame={true} classes="h-16" />
+                                <p>{stat.games}</p>
+                                <p className={`${getWinrateColor(stat.winrate)}`}>{Math.round(stat.winrate*100)/100}%</p>
                             </div>
                         ))}
+                    </div>
+                    <div className="w-full flex justify-between bg-neutral-800 text-neutral-50 p-2 mb-2">
+                        {roleLabels.map(({ role, label }) => {
+                            
+                            const synergies = roleSynergiesMap[role].sort(sortSynergies);
+
+                            return (
+                                <div key={role} className="w-[19%] flex flex-col">
+                                    <div className="flex justify-center items-center bg-neutral-700 border border-neutral-50 rounded-t-3xl gap-2 py-1 ">
+                                        <img
+                                            key={role}
+                                            src={`https://dpm.lol/position/${role}.svg`}
+                                            alt={label}
+                                            title={label}
+                                            className="h-[35px] cursor-pointer"
+                                        />
+                                        <p className="text-lg">{label}</p>
+                                    </div>
+                                    <div className="w-full h-full space-y-1 bg-neutral-800 border border-t-0">
+                                        {synergies.map(synergy => (
+                                            <div key={synergy.championId} className={`grid grid-cols-3 items-center text-center px-2 py-1 bg-neutral-700 ${synergy.winrate === 0 ? "opacity-60" : ""}`}>
+                                                <div className="flex justify-center">
+                                                    <ChampionImage championId={synergy.championId} isTeamIdSame={true} classes="h-13" />
+                                                </div>
+                                                <p className="text-lg">{synergy.games}</p>
+                                                <p className={`text-lg ${getWinrateColor(synergy.winrate)}`}>{synergy.winrate.toFixed(1)}%</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )
+                        })}
                     </div>
                 </>
             )}

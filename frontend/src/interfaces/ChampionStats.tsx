@@ -1,7 +1,10 @@
+import ChampionSynergy from "./ChampionSynergy";
+
 interface ChampionStats {
     championId: number;
     championName: string;
     opponentMatchups: ChampionStats[];
+    championSynergies: Record<string, ChampionSynergy[]>;
     games: number;
     wins: number;
     totalKills: number;

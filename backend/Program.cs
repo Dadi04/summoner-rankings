@@ -606,6 +606,33 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
 
                 matchup.TotalMin += Math.Round(match.details.info.gameDuration / 60.0, 1);
             }
+
+            var teammates = match.details.info.participants.Where(p => p.teamId == participant.teamId).ToList();
+            if (teammates != null) {
+                foreach (var teammate in teammates) {
+                    if (teammate == null) continue;
+                    if (teammate.puuid == participant.puuid) continue;
+
+                    string teammateRole = teammate.teamPosition.ToUpper();
+
+                    if (!stats.ChampionSynergies.TryGetValue(teammateRole, out var synergyList)) {
+                        synergyList = new List<ChampionSynergy>();
+                        stats.ChampionSynergies[teammateRole] = synergyList;
+                    }
+
+                    var synergy = synergyList.FirstOrDefault(s => s.ChampionId == teammate.championId);
+                    if (synergy == null) {
+                        synergy = new ChampionSynergy {
+                            ChampionId = teammate.championId,
+                            ChampionName = teammate.championName
+                        };
+                        synergyList.Add(synergy);
+                    }
+
+                    synergy.Games++;
+                    if (participant.win) synergy.Wins++;
+                }
+            } 
         }
 
         void UpdateRoleStats(Dictionary<string, PreferredRole> roleDict) {
@@ -991,6 +1018,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         }
         // if (participant == null || participant.gameEndedInEarlySurrender) continue;
 
+        // update this shit
         void UpdateChampionStats(Dictionary<int, ChampionStats> statsDict) {
             int champId = participant.championId;
             if (!statsDict.TryGetValue(champId, out ChampionStats? stats)) {
@@ -1031,6 +1059,7 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         }
     }
 
+    // update this shit
     Dictionary<int, ChampionStats> MergeChampionStats(Dictionary<int, ChampionStats> existingStats, Dictionary<int, ChampionStats> newStats) {
         foreach (var kvp in newStats) {
             if (existingStats.TryGetValue(kvp.Key, out var existing)) {
@@ -1713,10 +1742,19 @@ public class PerkSelectionDto {
     public int var3 { get; set; }
 }
 
+public class ChampionSynergy {
+    public int ChampionId { get; set; }
+    public string ChampionName { get; set; } = string.Empty;
+    public int Games { get; set; }
+    public int Wins { get; set; }
+    public double Winrate => Games > 0 ? (double)Wins / Games * 100 : 0;
+}
+
 public class ChampionStats {
     public int ChampionId { get; set; }
     public string ChampionName { get; set; } = string.Empty;
     public List<ChampionStats> OpponentMatchups { get; set; } = new List<ChampionStats>();
+    public Dictionary<string, List<ChampionSynergy>> ChampionSynergies { get; set; } = new();
     public int Games { get; set; }
     public int Wins { get; set; }
     public int TotalKills { get; set; }
@@ -1749,13 +1787,13 @@ public class ChampionStats {
     public int TotalFirstBloodKills { get; set; }
     public int TotalFirstBloodAssists { get; set; }
     public double TotalTimeSpentDeadMin { get; set; }
+    public double TotalMin { get; set; }
 
     public int TotalBlueSideGames { get; set; }
     public int TotalRedSideGames { get; set; }
     public int TotalBlueSideWins { get; set; }
     public int TotalRedSideWins { get; set; }
 
-    public double TotalMin { get; set; }
     public double Winrate => Games > 0 ? (double)Wins / Games * 100 : 0;
     public double AverageKDA => TotalDeaths > 0 ? (double)(TotalKills + TotalAssists) / TotalDeaths : (TotalKills + TotalAssists);
 }
