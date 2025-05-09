@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 
 import logodark from "../assets/logo-dark.png";
@@ -79,6 +79,13 @@ const Home: React.FC = () => {
         setShowRegion(false);
     }
 
+    const handleDelete = (entryToDelete: { summoner: string; region: string }) => {
+        const newHistory = history.filter((h) => !(h.summoner === entryToDelete.summoner && h.region === entryToDelete.region));
+        setHistory(newHistory);
+
+        Cookies.set(COOKIE_NAME, JSON.stringify(newHistory), { expires: 7 });
+    };
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
@@ -157,7 +164,7 @@ const Home: React.FC = () => {
                                                 <div key={id} className="flex p-2 items-center justify-between">
                                                     <div className="flex gap-2 items-center">
                                                         <p className="bg-purple-700 text-neutral-50 rounded-lg p-[3px] font-semibold">{region?.abbr}</p>
-                                                        <p onClick={() => setSummonerInput(entry.summoner)} className="text-lg">{entry.summoner}</p>
+                                                        <Link to={`/lol/profile/${region?.code}/${entry.summoner.replace("#", "-")}`} onClick={() => setOpenSearchDiv(false)} className="text-lg cursor-pointer hover:underline">{entry.summoner}</Link>
                                                     </div>
                                                     <div className="flex gap-2 items-center">
                                                         <button key={`${entry.summoner}-${entry.region}-star`} type="button" onClick={toggleFav} className="cursor-pointer trasition-all transfrom scale-110" aria-label="Favorite">
@@ -165,7 +172,7 @@ const Home: React.FC = () => {
                                                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                                                             </svg>
                                                         </button>
-                                                        <button key={`${entry.summoner}-${entry.region}-delete`} type="button" className="cursor-pointer transition-transform transform hover:scale-110" aria-label="Delete History Entry">
+                                                        <button key={`${entry.summoner}-${entry.region}-delete`} type="button" onClick={() => handleDelete(entry)} className="cursor-pointer transition-transform transform hover:scale-110" aria-label="Delete History Entry">
                                                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                                 <line x1="18" y1="6" x2="6" y2="18" />
                                                                 <line x1="6" y1="6" x2="18" y2="18" />
