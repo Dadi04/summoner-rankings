@@ -313,8 +313,6 @@ const Summoner: React.FC = () => {
         return <div className="w-full flex justify-center mt-[125px] mb-[195px]"><DotLottieReact src={loadingAnimation} className="w-[600px] bg-transparent" loop autoplay /></div>
     }
 
-    console.log("apiData", apiData);
-
     // const clashData = apiData.clashData;
     const championStatsSoloDuoData = Object.values(apiData.rankedSoloChampionStatsData);
     const championStatsFlexData = Object.values(apiData.rankedFlexChampionStatsData);

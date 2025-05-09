@@ -538,8 +538,14 @@ const Champions: React.FC = () => {
                                                                     <path opacity="0.2" d="M10 10.5C10 10.2239 10.2239 10 10.5 10H13.5C13.7761 10 14 10.2239 14 10.5V13.5C14 13.7761 13.7761 14 13.5 14H10.5C10.2239 14 10 13.7761 10 13.5V10.5Z" />
                                                                 </svg>
                                                                 <div className="flex justify-center gap-1 items-baseline">
-                                                                    <p className="text-xl">{Math.round(stat.totalBlueSideWins/stat.totalBlueSideGames*100*100)/100}</p>
-                                                                    <p className="text-neutral-400">%</p>
+                                                                    {stat.totalBlueSideGames > 0 ? (
+                                                                        <>
+                                                                            <p className="text-xl">{Math.round(stat.totalBlueSideWins/stat.totalBlueSideGames*100*100)/100}</p>
+                                                                            <p className="text-neutral-400">%</p>
+                                                                        </>
+                                                                    ) : (
+                                                                        <p className="text-neutral-400">No Games Played</p>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                             <div className="flex flex-col">
@@ -549,8 +555,14 @@ const Champions: React.FC = () => {
                                                                     <path opacity="0.2" d="M10 10.5C10 10.2239 10.2239 10 10.5 10H13.5C13.7761 10 14 10.2239 14 10.5V13.5C14 13.7761 13.7761 14 13.5 14H10.5C10.2239 14 10 13.7761 10 13.5V10.5Z" />
                                                                 </svg>
                                                                 <div className="flex justify-center gap-1 items-baseline">
-                                                                    <p className="text-xl">{Math.round(stat.totalRedSideWins/stat.totalRedSideGames*100*100)/100}</p>
-                                                                    <p className="text-neutral-400">%</p>
+                                                                    {stat.totalRedSideGames > 0 ? (
+                                                                        <>
+                                                                            <p className="text-xl">{Math.round(stat.totalRedSideWins/stat.totalRedSideGames*100*100)/100}</p>
+                                                                            <p className="text-neutral-400">%</p>
+                                                                        </>
+                                                                    ) : (
+                                                                        <p className="text-neutral-400">No Games Played</p>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -661,10 +673,10 @@ const Champions: React.FC = () => {
                                                         </div>
                                                         <div>
                                                             <h1 className="text-xl font-semibold text-center my-6">Time Played</h1>
-                                                            <div className="flex justify-center gap-7 items-center">
+                                                            <div className="flex justify-center gap-7 items-center text-center">
                                                                 <img src={clockIcon} alt="clockIcon" className="h-8" />
                                                                 <div>
-                                                                    <p>{Math.round(stat.totalMin / 60)}h {Math.round(stat.totalMin % 60)}min</p>
+                                                                    <p>{Math.floor(stat.totalMin / 60)}h {Math.round(stat.totalMin % 60)}min</p>
                                                                     <p className="text-neutral-400">Total time</p>
                                                                 </div>
                                                                 <div>

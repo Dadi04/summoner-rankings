@@ -21,7 +21,6 @@ import onMyWayPing from "../../assets/pings/onMyWayPing.webp";
 import pushPing from "../../assets/pings/pushPing.webp";
 
 const MatchDetails: React.FC<{info: MatchDetailsInfo, timeline: any, selectedPlayer: MatchParticipant}> = ({info, timeline, selectedPlayer}) => {
-    console.log(timeline, info)
     const champ = Object.values(champions).find(c => c.key.toLowerCase() === selectedPlayer.championName.toLowerCase());
     if (!champ) return <div>Champion not found</div>;
     const { abilities,  } = champ;

@@ -5,9 +5,8 @@ import itemJson from "../assets/json/items.json";
 
 function removeConsecutiveBrTags(html: string): string {
     return html
-        .replace(/(<mainText>)?(?:\s*<br\s*\/?>\s*)+/gi, "$1") // fix da skida sve breakove ali da ostavi 1 tamo gde je bilo vise // myb change to meraki
-        .replace(/(<br\s*\/?>\s*){2,}/gi, "<br /><br />")
-        .replace(/(<br\s*\/?>\s*)+(?=<\/mainText>)/gi, "")
+        .replace(/<br\s*\/?>/gi, "<br />")
+        .replace(/(?:<br \/>\s*){2,}/g, "<br /><br />")
         .trim();
 }
 

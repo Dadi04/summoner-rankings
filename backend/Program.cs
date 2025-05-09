@@ -579,8 +579,8 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (stri
                 }
             }
 
-            stats.TotalTimeSpentDeadMin += Math.Round(participant.totalTimeSpentDead/60.0, 1);
-            stats.TotalMin += Math.Round(match.details.info.gameDuration/60.0, 1);
+            stats.TotalTimeSpentDeadMin += Math.Round(participant.totalTimeSpentDead / 60.0, 1);
+            stats.TotalMin += Math.Round(match.details.info.gameDuration / 60.0, 1);
 
             var opponent = match.details.info.participants.FirstOrDefault(p => p.teamPosition == participant.teamPosition && p.teamId != participant.teamId);
             if (opponent != null) {
@@ -1016,9 +1016,54 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
             Console.WriteLine($"Invalid matches: {match.details.metadata.matchId}");
             continue;
         }
-        // if (participant == null || participant.gameEndedInEarlySurrender) continue;
 
-        // update this shit
+        var team = match.details.info.teams.FirstOrDefault(team => team.teamId == participant.teamId);
+        if (team == null) {
+            Console.WriteLine($"Invalid match: {match.details.metadata.matchId}");
+            continue;
+        }
+
+        int atakhanKilled = 0;
+        using var doc = JsonDocument.Parse(match.timelineJson);
+        var root = doc.RootElement;
+        if (!root.TryGetProperty("info", out var infoElement) || infoElement.ValueKind != JsonValueKind.Object)  {
+            Console.WriteLine($"Invalid match: {match.details.metadata.matchId}");
+            continue;
+        }
+
+        if (!infoElement.TryGetProperty("frames", out var framesElement) || framesElement.ValueKind != JsonValueKind.Array) {
+            Console.WriteLine($"Invalid match: {match.details.metadata.matchId}");
+            continue;
+        }
+
+        var frames = framesElement.EnumerateArray();
+        foreach(var frame in frames) {
+            if (!frame.TryGetProperty("events", out var eventsElement) || eventsElement.ValueKind != JsonValueKind.Array) {
+                continue;
+            }
+
+            var killEvent = eventsElement.EnumerateArray().FirstOrDefault(e => {
+                if (!e.TryGetProperty("killerTeamId", out var killerTeam) || killerTeam.GetInt32() != participant.teamId) {
+                    return false;
+                }
+
+                if (!e.TryGetProperty("type", out var typeElement) || typeElement.GetString() != "ELITE_MONSTER_KILL") {
+                    return false;
+                }
+
+                if (!e.TryGetProperty("monsterType", out var monsterElement) || monsterElement.GetString() != "ATAKHAN") {
+                    return false;
+                }
+
+                return true;
+            });
+
+            if (killEvent.ValueKind != JsonValueKind.Undefined) {
+                atakhanKilled++;
+                break;
+            }
+        }
+
         void UpdateChampionStats(Dictionary<int, ChampionStats> statsDict) {
             int champId = participant.championId;
             if (!statsDict.TryGetValue(champId, out ChampionStats? stats)) {
@@ -1033,13 +1078,108 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
             stats.TotalKills += participant.kills;
             stats.TotalDeaths += participant.deaths;
             stats.TotalAssists += participant.assists;
+
+            stats.TotalDMGDealt += participant.totalDamageDealtToChampions;
+            stats.TotalDMGTaken += participant.totalDamageTaken;
+            stats.TotalGoldEarned += participant.goldEarned;
+            stats.TotalCS += participant.totalMinionsKilled + participant.neutralMinionsKilled;
+            stats.TotalVisionScore += participant.visionScore;
+
+            stats.TotalBaronKills += team.objectives.baron.kills;
+            stats.TotalDragonKills += team.objectives.dragon.kills;
+            stats.TotalHeraldKills += team.objectives.riftHerald.kills;
+            stats.TotalGrubsKills += team.objectives.horde.kills;
+            stats.TotalAtakhanKills += atakhanKilled;
+            stats.TotalTowerKills += team.objectives.tower.kills;
+            stats.TotalInhibitorKills += team.objectives.inhibitor.kills;
+
+            stats.TotalSpell1Casts += participant.spell1Casts;
+            stats.TotalSpell2Casts += participant.spell2Casts;
+            stats.TotalSpell3Casts += participant.spell3Casts;
+            stats.TotalSpell4Casts += participant.spell4Casts;
+
+            stats.TotalDoubleKills += participant.doubleKills;
+            stats.TotalTripleKills += participant.tripleKills;
+            stats.TotalQuadraKills += participant.quadraKills;
+            stats.TotalPentaKills += participant.pentaKills;
+            if (participant.firstBloodKill) stats.TotalFirstBloodKills++;
+            if (participant.firstBloodAssist) stats.TotalFirstBloodAssists++;
+
+            if (participant.teamId == 100) {
+                stats.TotalBlueSideGames++;
+                if (participant.win) {
+                    stats.TotalBlueSideWins++;
+                }
+            } 
+            
+            if (participant.teamId == 200) {
+                stats.TotalRedSideGames++;
+                if (participant.win) {
+                    stats.TotalRedSideWins++;
+                }
+            }
+
+            stats.TotalTimeSpentDeadMin += Math.Round(participant.totalTimeSpentDead / 60.0, 1);
+            stats.TotalMin += Math.Round(match.details.info.gameDuration / 60.0, 1);
+
+            var opponent = match.details.info.participants.FirstOrDefault(p => p.teamPosition == participant.teamPosition && p.teamId != participant.teamId);
+            if (opponent != null) {
+                var matchup = stats.OpponentMatchups.FirstOrDefault(opp => opp.ChampionId == opponent.championId);
+                if (matchup == null) {
+                    matchup = new ChampionStats {
+                        ChampionId = opponent.championId,
+                        ChampionName = opponent.championName
+                    };
+                    stats.OpponentMatchups.Add(matchup);
+                }
+                matchup.Games++;
+                if (participant.win) matchup.Wins++;
+                matchup.TotalKills += participant.kills;
+                matchup.TotalDeaths += participant.deaths;
+                matchup.TotalAssists += participant.assists;
+                matchup.TotalCS += participant.totalMinionsKilled + participant.neutralMinionsKilled;
+
+                matchup.TotalDoubleKills += participant.doubleKills;
+                matchup.TotalTripleKills += participant.tripleKills;
+                matchup.TotalQuadraKills += participant.quadraKills;
+                matchup.TotalPentaKills += participant.pentaKills;
+
+                matchup.TotalMin += Math.Round(match.details.info.gameDuration / 60.0, 1);
+            }
+
+            var teammates = match.details.info.participants.Where(p => p.teamId == participant.teamId).ToList();
+            if (teammates != null) {
+                foreach (var teammate in teammates) {
+                    if (teammate == null) continue;
+                    if (teammate.puuid == participant.puuid) continue;
+
+                    string teammateRole = teammate.teamPosition.ToUpper();
+
+                    if (!stats.ChampionSynergies.TryGetValue(teammateRole, out var synergyList)) {
+                        synergyList = new List<ChampionSynergy>();
+                        stats.ChampionSynergies[teammateRole] = synergyList;
+                    }
+
+                    var synergy = synergyList.FirstOrDefault(s => s.ChampionId == teammate.championId);
+                    if (synergy == null) {
+                        synergy = new ChampionSynergy {
+                            ChampionId = teammate.championId,
+                            ChampionName = teammate.championName
+                        };
+                        synergyList.Add(synergy);
+                    }
+
+                    synergy.Games++;
+                    if (participant.win) synergy.Wins++;
+                }
+            }
         }
+
         void UpdateRoleStats(Dictionary<string, PreferredRole> roleDict) {
             string role = participant.teamPosition.ToUpper();
             if (roleDict.TryGetValue(role, out PreferredRole? preferredRole)) {
                 preferredRole.Games++;
-                if (participant.win)
-                    preferredRole.Wins++;
+                if (participant.win) preferredRole.Wins++;
                 preferredRole.TotalKills += participant.kills;
                 preferredRole.TotalDeaths += participant.deaths;
                 preferredRole.TotalAssists += participant.assists;
@@ -1059,18 +1199,88 @@ app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/update", asyn
         }
     }
 
-    // update this shit
     Dictionary<int, ChampionStats> MergeChampionStats(Dictionary<int, ChampionStats> existingStats, Dictionary<int, ChampionStats> newStats) {
-        foreach (var kvp in newStats) {
-            if (existingStats.TryGetValue(kvp.Key, out var existing)) {
-                existing.Games += kvp.Value.Games;
-                existing.Wins += kvp.Value.Wins;
-                existing.TotalKills += kvp.Value.TotalKills;
-                existing.TotalDeaths += kvp.Value.TotalDeaths;
-                existing.TotalAssists += kvp.Value.TotalAssists;
+        foreach (var newStat in newStats) {
+            int champId = newStat.Key;
+            ChampionStats incoming = newStat.Value;
+
+            if (!existingStats.TryGetValue(champId, out ChampionStats? baseStats)) {
+                existingStats[champId] = incoming;
+                continue;
             }
-            else {
-                existingStats[kvp.Key] = kvp.Value;
+
+            baseStats.Games += incoming.Games;
+            baseStats.Wins += incoming.Wins;
+            baseStats.TotalKills += incoming.TotalKills;
+            baseStats.TotalDeaths += incoming.TotalDeaths;
+            baseStats.TotalAssists += incoming.TotalAssists;
+            baseStats.TotalDMGDealt += incoming.TotalDMGDealt;
+            baseStats.TotalDMGTaken += incoming.TotalDMGTaken;
+            baseStats.TotalGoldEarned += incoming.TotalGoldEarned;
+            baseStats.TotalCS += incoming.TotalCS;
+            baseStats.TotalVisionScore += incoming.TotalVisionScore;
+            baseStats.TotalBaronKills += incoming.TotalBaronKills;
+            baseStats.TotalDragonKills += incoming.TotalDragonKills;
+            baseStats.TotalHeraldKills += incoming.TotalHeraldKills;
+            baseStats.TotalGrubsKills += incoming.TotalGrubsKills;
+            baseStats.TotalAtakhanKills += incoming.TotalAtakhanKills;
+            baseStats.TotalTowerKills += incoming.TotalTowerKills;
+            baseStats.TotalInhibitorKills += incoming.TotalInhibitorKills;
+            baseStats.TotalSpell1Casts += incoming.TotalSpell1Casts;
+            baseStats.TotalSpell2Casts += incoming.TotalSpell2Casts;
+            baseStats.TotalSpell3Casts += incoming.TotalSpell3Casts;
+            baseStats.TotalSpell4Casts += incoming.TotalSpell4Casts;
+            baseStats.TotalDoubleKills += incoming.TotalDoubleKills;
+            baseStats.TotalTripleKills += incoming.TotalTripleKills;
+            baseStats.TotalQuadraKills += incoming.TotalQuadraKills;
+            baseStats.TotalPentaKills += incoming.TotalPentaKills;
+            baseStats.TotalFirstBloodKills += incoming.TotalFirstBloodKills;
+            baseStats.TotalFirstBloodAssists += incoming.TotalFirstBloodAssists;
+            baseStats.TotalBlueSideGames += incoming.TotalBlueSideGames;
+            baseStats.TotalBlueSideWins += incoming.TotalBlueSideWins;
+            baseStats.TotalRedSideGames += incoming.TotalRedSideGames;
+            baseStats.TotalRedSideWins += incoming.TotalRedSideWins;
+            baseStats.TotalTimeSpentDeadMin += incoming.TotalTimeSpentDeadMin;
+            baseStats.TotalMin += incoming.TotalMin;
+
+            foreach (var inOpp in incoming.OpponentMatchups) {
+                var exOpp = baseStats.OpponentMatchups.FirstOrDefault(x => x.ChampionId == inOpp.ChampionId);
+                if (exOpp == null) {
+                    baseStats.OpponentMatchups.Add(inOpp);
+                } else {
+                    exOpp.Games += inOpp.Games;
+                    exOpp.Wins += inOpp.Wins;
+                    exOpp.TotalKills += inOpp.TotalKills;
+                    exOpp.TotalDeaths += inOpp.TotalDeaths;
+                    exOpp.TotalAssists += inOpp.TotalAssists;
+                    exOpp.TotalCS += inOpp.TotalCS;
+                    exOpp.TotalDoubleKills += inOpp.TotalDoubleKills;
+                    exOpp.TotalTripleKills += inOpp.TotalTripleKills;
+                    exOpp.TotalQuadraKills += inOpp.TotalQuadraKills;
+                    exOpp.TotalPentaKills += inOpp.TotalPentaKills;
+                    exOpp.TotalMin += inOpp.TotalMin;
+                }
+            }
+
+            foreach (var synergy in incoming.ChampionSynergies) {
+                string role = synergy.Key;
+                var incomingList = synergy.Value;
+
+                if (!baseStats.ChampionSynergies.TryGetValue(role, out var baseList)) {
+                    baseStats.ChampionSynergies[role] = incomingList;
+                    continue;
+                }
+
+                foreach (var inSyn in incomingList) {
+                    var exSyn = baseList.FirstOrDefault(s => s.ChampionId == inSyn.ChampionId);
+                    if (exSyn == null) {
+                        baseList.Add(inSyn);
+                    }
+                    else {
+                        exSyn.Games += inSyn.Games;
+                        exSyn.Wins += inSyn.Wins;
+                    }
+                }
             }
         }
         return existingStats;
