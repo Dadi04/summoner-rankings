@@ -1,48 +1,156 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
+
 import logolight from "../assets/logo-light.png";
 import close from "../assets/close.png";
 
 const NavBar: React.FC = () => {
     const [showSignInForm, setShowSignInForm] = useState(false);
     const [showSignUpForm, setShowSignUpForm] = useState(false);
+
+    const [signinUsername, setSigninUsername] = useState("");
+    const [signinPassword, setSigninPassword] = useState("");
+
+    const [signupEmail, setSignupEmail] = useState("");
+    const [signupUsername, setSignupUsername] = useState("");
+    const [signupPassword, setSignupPassword] = useState("");
+
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [username, setUsername] = useState<string | null>(null);
+
+    useEffect(() => {
+        const token = localStorage.getItem("jwt");
+        if (token) {
+            setIsAuthenticated(true);
+            try {
+                const payload = jwtDecode<any>(token);
+                console.log(payload);
+                setUsername(payload.username);
+            } catch {
+                console.warn("Failed to decode token");
+            }
+        }
+    }, []);
+
+    const handleSignin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        try {
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: signinUsername,
+                    password: signinPassword,
+                }),
+            });
+            if (!res.ok) throw new Error("Login failed");
+            const { token } = await res.json();
+
+            localStorage.setItem("jwt", token);
+
+            setIsAuthenticated(true);
+
+            const payload = jwtDecode<any>(token);
+            console.log(payload);
+            setUsername(payload.username);
+
+            setShowSignInForm(false);
+        } catch (error) {
+            console.error(error);
+            alert("Invalid credentials");
+        }
+    };
+
+    const handleSignup = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        try {
+            const res = await fetch("/api/auth/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: signupEmail,
+                    username: signupUsername,
+                    password: signupPassword,
+                }),
+            });
+            if (!res.ok) throw new Error("Login failed");
+            const { token } = await res.json();
+
+            localStorage.setItem("jwt", token);
+
+            setIsAuthenticated(true);
+
+            const payload = jwtDecode<any>(token);
+            console.log(payload);
+            setUsername(payload.username);
+
+            setShowSignUpForm(false);
+        } catch (error) {
+            console.error(error);
+            alert("Registration error");
+        }
+    };
+
+    const handleSignout = () => {
+        localStorage.removeItem("jwt");
+        setIsAuthenticated(false);
+        setUsername(null);
+    }
   
     return (
         <>
             <nav className="bg-neutral-800 text-white p-4">
                 <div className="container mx-auto flex items-center">
                     <div className="flex-1 flex justify-start">
-                    <Link to="/"><img src={logolight} alt="logo-light.png" className="h-18" /></Link>
+                        <Link to="/"><img src={logolight} alt="logo-light.png" className="h-18" /></Link>
                     </div>
                     <div className="flex-1 flex justify-center space-x-6">
-                    <ul className="flex space-x-8 text-xl">
-                        <li><Link to="/" className="p-3 transition-color duration-300 hover:text-gray-400">Home</Link></li>
-                        <li><Link to="/races" className="p-3 transition-color duration-300 hover:text-gray-400">Races</Link></li>
-                        <li><Link to="/leaderboard" className="p-3 transition-color duration-300 hover:text-gray-400">Leaderboard</Link></li>
-                        <li><Link to="/clash" className="p-3 transition-color duration-300 hover:text-gray-400">Clash</Link></li>
-                    </ul>
+                        <ul className="flex space-x-8 text-xl">
+                            <li><Link to="/" className="p-3 transition-color duration-300 hover:text-gray-400">Home</Link></li>
+                            <li><Link to="/races" className="p-3 transition-color duration-300 hover:text-gray-400">Races</Link></li>
+                            <li><Link to="/leaderboard" className="p-3 transition-color duration-300 hover:text-gray-400">Leaderboard</Link></li>
+                            <li><Link to="/clash" className="p-3 transition-color duration-300 hover:text-gray-400">Clash</Link></li>
+                        </ul>
                     </div>
                     <div className="flex-1 flex justify-end">
-                    <ul className="text-xl">
-                        <li><button onClick={() => setShowSignInForm(true)} className="p-3 cursor-pointer transition-color duration-300 hover:text-gray-400">Sign In</button></li>
-                    </ul>
+                        <ul className="text-xl">
+                            <li>
+                                {isAuthenticated ? (
+                                    <>
+                                        <Link to={`/${username}`} className="p-3 cursor-pointer transition-color duration-300 hover:text-gray-400">
+                                            {username || "Account"}
+                                        </Link>
+                                        <button onClick={handleSignout} className="p-3 cursor-pointer transition-color duration-300 hover:text-gray-400" >
+                                            Sign Out
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button onClick={() => setShowSignInForm(true)} className="p-3 cursor-pointer transition-color duration-300 hover:text-gray-400">
+                                        Sign In
+                                    </button>
+                                )}
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </nav>
 
             {showSignInForm && (
-                <div onClick={() => setShowSignInForm(false)} className="fixed inset-0 flex items-center justify-center bg-black opacity-90 z-50">
+                <div onClick={() => setShowSignInForm(false)} className="fixed inset-0 flex items-center justify-center bg-black/90 z-50">
                     <div onClick={(e) => e.stopPropagation()} className="bg-white p-6 rounded-lg shadow-lg relative w-100">
                         <div className="p-2 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-gray-100 active:outline">
                             <img onClick={() => setShowSignInForm(false)} src={close} alt="close.png" className="h-4" />
                         </div>
                         <h2 className="text-2xl font-bold mt-6 text-center">Sign In to Summoner Rankings</h2>
                         <p className="text-center mt-0 mb-4">Welcome Back! Please sign in to continue.</p>
-                        <form action="" className="flex flex-col">
+                        <form onSubmit={handleSignin} className="flex flex-col">
                             <label htmlFor="username">Username</label>
-                            <input type="text" placeholder="Enter your username" className="w-full p-2 mb-3 border rounded transition-all duration-300 ease-in-out hover:border-gray-500 hover:shadow-md focus:border-gray-500 focus:ring-2 focus:ring-gray-400 outline-none" autoComplete="username" />
+                            <input type="text" value={signinUsername} onChange={e => setSigninUsername(e.target.value)} placeholder="Enter your username" className="w-full p-2 mb-3 border rounded transition-all duration-300 ease-in-out hover:border-gray-500 hover:shadow-md focus:border-gray-500 focus:ring-2 focus:ring-gray-400 outline-none" autoComplete="username" required />
                             <label htmlFor="password">Password</label>
-                            <input type="password" placeholder="Enter your password" className="w-full p-2 mb-3 border rounded transition-all duration-300 ease-in-out hover:border-gray-500 hover:shadow-md focus:border-gray-500 focus:ring-2 focus:ring-gray-400 outline-none" autoComplete="current-password" />
+                            <input type="password" value={signinPassword} onChange={e => setSigninPassword(e.target.value)} placeholder="Enter your password" className="w-full p-2 mb-3 border rounded transition-all duration-300 ease-in-out hover:border-gray-500 hover:shadow-md focus:border-gray-500 focus:ring-2 focus:ring-gray-400 outline-none" autoComplete="current-password" required />
                             <button type="submit" className="w-full cursor-pointer bg-neutral-900 text-white p-2 rounded transition duration-300 hover:bg-neutral-800">Submit</button>
                         </form>
                         <div className="border-t-1 mt-4 w-full p-4 text-center">
@@ -54,20 +162,20 @@ const NavBar: React.FC = () => {
             )}
     
             {showSignUpForm && (
-                <div onClick={() => setShowSignUpForm(false)} className="fixed inset-0 flex items-center justify-center bg-black opacity-90 z-50">
+                <div onClick={() => setShowSignUpForm(false)} className="fixed inset-0 flex items-center justify-center bg-black/90 z-50">
                     <div onClick={(e) => e.stopPropagation()} className="bg-white p-6 rounded-lg shadow-lg relative w-100">
                         <div className="p-2 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-gray-100 active:outline">
                             <img onClick={() => setShowSignUpForm(false)} src={close} alt="close.png" className="h-4" />
                         </div>
                         <h2 className="text-2xl font-bold mt-6 text-center">Sign In to Summoner Rankings</h2>
                         <p className="text-center mt-0 mb-4">Welcome Back! Please sign in to continue.</p>
-                        <form action="" className="flex flex-col">
+                        <form onSubmit={handleSignup} className="flex flex-col">
                             <label htmlFor="email">Email</label>
-                            <input type="email" placeholder="Enter your email" className="w-full p-2 mb-3 border rounded transition-all duration-300 ease-in-out hover:border-gray-500 hover:shadow-md focus:border-gray-500 focus:ring-2 focus:ring-gray-400 outline-none" autoComplete="email" />
+                            <input type="email" value={signupEmail} onChange={e => setSignupEmail(e.target.value)} placeholder="Enter your email" className="w-full p-2 mb-3 border rounded transition-all duration-300 ease-in-out hover:border-gray-500 hover:shadow-md focus:border-gray-500 focus:ring-2 focus:ring-gray-400 outline-none" autoComplete="email" required />
                             <label htmlFor="username">Username</label>
-                            <input type="text" placeholder="Enter your username" className="w-full p-2 mb-3 border rounded transition-all duration-300 ease-in-out hover:border-gray-500 hover:shadow-md focus:border-gray-500 focus:ring-2 focus:ring-gray-400 outline-none" autoComplete="username" />
+                            <input type="text" value={signupUsername} onChange={e => setSignupUsername(e.target.value)} placeholder="Enter your username" className="w-full p-2 mb-3 border rounded transition-all duration-300 ease-in-out hover:border-gray-500 hover:shadow-md focus:border-gray-500 focus:ring-2 focus:ring-gray-400 outline-none" autoComplete="username" required />
                             <label htmlFor="password">Password</label>
-                            <input type="password" placeholder="Enter your password" className="w-full p-2 mb-3 border rounded transition-all duration-300 ease-in-out hover:border-gray-500 hover:shadow-md focus:border-gray-500 focus:ring-2 focus:ring-gray-400 outline-none" autoComplete="current-password" />
+                            <input type="password" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} placeholder="Enter your password" className="w-full p-2 mb-3 border rounded transition-all duration-300 ease-in-out hover:border-gray-500 hover:shadow-md focus:border-gray-500 focus:ring-2 focus:ring-gray-400 outline-none" autoComplete="current-password" required />
                             <button type="submit" className="w-full cursor-pointer bg-neutral-900 text-white p-2 rounded transition duration-300 hover:bg-neutral-800">Submit</button>
                         </form>
                         <div className="border-t-1 mt-4 w-full p-4 text-center">

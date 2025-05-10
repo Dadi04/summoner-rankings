@@ -151,7 +151,6 @@ const Home: React.FC = () => {
                                 {history.length > 0 ? (
                                     <div className="flex flex-col">
                                         {history.map(entry => {
-                                            // trebalo bi da bude link umesto setSummonerInput al ok
                                             const id = `${entry.summoner}-${entry.region}`;
                                             const isFav = favorites.includes(id);
 

@@ -12,6 +12,7 @@ namespace backend.Services {
         public DbSet<Player> Players { get; set; } = null!;
         public DbSet<PlayerMatch> PlayerMatches { get; set; }
         public DbSet<Race> Races { get; set; } = null!;
+        public DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
             modelBuilder.Entity<Player>()

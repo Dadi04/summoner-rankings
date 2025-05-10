@@ -5,11 +5,11 @@ using System.Threading.Tasks;
 
 namespace backend.Models {
     public class Player {
-        public int Id {get; set;}
-        public string SummonerName {get; set;} = string.Empty;
-        public string SummonerTag {get; set;} = string.Empty;
-        public string Region {get; set;} = string.Empty;
-        public string Puuid {get; set;} = string.Empty;
+        public int Id { get; set; }
+        public string SummonerName { get; set; } = string.Empty;
+        public string SummonerTag { get; set; } = string.Empty;
+        public string Region { get; set; } = string.Empty;
+        public string Puuid { get; set; } = string.Empty;
         public string SummonerData { get; set; } = string.Empty;
         public string EntriesData { get; set; } = string.Empty;
         public string MasteriesData { get; set; } = string.Empty;

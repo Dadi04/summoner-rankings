@@ -11,6 +11,9 @@ export default defineConfig({
   assetsInclude: ['**/*.lottie'],
   server: {
     proxy: {
+      '/api/auth': {
+        target: 'http://localhost:5288',
+      },
       '/api/lol/profile': {
         target: 'http://localhost:5288',
       },

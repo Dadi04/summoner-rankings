@@ -10,7 +10,8 @@ import LiveGame from "./pages/LiveGame";
 import Races from "./pages/Races";
 import Leaderboard from "./pages/Leaderboard";
 import Clash from "./pages/Clash";
-import SignIn from "./pages/SignIn";
+import Account from "./pages/Account";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const App: React.FC = () => {
   return (
@@ -27,7 +28,11 @@ const App: React.FC = () => {
             <Route path="/races" element={<Races />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/clash" element={<Clash />} />
-            <Route path="/signin" element={<SignIn />} />
+            <Route path="/:username" element={
+              <ProtectedRoute>
+                <Account />
+              </ProtectedRoute>
+            } />
           </Routes>
         </div>
         <Footer />

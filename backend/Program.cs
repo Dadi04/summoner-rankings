@@ -1,18 +1,20 @@
-using backend.Services;
 using Microsoft.EntityFrameworkCore;
-using System.Net;
-using System.Net.Http;
-using System.Text.Json;
-using DotNetEnv;
-using Azure;
-using Polly;
-using Polly.RateLimit;
-using Microsoft.AspNetCore.Identity;
-using backend.Models;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
-var builder = WebApplication.CreateBuilder(args);
+using DotNetEnv;
+using Polly;
+
+using System.Net;
+using System.Text;
+using System.Text.Json;
+
+using backend.Services;
+using backend.Models;
+
 Env.Load();
+var builder = WebApplication.CreateBuilder(args);
+
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -28,6 +30,25 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
     policy.AllowAnyOrigin()
           .AllowAnyMethod()
           .AllowAnyHeader()));
+
+builder.Services.AddControllers();
+
+builder.Services.AddAuthentication(options => {
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options => {
+    var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Missing Jwt:Key"));
+
+    options.TokenValidationParameters = new TokenValidationParameters {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidateLifetime = true,
+    };
+});
 
 builder.Services.AddDbContext<ApplicationDbContext>(options => {
     string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
@@ -47,6 +68,9 @@ if (app.Environment.IsDevelopment()) {
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
 
 string apiKey = Environment.GetEnvironmentVariable("RIOT_API_KEY") ?? "";
     
