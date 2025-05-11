@@ -13,16 +13,20 @@ namespace backend.Services {
         public DbSet<PlayerMatch> PlayerMatches { get; set; }
         public DbSet<Race> Races { get; set; } = null!;
         public DbSet<User> Users { get; set; }
+        public DbSet<Favorite> Favorites { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder.Entity<Player>()
                 .HasMany(p => p.Races)
                 .WithMany(r => r.Players);
-
-            base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<PlayerMatch>()
                 .HasIndex(pm => new { pm.PlayerId, pm.MatchIndex })
                 .HasDatabaseName("IX_PlayerMatches_PlayerId_MatchIndex");
+            modelBuilder.Entity<Favorite>()
+                .HasIndex(f => new { f.UserId, f.SummonerName, f.Region })
+                .IsUnique();
         }
 
     }

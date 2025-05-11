@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useRef, useEffect, FormEvent, useCallback } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import Cookies from "js-cookie";
 
 import logodark from "../assets/logo-dark.png";
@@ -9,6 +9,12 @@ interface RegionItem {
     name: string;
     abbr: string;
     code: string;
+}
+
+interface FavoritePlayer {
+    id: string;
+    summonerName: string;
+    region: string;
 }
 
 const REGION_ITEMS: RegionItem[] = [
@@ -39,11 +45,19 @@ const Home: React.FC = () => {
     const [searchDiv, setSearchDiv] = useState<"search-history" | "favorites">("search-history");
     const [summonerInput, setSummonerInput] = useState("");
     const [history, setHistory] = useState<{ summoner: string; region: string }[]>([]);
-    const [favorites, setFavorites] = useState<string[]>([]);
+    const [favorites, setFavorites] = useState<FavoritePlayer[]>([]);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const dropdownToggleRef = useRef<HTMLDivElement>(null);
     const dropdownListRef = useRef<HTMLDivElement>(null);
     const searchDivRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const checkAuthStatus = () => {
+        const token = localStorage.getItem("jwt");
+        setIsAuthenticated(!!token);
+    };
 
     useEffect(() => {
         const existing = Cookies.get(COOKIE_NAME);
@@ -55,7 +69,56 @@ const Home: React.FC = () => {
                 Cookies.remove(COOKIE_NAME);
             }
         }
+        
+        checkAuthStatus();
+        
+        window.addEventListener("storage", event => {
+            if (event.key === "jwt") {
+                checkAuthStatus();
+            }
+        });
+        
+        const handleAuthChange = () => checkAuthStatus();
+        window.addEventListener("authStateChanged", handleAuthChange);
+        
+        return () => {
+            window.removeEventListener("storage", event => {
+                if (event.key === "jwt") {
+                    checkAuthStatus();
+                }
+            });
+            window.removeEventListener("authStateChanged", handleAuthChange);
+        };
     }, []);
+
+    const fetchFavorites = useCallback(async () => {
+        if (!isAuthenticated) return;
+        
+        try {
+            setIsLoading(true);
+            const token = localStorage.getItem("jwt");
+            const response = await fetch('/api/favorites', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                setFavorites(data);
+            }
+        } catch (error) {
+            console.error("Error fetching favorites:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [isAuthenticated, setFavorites]);
+
+    useEffect(() => {
+        if (searchDiv === "favorites" && openSearchDiv && isAuthenticated) {
+            fetchFavorites();
+        }
+    }, [searchDiv, openSearchDiv, isAuthenticated, fetchFavorites]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -74,6 +137,18 @@ const Home: React.FC = () => {
         }
     }, []);
 
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchFavorites();
+        }
+    }, [location.pathname, isAuthenticated, fetchFavorites]);
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            setFavorites([]);
+        }
+    }, [isAuthenticated]);
+
     const handleSelect = (region: RegionItem) => {
         setSelectedRegion(region);
         setShowRegion(false);
@@ -84,6 +159,93 @@ const Home: React.FC = () => {
         setHistory(newHistory);
 
         Cookies.set(COOKIE_NAME, JSON.stringify(newHistory), { expires: 7 });
+    };
+
+    const toggleFavorite = async (entry: { summoner: string; region: string }) => {
+        if (!isAuthenticated) {
+            alert("You need to be signed in to use Favorites");
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const token = localStorage.getItem("jwt");
+            if (!token) {
+                alert("Authentication token not found. Please sign in again.");
+                setIsAuthenticated(false);
+                return;
+            }
+            
+            const isFavorited = favorites.some(fav => 
+                fav.summonerName === entry.summoner && 
+                fav.region === entry.region
+            );
+            
+            const method = isFavorited ? 'DELETE' : 'POST';
+            
+            const response = await fetch('/api/favorites', {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    summonerName: entry.summoner,
+                    region: entry.region
+                })
+            });
+
+            if (response.ok) {
+                if (isFavorited) {
+                    setFavorites(favorites.filter(fav => 
+                        !(fav.summonerName === entry.summoner && fav.region === entry.region)
+                    ));
+                } else {
+                    fetchFavorites();
+                }
+            } else if (response.status === 401) {
+                alert("Your session has expired. Please sign in again.");
+                setIsAuthenticated(false);
+                localStorage.removeItem("jwt");
+            } else {
+                const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
+                console.error("Error toggling favorite:", errorData);
+                alert(`Failed to update favorite: ${errorData.message || response.statusText}`);
+            }
+        } catch (error) {
+            console.error("Error toggling favorite:", error);
+            alert("An error occurred. Please try again later.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const removeFavorite = async (favorite: FavoritePlayer) => {
+        if (!isAuthenticated) return;
+        
+        setIsLoading(true);
+        try {
+            const token = localStorage.getItem("jwt");
+            const response = await fetch('/api/favorites', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    summonerName: favorite.summonerName,
+                    region: favorite.region
+                })
+            });
+
+            if (response.ok) {
+                setFavorites(favorites.filter(fav => fav.id !== favorite.id));
+            }
+        } catch (error) {
+            console.error("Error removing favorite:", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleSubmit = async (e: FormEvent) => {
@@ -107,6 +269,34 @@ const Home: React.FC = () => {
         setHistory(historyArr);
 
         navigate(`/lol/profile/${selectedRegion.code}/${encodedSummoner}`, {state: {region: selectedRegion, summoner: encodedSummoner}});
+    };
+
+    const isEntryFavorited = (entry: { summoner: string; region: string }) => {
+        if (!isAuthenticated) return false;
+        
+        return favorites.some(fav => 
+            fav.summonerName === entry.summoner && 
+            fav.region === entry.region
+        );
+    };
+
+    const addToSearchHistory = (favorite: FavoritePlayer) => {
+        const existingEntry = history.find(h => 
+            h.summoner === favorite.summonerName && 
+            h.region === favorite.region
+        );
+
+        if (!existingEntry) {
+            const newEntry = {
+                summoner: favorite.summonerName,
+                region: favorite.region
+            };
+
+            const newHistory = [newEntry, ...history].slice(0, MAX_HISTORY);
+            
+            setHistory(newHistory);
+            Cookies.set(COOKIE_NAME, JSON.stringify(newHistory), { expires: 7 });
+        }
     };
 
     return (
@@ -152,11 +342,7 @@ const Home: React.FC = () => {
                                     <div className="flex flex-col">
                                         {history.map(entry => {
                                             const id = `${entry.summoner}-${entry.region}`;
-                                            const isFav = favorites.includes(id);
-
-                                            const toggleFav = () => {
-                                                setFavorites(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id] );
-                                            };
+                                            const isFav = isEntryFavorited(entry);
 
                                             const region = REGION_ITEMS.find(r => r.code === entry.region);
                                             return (
@@ -166,8 +352,15 @@ const Home: React.FC = () => {
                                                         <Link to={`/lol/profile/${region?.code}/${entry.summoner.replace("#", "-")}`} onClick={() => setOpenSearchDiv(false)} className="text-lg cursor-pointer hover:underline">{entry.summoner}</Link>
                                                     </div>
                                                     <div className="flex gap-2 items-center">
-                                                        <button key={`${entry.summoner}-${entry.region}-star`} type="button" onClick={toggleFav} className="cursor-pointer trasition-all transfrom scale-110" aria-label="Favorite">
-                                                            <svg className="star-svg" width="24" height="24" viewBox="0 0 24 24" fill={isFav ? "yellow" : "none"} stroke={isFav ? "yellow" : "#4b5563"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <button 
+                                                            key={`${entry.summoner}-${entry.region}-star`} 
+                                                            type="button" 
+                                                            onClick={() => toggleFavorite(entry)} 
+                                                            className="cursor-pointer transition-all transform scale-110" 
+                                                            aria-label="Favorite"
+                                                            disabled={isLoading}
+                                                        >
+                                                            <svg className="star-svg" width="24" height="24" viewBox="0 0 24 24" fill={isAuthenticated && isFav ? "yellow" : "none"} stroke={isAuthenticated && isFav ? "yellow" : "#4b5563"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                                                             </svg>
                                                         </button>
@@ -188,9 +381,58 @@ const Home: React.FC = () => {
                             </div>
                         ) : (
                             <div>
-                                {favorites.length > 0 ? (
-                                    <div>
-
+                                {!isAuthenticated ? (
+                                    <div className="flex flex-col py-10">
+                                        <div className="w-full flex justify-center">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"></path>
+                                                <path d="M12 16v-4"></path>
+                                                <path d="M12 8h.01"></path>
+                                            </svg>
+                                        </div>
+                                        <p className="text-lg text-center mt-2">You need to be signed in to use Favorites</p>
+                                    </div>
+                                ) : favorites.length > 0 ? (
+                                    <div className="flex flex-col">
+                                        {isLoading && (
+                                            <div className="text-center py-2 bg-purple-100">
+                                                <span className="text-purple-700 font-medium">Refreshing favorites...</span>
+                                            </div>
+                                        )}
+                                        {favorites.map(favorite => {
+                                            const region = REGION_ITEMS.find(r => r.code === favorite.region);
+                                            return (
+                                                <div key={favorite.id} className="flex p-2 items-center justify-between">
+                                                    <div className="flex gap-2 items-center">
+                                                        <p className="bg-purple-700 text-neutral-50 rounded-lg p-[3px] font-semibold">{region?.abbr}</p>
+                                                        <Link 
+                                                            to={`/lol/profile/${favorite.region}/${favorite.summonerName.replace("#", "-")}`} 
+                                                            onClick={() => {
+                                                                setOpenSearchDiv(false);
+                                                                addToSearchHistory(favorite);
+                                                            }} 
+                                                            className="text-lg cursor-pointer hover:underline"
+                                                        >
+                                                            {favorite.summonerName}
+                                                        </Link>
+                                                    </div>
+                                                    <div className="flex gap-2 items-center">
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => removeFavorite(favorite)} 
+                                                            className="cursor-pointer transition-transform transform hover:scale-110" 
+                                                            aria-label="Remove Favorite"
+                                                            disabled={isLoading}
+                                                        >
+                                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <line x1="18" y1="6" x2="6" y2="18" />
+                                                                <line x1="6" y1="6" x2="18" y2="18" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 ) : (
                                     <div className="flex flex-col py-10">

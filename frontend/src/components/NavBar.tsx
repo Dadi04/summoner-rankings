@@ -174,7 +174,7 @@ const NavBar: React.FC = () => {
             </nav>
 
             {showSignInForm && (
-                <div onClick={() => setShowSignInForm(false)} className="fixed inset-0 flex items-center justify-center bg-black/90 z-50">
+                <div onClick={() => setShowSignInForm(false)} className="fixed inset-0 flex items-center justify-center bg-black/90 z-150">
                     <div onClick={(e) => e.stopPropagation()} className="bg-white py-6 px-5 rounded-lg shadow-lg relative w-100">
                         <div className="p-2 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-gray-100 active:outline">
                             <img onClick={() => setShowSignInForm(false)} src={close} alt="close.png" className="h-4" />

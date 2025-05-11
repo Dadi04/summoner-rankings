@@ -13,13 +13,13 @@ const ProtectedRoute: React.FC<{children: React.ReactNode;}> = ({ children }) =>
     useEffect(() => {
         const token = localStorage.getItem("jwt");
         if (token) {
-        try {
-            const payload = jwtDecode<any>(token);
-            setUsername(payload.username);
-            setIsAuthenticated(true);
-        } catch {
-            setIsAuthenticated(false);
-        }
+            try {
+                const payload = jwtDecode<any>(token);
+                setUsername(payload.username);
+                setIsAuthenticated(true);
+            } catch {
+                setIsAuthenticated(false);
+            }   
         } else {
             setIsAuthenticated(false);
         }

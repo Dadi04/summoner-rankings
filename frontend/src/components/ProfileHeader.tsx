@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { DD_VERSION } from "../version";
 
@@ -11,6 +11,120 @@ const ProfileHeader: React.FC<{data: Player; regionCode: string; encodedSummoner
     const spectatorData = data.spectatorData;
 
     const [isFavorite, setIsFavorite] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+    useEffect(() => {
+        const checkAuthStatus = () => {
+            const token = localStorage.getItem("jwt");
+            setIsAuthenticated(!!token);
+        };
+        
+        checkAuthStatus();
+        
+        window.addEventListener("storage", event => {
+            if (event.key === "jwt") {
+                checkAuthStatus();
+            }
+        });
+        
+        const handleAuthChange = () => checkAuthStatus();
+        window.addEventListener("authStateChanged", handleAuthChange);
+        
+        return () => {
+            window.removeEventListener("storage", event => {
+                if (event.key === "jwt") {
+                    checkAuthStatus();
+                }
+            });
+            window.removeEventListener("authStateChanged", handleAuthChange);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            setIsFavorite(false);
+        }
+    }, [isAuthenticated]);
+
+    useEffect(() => {
+        const checkFavoriteStatus = async () => {
+            try {
+                const token = localStorage.getItem("jwt");
+                if (!token) return;
+
+                const response = await fetch(`/api/favorites/check?region=${regionCode}&summoner=${data.summonerName}${data.summonerTag ? `-${data.summonerTag}` : ''}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    setIsFavorite(result.isFavorite);
+                }
+            } catch (error) {
+                console.error("Error checking favorite status:", error);
+            }
+        };
+        
+        if (isAuthenticated) {
+            checkFavoriteStatus();
+        } else {
+            setIsFavorite(false);
+        }
+    }, [regionCode, data.summonerName, data.summonerTag, isAuthenticated]);
+
+    const toggleFavorite = async () => {
+        if (!isAuthenticated) {
+            alert("You need to be signed in to add favorites");
+            return;
+        }
+
+        const token = localStorage.getItem("jwt");
+        if (!token) {
+            setIsAuthenticated(false);
+            alert("You need to be signed in to add favorites");
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            
+            const method = isFavorite ? 'DELETE' : 'POST';
+            const summonerIdentifier = `${data.summonerName}${data.summonerTag ? `#${data.summonerTag}` : ''}`;
+            
+            const response = await fetch('/api/favorites', {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    summonerName: summonerIdentifier,
+                    region: regionCode
+                })
+            });
+
+            if (response.ok) {
+                setIsFavorite(!isFavorite);
+            } else if (response.status === 401) {
+                alert("Your session has expired. Please sign in again.");
+                localStorage.removeItem("jwt");
+                setIsAuthenticated(false);
+                window.dispatchEvent(new Event("authStateChanged"));
+            } else {
+                const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
+                console.error("Failed to update favorite status:", errorData);
+                alert(`Failed to update favorite: ${errorData.message || response.statusText}`);
+            }
+        } catch (error) {
+            console.error("Error toggling favorite:", error);
+            alert("An error occurred. Please try again later.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     let lastUpdated = Math.round((Date.now() - data.addedAt*1000)/60000);
     let timeUnit = lastUpdated === 1 ? "minute ago" : "minutes ago";
@@ -51,8 +165,14 @@ const ProfileHeader: React.FC<{data: Player; regionCode: string; encodedSummoner
                     <div className="flex">
                         <h1 className="text-white font-bold text-3xl mr-2">{data.summonerName}</h1>
                         <h1 className="text-neutral-400 text-3xl mr-2">#{data.summonerTag}</h1>
-                        <button type="button" onClick={() => setIsFavorite(prev => !prev)} className="star-button" aria-label="Favorite">
-                            <svg className="star-svg" width="24" height="24" viewBox="0 0 24 24" fill={isFavorite ? "yellow" : "none"} stroke={isFavorite ? "yellow" : "#4b5563"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <button 
+                            type="button" 
+                            onClick={toggleFavorite} 
+                            className={`star-button ${isLoading ? 'opacity-50' : ''}`} 
+                            aria-label="Favorite"
+                            disabled={isLoading}
+                        >
+                            <svg className="star-svg" width="24" height="24" viewBox="0 0 24 24" fill={isAuthenticated && isFavorite ? "yellow" : "none"} stroke={isAuthenticated && isFavorite ? "yellow" : "#4b5563"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                             </svg>
                         </button>

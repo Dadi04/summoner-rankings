@@ -11,6 +11,9 @@ export default defineConfig({
   assetsInclude: ['**/*.lottie'],
   server: {
     proxy: {
+      '/api/favorites': {
+        target: 'http://localhost:5288',
+      },
       '/api/auth': {
         target: 'http://localhost:5288',
       },
