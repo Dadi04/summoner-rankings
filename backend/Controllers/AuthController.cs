@@ -18,6 +18,7 @@ public class AuthController : ControllerBase {
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterDto dto) {
         if (_db.Users.Any(u => u.Username == dto.Username)) return BadRequest("Username taken");
+        if (_db.Users.Any(u => u.Email == dto.Email)) return BadRequest("Email taken");
 
         dto.PasswordHash = AuthHelpers.HashPassword(dto.Password);
 

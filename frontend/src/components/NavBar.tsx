@@ -25,7 +25,6 @@ const NavBar: React.FC = () => {
             setIsAuthenticated(true);
             try {
                 const payload = jwtDecode<any>(token);
-                console.log(payload);
                 setUsername(payload.username);
             } catch {
                 console.warn("Failed to decode token");
@@ -46,17 +45,24 @@ const NavBar: React.FC = () => {
                 }),
             });
             if (!res.ok) throw new Error("Login failed");
-            const { token } = await res.json();
+            const data = await res.json();
+            
+            if (!data.token) {
+                throw new Error("No token received from server");
+            }
 
-            localStorage.setItem("jwt", token);
-
+            localStorage.setItem("jwt", data.token);
             setIsAuthenticated(true);
 
-            const payload = jwtDecode<any>(token);
-            console.log(payload);
-            setUsername(payload.username);
+            try {
+                const payload = jwtDecode<any>(data.token);
+                setUsername(payload.username);
+            } catch (decodeError) {
+                console.warn("Failed to decode token:", decodeError);
+            }
 
             setShowSignInForm(false);
+            window.dispatchEvent(new Event("authStateChanged"));
         } catch (error) {
             console.error(error);
             alert("Invalid credentials");
@@ -67,7 +73,7 @@ const NavBar: React.FC = () => {
         e.preventDefault();
         
         try {
-            const res = await fetch("/api/auth/register", {
+            const signupResult = await fetch("/api/auth/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -76,21 +82,49 @@ const NavBar: React.FC = () => {
                     password: signupPassword,
                 }),
             });
-            if (!res.ok) throw new Error("Login failed");
-            const { token } = await res.json();
+            
+            if (!signupResult.ok) {
+                const errorData = await signupResult.json().catch(() => ({ message: "Registration failed" }));
+                console.error("Registration failed:", errorData);
+                throw new Error(errorData.message || "Registration failed");
+            }
+            
+            const signinResult = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: signupUsername,
+                    password: signupPassword,
+                }),
+            });
+            
+            if (!signinResult.ok) {
+                throw new Error("Registration successful, but auto-login failed. Please log in manually.");
+            }
+            
+            const data = await signinResult.json();
+            
+            if (!data.token) {
+                throw new Error("No token received from server");
+            }
 
-            localStorage.setItem("jwt", token);
-
+            localStorage.setItem("jwt", data.token);
             setIsAuthenticated(true);
 
-            const payload = jwtDecode<any>(token);
-            console.log(payload);
-            setUsername(payload.username);
+            try {
+                const payload = jwtDecode<any>(data.token);
+                setUsername(payload.username);
+            } catch (decodeError) {
+                console.error("Failed to decode token:", decodeError);
+            }
 
             setShowSignUpForm(false);
+            window.dispatchEvent(new Event("authStateChanged"));
+            
+            alert("Registration successful! You are now logged in.");
         } catch (error) {
-            console.error(error);
-            alert("Registration error");
+            console.error("Registration error:", error);
+            alert(error instanceof Error ? error.message : "Registration error");
         }
     };
 
@@ -98,6 +132,7 @@ const NavBar: React.FC = () => {
         localStorage.removeItem("jwt");
         setIsAuthenticated(false);
         setUsername(null);
+        window.dispatchEvent(new Event("authStateChanged"));
     }
   
     return (
@@ -140,7 +175,7 @@ const NavBar: React.FC = () => {
 
             {showSignInForm && (
                 <div onClick={() => setShowSignInForm(false)} className="fixed inset-0 flex items-center justify-center bg-black/90 z-50">
-                    <div onClick={(e) => e.stopPropagation()} className="bg-white p-6 rounded-lg shadow-lg relative w-100">
+                    <div onClick={(e) => e.stopPropagation()} className="bg-white py-6 px-5 rounded-lg shadow-lg relative w-100">
                         <div className="p-2 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-gray-100 active:outline">
                             <img onClick={() => setShowSignInForm(false)} src={close} alt="close.png" className="h-4" />
                         </div>
@@ -163,12 +198,12 @@ const NavBar: React.FC = () => {
     
             {showSignUpForm && (
                 <div onClick={() => setShowSignUpForm(false)} className="fixed inset-0 flex items-center justify-center bg-black/90 z-50">
-                    <div onClick={(e) => e.stopPropagation()} className="bg-white p-6 rounded-lg shadow-lg relative w-100">
+                    <div onClick={(e) => e.stopPropagation()} className="bg-white py-6 px-5 rounded-lg shadow-lg relative w-100">
                         <div className="p-2 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-gray-100 active:outline">
                             <img onClick={() => setShowSignUpForm(false)} src={close} alt="close.png" className="h-4" />
                         </div>
-                        <h2 className="text-2xl font-bold mt-6 text-center">Sign In to Summoner Rankings</h2>
-                        <p className="text-center mt-0 mb-4">Welcome Back! Please sign in to continue.</p>
+                        <h2 className="text-2xl font-bold mt-6 text-center">Sign Up to Summoner Rankings</h2>
+                        <p className="text-center mt-0 mb-4">Create your account to save favorites and more!</p>
                         <form onSubmit={handleSignup} className="flex flex-col">
                             <label htmlFor="email">Email</label>
                             <input type="email" value={signupEmail} onChange={e => setSignupEmail(e.target.value)} placeholder="Enter your email" className="w-full p-2 mb-3 border rounded transition-all duration-300 ease-in-out hover:border-gray-500 hover:shadow-md focus:border-gray-500 focus:ring-2 focus:ring-gray-400 outline-none" autoComplete="email" required />
