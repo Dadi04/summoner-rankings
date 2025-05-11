@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 
 using backend.Models;
+using backend.DTOs;
 using backend.Services;
 
 [ApiController]
