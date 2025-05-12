@@ -1,6 +1,9 @@
-import React, { useState, useRef, useEffect, FormEvent, useCallback } from "react";
+import React, { useState, useRef, useEffect, FormEvent, useCallback, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Cookies from "js-cookie";
+import { DD_VERSION } from "../version";
+
+import PlayerBasicInfo from "../interfaces/PlayerBasicInfo";
 
 import logodark from "../assets/logo-dark.png";
 import arrowdown from "../assets/arrow-down-dark.png"
@@ -48,6 +51,8 @@ const Home: React.FC = () => {
     const [favorites, setFavorites] = useState<FavoritePlayer[]>([]);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [allPlayers, setAllPlayers] = useState<PlayerBasicInfo[]>([]);
+
     const dropdownToggleRef = useRef<HTMLDivElement>(null);
     const dropdownListRef = useRef<HTMLDivElement>(null);
     const searchDivRef = useRef<HTMLDivElement>(null);
@@ -90,6 +95,19 @@ const Home: React.FC = () => {
             window.removeEventListener("authStateChanged", handleAuthChange);
         };
     }, []);
+
+    useEffect(() => {
+        fetch("/api/searchaccounts")
+            .then((res) => res.ok ? res.json() : Promise.reject(res.statusText))
+            .then((data: PlayerBasicInfo[]) => setAllPlayers(data))
+            .catch((err) => console.error("Failed to load players:", err))
+    }, []);
+
+    const filteredPlayers = useMemo(() => {
+        const q = summonerInput.trim().toLowerCase();
+        if (q === "") return [];
+        return allPlayers.filter(p => p.summonerName.toLowerCase().includes(q));
+    }, [allPlayers, summonerInput]);
 
     const fetchFavorites = useCallback(async () => {
         if (!isAuthenticated) return;
@@ -248,6 +266,18 @@ const Home: React.FC = () => {
         }
     };
 
+    const pushToHistory = (summoner: string, tag: string, region: string) => {
+        const newEntry = { summoner, region };
+        let next = history.filter(
+            h => !(h.summoner === `${summoner}#${tag}` && h.region === region)
+        );
+        next.unshift(newEntry);
+        next = next.slice(0, MAX_HISTORY);
+
+        setHistory(next);
+        Cookies.set(COOKIE_NAME, JSON.stringify(next), { expires: 7 });
+    };
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
@@ -337,48 +367,87 @@ const Home: React.FC = () => {
                             </div>
                         </div>
                         {searchDiv === "search-history" ? (
-                            <div>
-                                {history.length > 0 ? (
-                                    <div className="flex flex-col">
-                                        {history.map(entry => {
-                                            const id = `${entry.summoner}-${entry.region}`;
-                                            const isFav = isEntryFavorited(entry);
+                            summonerInput.trim() === "" ? (
+                                <div>
+                                    {history.length > 0 ? (
+                                        <div className="flex flex-col">
+                                            {history.map(entry => {
+                                                const id = `${entry.summoner}-${entry.region}`;
+                                                const isFav = isEntryFavorited(entry);
 
-                                            const region = REGION_ITEMS.find(r => r.code === entry.region);
+                                                const region = REGION_ITEMS.find(r => r.code === entry.region);
+                                                return (
+                                                    <div key={id} className="flex p-2 items-center justify-between">
+                                                        <div className="flex gap-2 items-center">
+                                                            <p className="bg-purple-700 text-neutral-50 rounded-lg p-[3px] font-semibold">{region?.abbr}</p>
+                                                            <Link to={`/lol/profile/${region?.code}/${entry.summoner.replace("#", "-")}`} onClick={() => setOpenSearchDiv(false)} className="text-lg cursor-pointer hover:underline">{entry.summoner}</Link>
+                                                        </div>
+                                                        <div className="flex gap-2 items-center">
+                                                            <button 
+                                                                key={`${entry.summoner}-${entry.region}-star`} 
+                                                                type="button" 
+                                                                onClick={() => toggleFavorite(entry)} 
+                                                                className="cursor-pointer transition-all transform scale-110" 
+                                                                aria-label="Favorite"
+                                                                disabled={isLoading}
+                                                            >
+                                                                <svg className="star-svg" width="24" height="24" viewBox="0 0 24 24" fill={isAuthenticated && isFav ? "yellow" : "none"} stroke={isAuthenticated && isFav ? "yellow" : "#4b5563"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                                                </svg>
+                                                            </button>
+                                                            <button key={`${entry.summoner}-${entry.region}-delete`} type="button" onClick={() => handleDelete(entry)} className="cursor-pointer transition-transform transform hover:scale-110" aria-label="Delete History Entry">
+                                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <p className="p-3 text-lg text-center">No Recent Searches</p>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="flex flex-col">
+                                    {filteredPlayers.length > 0 ? (
+                                        filteredPlayers.map(player => {
+                                            const id = `${player.summonerName}-${player.region}`;
+                                            const region = REGION_ITEMS.find(r => r.code === player.region);
                                             return (
-                                                <div key={id} className="flex p-2 items-center justify-between">
-                                                    <div className="flex gap-2 items-center">
-                                                        <p className="bg-purple-700 text-neutral-50 rounded-lg p-[3px] font-semibold">{region?.abbr}</p>
-                                                        <Link to={`/lol/profile/${region?.code}/${entry.summoner.replace("#", "-")}`} onClick={() => setOpenSearchDiv(false)} className="text-lg cursor-pointer hover:underline">{entry.summoner}</Link>
+                                                <div
+                                                    key={id}
+                                                    className="flex items-center justify-between p-2 transition-all hover:bg-neutral-200 cursor-pointer"
+                                                    onClick={() => {
+                                                        const urlName = encodeURIComponent(`${player.summonerName}-${player.summonerTag}`);
+                                                        pushToHistory(player.summonerName, player.summonerTag, player.region);
+                                                        navigate(`/lol/profile/${player.region}/${urlName}`);
+                                                        setOpenSearchDiv(false);
+                                                    }}
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <img
+                                                            src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/profileicon/${player.profileIcon}.png`}
+                                                            alt={`${player.profileIcon}`}
+                                                            className="w-8"
+                                                        />
+                                                        <span className="text-lg cursor-pointer hover:underline">{player.summonerName}#{player.summonerTag}</span>
                                                     </div>
-                                                    <div className="flex gap-2 items-center">
-                                                        <button 
-                                                            key={`${entry.summoner}-${entry.region}-star`} 
-                                                            type="button" 
-                                                            onClick={() => toggleFavorite(entry)} 
-                                                            className="cursor-pointer transition-all transform scale-110" 
-                                                            aria-label="Favorite"
-                                                            disabled={isLoading}
-                                                        >
-                                                            <svg className="star-svg" width="24" height="24" viewBox="0 0 24 24" fill={isAuthenticated && isFav ? "yellow" : "none"} stroke={isAuthenticated && isFav ? "yellow" : "#4b5563"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                                                            </svg>
-                                                        </button>
-                                                        <button key={`${entry.summoner}-${entry.region}-delete`} type="button" onClick={() => handleDelete(entry)} className="cursor-pointer transition-transform transform hover:scale-110" aria-label="Delete History Entry">
-                                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                <line x1="18" y1="6" x2="6" y2="18" />
-                                                                <line x1="6" y1="6" x2="18" y2="18" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
+                                                    <p className="bg-purple-700 text-neutral-50 rounded-lg p-[3px] font-semibold">
+                                                        {region?.abbr}
+                                                    </p>
                                                 </div>
-                                            )
-                                        })}
-                                    </div>
-                                ) : (
-                                    <p>No Recent Searches</p>
-                                )}
-                            </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <p className="p-4 text-center text-gray-500">
+                                            No accounts match "{summonerInput}"
+                                        </p>
+                                    )}
+                                </div>
+                            )
                         ) : (
                             <div>
                                 {!isAuthenticated ? (

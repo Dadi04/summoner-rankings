@@ -10,6 +10,7 @@ namespace backend.Services {
         public ApplicationDbContext(DbContextOptions options) : base(options) {}
 
         public DbSet<Player> Players { get; set; } = null!;
+        public DbSet<PlayerBasicInfo> PlayersBasicInfo { get; set; } = null!;
         public DbSet<PlayerMatch> PlayerMatches { get; set; }
         public DbSet<Race> Races { get; set; } = null!;
         public DbSet<User> Users { get; set; }

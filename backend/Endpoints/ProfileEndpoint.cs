@@ -35,6 +35,7 @@ namespace backend.Endpoints {
                         SummonerName = existingPlayer.PlayerBasicInfo.SummonerName,
                         SummonerTag = existingPlayer.PlayerBasicInfo.SummonerTag,
                         Region = existingPlayer.PlayerBasicInfo.Region,
+                        ProfileIcon = existingPlayer.PlayerBasicInfo.ProfileIcon,
                     };
 
                     var dto = new PlayerDto {
@@ -573,7 +574,9 @@ namespace backend.Endpoints {
                     SummonerName = summonerName,
                     SummonerTag = summonerTag,
                     Region = region,
+                    ProfileIcon = JsonSerializer.Deserialize<RiotSummonerDto>(await summonerTask)!.profileIconId
                 };
+                dbContext.PlayersBasicInfo.Add(playerBasicInfo);
 
                 var player = new Player {
                     PlayerBasicInfo = playerBasicInfo,
@@ -613,6 +616,7 @@ namespace backend.Endpoints {
                     SummonerName = player.PlayerBasicInfo.SummonerName,
                     SummonerTag = player.PlayerBasicInfo.SummonerTag,
                     Region = player.PlayerBasicInfo.Region,
+                    ProfileIcon = JsonSerializer.Deserialize<RiotSummonerDto>(player.SummonerData)!.profileIconId
                 };
 
                 var playerDto = new PlayerDto {

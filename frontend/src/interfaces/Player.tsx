@@ -3,6 +3,7 @@ import ChampionStats from "./ChampionStats";
 import Match from "./Match";
 import Entry from "./Entry";
 import Mastery from "./Mastery";
+import PlayerBasicInfo from "./PlayerBasicInfo";
 
 interface Summoner {
     accountId: string;
@@ -12,12 +13,6 @@ interface Summoner {
     puuid: string;
     summonerLevel: number;
 };
-
-interface PlayerBasicInfo {
-    summonerName: string;
-    summonerTag: string;
-    region: string;
-}
 
 interface Player {
     playerBasicInfo: PlayerBasicInfo;
