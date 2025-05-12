@@ -29,8 +29,8 @@ public static class AuthHelpers {
             issuer: config["Jwt:Issuer"],
             audience: config["Jwt:Audience"],
             claims: new[] { 
-                new Claim("id", user.Id.ToString()),
-                new Claim("username", user.Username)
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Username)
             },
             expires: expires,
             signingCredentials: creds
