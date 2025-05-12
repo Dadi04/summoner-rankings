@@ -53,7 +53,7 @@ const ProfileHeader: React.FC<{data: Player; regionCode: string; encodedSummoner
                 const token = localStorage.getItem("jwt");
                 if (!token) return;
 
-                const response = await fetch(`/api/favorites/check?region=${regionCode}&summoner=${data.summonerName}${data.summonerTag ? `-${data.summonerTag}` : ''}`, {
+                const response = await fetch(`/api/favorites/check?region=${regionCode}&summoner=${data.playerBasicInfo.summonerName}${data.playerBasicInfo.summonerTag ? `-${data.playerBasicInfo.summonerTag}` : ''}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -73,7 +73,7 @@ const ProfileHeader: React.FC<{data: Player; regionCode: string; encodedSummoner
         } else {
             setIsFavorite(false);
         }
-    }, [regionCode, data.summonerName, data.summonerTag, isAuthenticated]);
+    }, [regionCode, data.playerBasicInfo.summonerName, data.playerBasicInfo.summonerTag, isAuthenticated]);
 
     const toggleFavorite = async () => {
         if (!isAuthenticated) {
@@ -92,7 +92,7 @@ const ProfileHeader: React.FC<{data: Player; regionCode: string; encodedSummoner
         try {
             
             const method = isFavorite ? 'DELETE' : 'POST';
-            const summonerIdentifier = `${data.summonerName}${data.summonerTag ? `#${data.summonerTag}` : ''}`;
+            const summonerIdentifier = `${data.playerBasicInfo.summonerName}${data.playerBasicInfo.summonerTag ? `#${data.playerBasicInfo.summonerTag}` : ''}`;
             
             const response = await fetch('/api/favorites', {
                 method: method,
@@ -158,13 +158,13 @@ const ProfileHeader: React.FC<{data: Player; regionCode: string; encodedSummoner
         <div className="w-full bg-neutral-800 mt-1">
             <div className="flex border-b-1 pt-5 pb-5 pl-5">
                 <div className="relative p-3">
-                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/profileicon/${summonerData.profileIconId}.png`} alt={`{summonerData.profileIconId}`} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
+                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/profileicon/${summonerData.profileIconId}.png`} alt={`${summonerData.profileIconId}`} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
                     <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 -translate-y-[10px] z-100 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{summonerData.summonerLevel}</span>
                 </div>
                 <div className="pt-3 pb-3">
                     <div className="flex">
-                        <h1 className="text-white font-bold text-3xl mr-2">{data.summonerName}</h1>
-                        <h1 className="text-neutral-400 text-3xl mr-2">#{data.summonerTag}</h1>
+                        <h1 className="text-white font-bold text-3xl mr-2">{data.playerBasicInfo.summonerName}</h1>
+                        <h1 className="text-neutral-400 text-3xl mr-2">#{data.playerBasicInfo.summonerTag}</h1>
                         <button 
                             type="button" 
                             onClick={toggleFavorite} 
@@ -179,7 +179,7 @@ const ProfileHeader: React.FC<{data: Player; regionCode: string; encodedSummoner
                     </div>
                     <div className="flex text-sm text-neutral-100">
                         <div className="pt-2 pb-2 pl-1">
-                            <p className="uppercase border-r-1 pr-2">{data.region}</p>
+                            <p className="uppercase border-r-1 pr-2">{data.playerBasicInfo.region}</p>
                         </div>
                         <p className="p-2">Ladder Rank TODO</p>
                     </div>

@@ -1,9 +1,9 @@
+using backend.Models;
+
 namespace backend.DTOs {
     public class PlayerDto {
         public int Id { get; set; }
-        public string SummonerName { get; set; } = string.Empty;
-        public string SummonerTag { get; set; } = string.Empty;
-        public string Region { get; set; } = string.Empty;
+        public PlayerBasicInfoDto PlayerBasicInfo { get; set; } = new();
         public string Puuid { get; set; } = string.Empty;
         public RiotSummonerDto SummonerData { get; set; } = new();
         public List<LeagueEntriesDto> EntriesData { get; set; } = new();

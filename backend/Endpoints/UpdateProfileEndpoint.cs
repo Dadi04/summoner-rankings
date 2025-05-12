@@ -19,7 +19,7 @@ namespace backend.Endpoints {
                     return Results.Problem("Invalid region specified.");
                 }
 
-                var existingPlayer = await dbContext.Players.FirstOrDefaultAsync(p => p.SummonerName == summonerName && p.SummonerTag == summonerTag && p.Region == region);
+                var existingPlayer = await dbContext.Players.FirstOrDefaultAsync(p => p.PlayerBasicInfo.SummonerName == summonerName && p.PlayerBasicInfo.SummonerTag == summonerTag && p.PlayerBasicInfo.Region == region);
                 if (existingPlayer == null) {
                     return Results.NotFound();
                 }
@@ -68,7 +68,7 @@ namespace backend.Endpoints {
                 }
 
                 var accountJson = await accountResponse.Content.ReadAsStreamAsync();
-                var riotAccount = JsonSerializer.Deserialize<RiotPlayerDto>(accountJson, new JsonSerializerOptions {
+                var riotAccount = JsonSerializer.Deserialize<AccountDto>(accountJson, new JsonSerializerOptions {
                     PropertyNameCaseInsensitive = true
                 });
                 if (riotAccount is null) {
@@ -718,12 +718,16 @@ namespace backend.Endpoints {
                 existingPlayer.AddedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
                 await dbContext.SaveChangesAsync();
-                    
+
+                var playerBasicInfoDto = new PlayerBasicInfoDto {
+                    SummonerName = existingPlayer.PlayerBasicInfo.SummonerName,
+                    SummonerTag = existingPlayer.PlayerBasicInfo.SummonerTag,
+                    Region = existingPlayer.PlayerBasicInfo.Region,
+                };
+
                 var playerDto = new PlayerDto {
                     Id = existingPlayer.Id,
-                    SummonerName = existingPlayer.SummonerName,
-                    SummonerTag = existingPlayer.SummonerTag,
-                    Region = existingPlayer.Region,
+                    PlayerBasicInfo = playerBasicInfoDto,
                     Puuid = existingPlayer.Puuid,
                     SummonerData = JsonSerializer.Deserialize<RiotSummonerDto>(existingPlayer.SummonerData)!,
                     EntriesData = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(existingPlayer.EntriesData)!,

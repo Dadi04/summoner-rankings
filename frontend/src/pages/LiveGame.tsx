@@ -61,7 +61,7 @@ const LiveGame: React.FC = () => {
                 
                 <div className="flex flex-col justify-center container h-[342px] bg-neutral-800 m-auto mt-2 mb-2 p-4 text-center gap-2">
                     <h2 className="text-2xl font-semibold text-neutral-50">
-                        "{newData.summonerName}#{newData.summonerTag}" is not in an active game.
+                        "{newData.playerBasicInfo.summonerName}#{newData.playerBasicInfo.summonerTag}" is not in an active game.
                     </h2>
                     <p className="text-lg text-neutral-200">
                         Please try again later if the summoner is currently in game.
@@ -102,9 +102,9 @@ const LiveGame: React.FC = () => {
                     
                     return {
                         ...item,
-                        summonerName: item.summonerName,
-                        summonerTag: item.summonerTag,
-                        region: item.region,
+                        summonerName: item.playerBasicInfo.summonerName,
+                        summonerTag: item.playerBasicInfo.summonerTag,
+                        region: item.playerBasicInfo.region,
                         puuid: item.puuid,
                         playerData:
                             typeof item.playerData === "string" && item.playerData.trim()

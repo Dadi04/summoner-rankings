@@ -5,6 +5,7 @@ using System.Text.Json;
 using backend.Services;
 using backend.Mappings;
 using backend.DTOs;
+using backend.Models;
 
 namespace backend.Endpoints {
     public static class LiveGameEndpoint {
@@ -18,12 +19,16 @@ namespace backend.Endpoints {
                 if (player == null) {
                     return Results.NotFound("Player not found.");
                 }
-                    
+
+                var playerBasicInfoDto = new PlayerBasicInfoDto {
+                    SummonerName = player.PlayerBasicInfo.SummonerName,
+                    SummonerTag = player.PlayerBasicInfo.SummonerTag,
+                    Region = player.PlayerBasicInfo.Region,
+                };
+
                 var dto = new PlayerDto {
                     Id = player.Id,
-                    SummonerName = player.SummonerName,
-                    SummonerTag = player.SummonerTag,
-                    Region = player.Region,
+                    PlayerBasicInfo = playerBasicInfoDto,
                     Puuid = player.Puuid,
                     SummonerData = JsonSerializer.Deserialize<RiotSummonerDto>(player.SummonerData)!,
                     EntriesData = JsonSerializer.Deserialize<List<LeagueEntriesDto>>(player.EntriesData)!,

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using backend.Services;
 
@@ -11,9 +12,11 @@ using backend.Services;
 namespace backend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250512074611_AddedPlayerBasicInfoModel")]
+    partial class AddedPlayerBasicInfoModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -102,9 +105,6 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("PlayerBasicInfoId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Puuid")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -138,34 +138,7 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PlayerBasicInfoId");
-
                     b.ToTable("Players");
-                });
-
-            modelBuilder.Entity("backend.Models.PlayerBasicInfo", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Region")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SummonerName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SummonerTag")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("PlayerBasicInfo");
                 });
 
             modelBuilder.Entity("backend.Models.PlayerMatch", b =>
@@ -267,13 +240,36 @@ namespace backend.Migrations
 
             modelBuilder.Entity("backend.Models.Player", b =>
                 {
-                    b.HasOne("backend.Models.PlayerBasicInfo", "PlayerBasicInfo")
-                        .WithMany()
-                        .HasForeignKey("PlayerBasicInfoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.OwnsOne("backend.Models.PlayerBasicInfo", "PlayerBasicInfo", b1 =>
+                        {
+                            b1.Property<int>("PlayerId")
+                                .HasColumnType("int");
 
-                    b.Navigation("PlayerBasicInfo");
+                            b1.Property<string>("Region")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)")
+                                .HasColumnName("Region");
+
+                            b1.Property<string>("SummonerName")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)")
+                                .HasColumnName("SummonerName");
+
+                            b1.Property<string>("SummonerTag")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)")
+                                .HasColumnName("SummonerTag");
+
+                            b1.HasKey("PlayerId");
+
+                            b1.ToTable("PlayersBasicInfo");
+
+                            b1.WithOwner()
+                                .HasForeignKey("PlayerId");
+                        });
+
+                    b.Navigation("PlayerBasicInfo")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("backend.Models.PlayerMatch", b =>

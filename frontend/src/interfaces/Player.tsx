@@ -13,10 +13,14 @@ interface Summoner {
     summonerLevel: number;
 };
 
-interface Player {
+interface PlayerBasicInfo {
     summonerName: string;
     summonerTag: string;
     region: string;
+}
+
+interface Player {
+    playerBasicInfo: PlayerBasicInfo;
     puuid: string;
     playerData: string;
     summonerData: Summoner;

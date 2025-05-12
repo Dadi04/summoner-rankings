@@ -1,14 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
 namespace backend.Models {
     public class Player {
         public int Id { get; set; }
-        public string SummonerName { get; set; } = string.Empty;
-        public string SummonerTag { get; set; } = string.Empty;
-        public string Region { get; set; } = string.Empty;
+        public PlayerBasicInfo PlayerBasicInfo { get; set; } = new();
         public string Puuid { get; set; } = string.Empty;
         public string SummonerData { get; set; } = string.Empty;
         public string EntriesData { get; set; } = string.Empty;
