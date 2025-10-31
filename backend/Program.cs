@@ -18,8 +18,6 @@ builder.Services.AddOpenApi();
 builder.Services.AddCors(options => options.AddPolicy("AllowReactApp", policy => policy.WithOrigins("http://localhost:5174", "http://localhost:5173").AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
-builder.Services.AddControllers();
-
 builder.Services.AddAuthentication(options => {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -38,6 +36,8 @@ builder.Services.AddAuthentication(options => {
     };
 });
 
+builder.Services.AddAuthorization();
+
 builder.Services.AddDbContext<ApplicationDbContext>(options => {
     string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
     options.UseSqlServer(connectionString);
@@ -55,10 +55,12 @@ app.UseRouting();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
 
 string apiKey = Environment.GetEnvironmentVariable("RIOT_API_KEY") ?? "";
 
+app.MapAuthEndpoints();
+app.MapFavoritesEndpoints();
+app.MapSearchAccountsEndpoints();
 app.MapProfileEndpoint(apiKey);
 app.MapUpdateProfileEndpoint(apiKey);
 app.MapLiveGameEndpoint();

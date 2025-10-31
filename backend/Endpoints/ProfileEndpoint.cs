@@ -18,7 +18,9 @@ namespace backend.Endpoints {
                 if (!RegionMappingProvider.RegionMapping.TryGetValue(region, out var continent)) {
                     return Results.Problem("Invalid region specified.");
                 }
-                var existingPlayer = await dbContext.Players.FirstOrDefaultAsync(p => p.PlayerBasicInfo.SummonerName == summonerName && p.PlayerBasicInfo.SummonerTag == summonerTag && p.PlayerBasicInfo.Region == region);
+                var existingPlayer = await dbContext.Players
+                    .Include(p => p.PlayerBasicInfo)
+                    .FirstOrDefaultAsync(p => p.PlayerBasicInfo.SummonerName == summonerName && p.PlayerBasicInfo.SummonerTag == summonerTag && p.PlayerBasicInfo.Region == region);
                 if (existingPlayer != null) {
                     var pageMatches = await dbContext.PlayerMatches
                         .AsNoTracking()
@@ -258,12 +260,12 @@ namespace backend.Endpoints {
                     int queueId = match.details.info.queueId;
                     var participant = match.details.info.participants.FirstOrDefault(p => p.puuid == puuid);
                     if (participant == null) {
-                        Console.WriteLine($"Invalid match: {match.details.metadata.matchId}");
+                        Console.WriteLine($"Invalid match: {match.details.metadata.matchId}, participant doesn't exist");
                         continue;
                     }
                     var team = match.details.info.teams.FirstOrDefault(team => team.teamId == participant.teamId);
                     if (team == null) {
-                        Console.WriteLine($"Invalid match: {match.details.metadata.matchId}");
+                        Console.WriteLine($"Invalid match: {match.details.metadata.matchId}, team doesn't exist");
                         continue;
                     }
 
@@ -271,12 +273,12 @@ namespace backend.Endpoints {
                     using var doc = JsonDocument.Parse(match.timelineJson);
                     var root = doc.RootElement;
                     if (!root.TryGetProperty("info", out var infoElement) || infoElement.ValueKind != JsonValueKind.Object)  {
-                        Console.WriteLine($"Invalid match: {match.details.metadata.matchId}");
+                        Console.WriteLine($"Invalid match: {match.details.metadata.matchId}, root doesn't exist");
                         continue;
                     }
 
                     if (!infoElement.TryGetProperty("frames", out var framesElement) || framesElement.ValueKind != JsonValueKind.Array) {
-                        Console.WriteLine($"Invalid match: {match.details.metadata.matchId}");
+                        Console.WriteLine($"Invalid match: {match.details.metadata.matchId}, frames doesn't exist");
                         continue;
                     }
 

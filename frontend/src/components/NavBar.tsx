@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
 import logolight from "../assets/logo-light.png";
@@ -144,10 +144,10 @@ const NavBar: React.FC = () => {
                     </div>
                     <div className="flex-1 flex justify-center space-x-6">
                         <ul className="flex space-x-8 text-xl">
-                            <li><Link to="/" className="p-3 transition-color duration-300 hover:text-gray-400">Home</Link></li>
-                            <li><Link to="/races" className="p-3 transition-color duration-300 hover:text-gray-400">Races</Link></li>
-                            <li><Link to="/leaderboard" className="p-3 transition-color duration-300 hover:text-gray-400">Leaderboard</Link></li>
-                            <li><Link to="/clash" className="p-3 transition-color duration-300 hover:text-gray-400">Clash</Link></li>
+                            <li><NavLink to="/" className="p-3 transition-color duration-300 hover:text-gray-400">Home</NavLink></li>
+                            <li><NavLink to="/races" className="p-3 transition-color duration-300 hover:text-gray-400">Races</NavLink></li>
+                            <li><NavLink to="/leaderboard" className="p-3 transition-color duration-300 hover:text-gray-400">Leaderboard</NavLink></li>
+                            <li><NavLink to="/clash" className="p-3 transition-color duration-300 hover:text-gray-400">Clash</NavLink></li>
                         </ul>
                     </div>
                     <div className="flex-1 flex justify-end">
