@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, FormEvent, useCallback, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Cookies from "js-cookie";
-import { DD_VERSION } from "../version";
 
 import PlayerBasicInfo from "../interfaces/PlayerBasicInfo";
 

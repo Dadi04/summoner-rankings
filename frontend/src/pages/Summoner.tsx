@@ -151,10 +151,13 @@ const Summoner: React.FC = () => {
             (acc[date] ??= []).push(match);
             return acc;
         }, {});
-        setPaginatorPage(1)
         
         return { grouped, pageMatches };
     }, [filteredMatches, paginatorPage]);
+
+    useEffect(() => {
+        setPaginatorPage(1);
+    }, [selectedRole, selectedQueue, selectedPatch, selectedChampion]);
 
     const pageStats = useMemo(() => {
         const matches = pageMatches;
