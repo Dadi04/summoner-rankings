@@ -19,7 +19,9 @@ namespace backend.Endpoints {
                     return Results.Problem("Invalid region specified.");
                 }
 
-                var existingPlayer = await dbContext.Players.FirstOrDefaultAsync(p => p.PlayerBasicInfo.SummonerName == summonerName && p.PlayerBasicInfo.SummonerTag == summonerTag && p.PlayerBasicInfo.Region == region);
+                var existingPlayer = await dbContext.Players
+                    .Include(p => p.PlayerBasicInfo)
+                    .FirstOrDefaultAsync(p => p.PlayerBasicInfo.SummonerName == summonerName && p.PlayerBasicInfo.SummonerTag == summonerTag && p.PlayerBasicInfo.Region == region);
                 if (existingPlayer == null) {
                     return Results.NotFound();
                 }
