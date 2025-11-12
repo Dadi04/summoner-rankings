@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import Tippy from "@tippyjs/react";
 import "tippy.js/dist/tippy.css";
+import { playerCache } from "../utils/playerCache";
 
 import ProfileHeader from "../components/ProfileHeader";
 import SelectMenu from "../components/SelectMenu";
@@ -82,21 +83,12 @@ const Champions: React.FC = () => {
     const summoner = decodeURIComponent(encodedSummoner);
     const cacheKey = `summoner_${regionCode}_${summoner}`;
 
-    const getInitialData = () => {
+    const [apiData, setApiData] = useState<Player | null>(() => {
         if (location.state?.apiData) {
             return location.state.apiData;
         }
-        
-        try {
-            const cachedData = localStorage.getItem(cacheKey);
-            return cachedData ? JSON.parse(cachedData) : null;
-        } catch (error) {
-            console.error("Error retrieving cached data:", error);
-            return null;
-        }
-    };
-
-    const [apiData, setApiData] = useState<Player | null>(getInitialData());
+        return null;
+    });
     const [loading, setLoading] = useState(!apiData);
 
     const handlePrimarySort = (key: string) => {
@@ -118,24 +110,40 @@ const Champions: React.FC = () => {
     };
 
     useEffect(() => {
+        const cacheData = async () => {
+            if (apiData) {
+                try {
+                    await playerCache.setItem(cacheKey, apiData);
+                } catch (error) {
+                    console.error("Error caching data:", error);
+                }
+            }
+        };
+        cacheData();
+    }, [apiData, cacheKey]);
+
+    useEffect(() => {
         const fetchData = async () => {
             if (apiData) {
                 return;
             }
             
             try {
+                // Try to get from cache first
+                const cachedData = await playerCache.getItem(cacheKey);
+                if (cachedData) {
+                    setApiData(cachedData);
+                    setLoading(false);
+                    return;
+                }
+
+                // If not in cache, fetch from API
                 const response = await fetch(`/api/lol/profile/${regionCode}/${summoner}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
                 setApiData(data);
-                
-                try {
-                    localStorage.setItem(cacheKey, JSON.stringify(data));
-                } catch (error) {
-                    console.error("Error caching data:", error);
-                }
             } catch (error) {
                 console.error("Error fetching API data:", error);
             } finally {
@@ -415,7 +423,7 @@ const Champions: React.FC = () => {
                                 </div>
                                 <div className={`text-neutral-50 overflow-hidden transition-max-height duration-300 ease-in-out ${openMatchupDiv === "-" ? "max-h-[3000px]" : "max-h-0"}`}>
                                     {groupedChampionMatchups.map(stat => (
-                                        <div className="grid grid-cols-[5%_17%_15%_10%_8%_8%_8%_8%_8%_8%_5%] items-center text-center p-2">
+                                        <div key={stat.championId} className="grid grid-cols-[5%_17%_15%_10%_8%_8%_8%_8%_8%_8%_5%] items-center text-center p-2">
                                             <p></p>
                                             <div className="flex items-center gap-1">
                                                 <p className="text-neutral-500 text-lg">VS</p>
@@ -702,7 +710,7 @@ const Champions: React.FC = () => {
                                                     })}
                                                 </div>
                                                 {stat.opponentMatchups.map((oppStat) => (
-                                                    <div className="grid grid-cols-[5%_17%_15%_10%_8%_8%_8%_8%_8%_8%_5%] items-center text-center my-2">
+                                                    <div key={oppStat.championId} className="grid grid-cols-[5%_17%_15%_10%_8%_8%_8%_8%_8%_8%_5%] items-center text-center my-2">
                                                         <p></p>
                                                         <div className="flex items-center gap-1">
                                                             <p className="text-neutral-500 text-lg">VS</p>

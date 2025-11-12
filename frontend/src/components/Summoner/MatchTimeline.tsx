@@ -211,7 +211,7 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                         const championSpecialKillSubtype = event.killType ?? event.multiKillLength ?? "nothing";
                         const dotKey = `kill-dot-${event.timestamp}-${playerId}-${event.type}-${championSpecialKillSubtype}`;
                         return (
-                            <div>
+                            <div key={`${event.timestamp}-${event.type}-${playerId}`}>
                                 {(event.type === "CHAMPION_KILL") && (
                                     <>
                                         {(event.killerId > 0 && event.victimId > 0) && (

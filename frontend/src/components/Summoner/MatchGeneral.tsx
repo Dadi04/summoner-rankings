@@ -306,7 +306,7 @@ const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: stri
                         </div>
                         <div className="flex flex-1 gap-2 justify-end">
                             {info.teams.find((team) => team.teamId === 100)?.bans.map((ban) => (
-                                <div className="relative">
+                                <div key={ban.championId} className="relative">
                                     <ChampionImage championId={ban.championId} teamId={100} isTeamIdSame={true} classes="h-10" />
                                     <img src={forbiddenlight} alt="forbidden" className="absolute h-5 bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/4" />
                                 </div>
@@ -760,7 +760,7 @@ const MatchGeneral: React.FC<{info: MatchDetailsInfo, timeline: any; puuid: stri
                         </div>
                         <div className="flex flex-1 gap-2 justify-end">
                             {info.teams.find((team) => team.teamId === 200)?.bans.map((ban) => (
-                                <div className="relative">
+                                <div key={ban.championId} className="relative">
                                     <ChampionImage championId={ban.championId} teamId={200} isTeamIdSame={true} classes="h-10" />
                                     <img src={forbiddenlight} alt="forbidden" className="absolute h-5 bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/4" />
                                 </div>

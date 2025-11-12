@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { DD_VERSION, LOL_VERSION } from "../version";
+import { playerCache } from "../utils/playerCache";
 
 import GameTimer from "../components/GameTimer";
 import {ChampionImage} from "../components/ChampionData";
@@ -97,21 +98,11 @@ const Summoner: React.FC = () => {
     const inputChampionsRef = useRef<HTMLDivElement>(null);
     const dropdownChampionsRef = useRef<HTMLDivElement>(null);
 
-    const getCachedData = () => {
-        try {
-            const cachedData = localStorage.getItem(cacheKey);
-            return cachedData ? JSON.parse(cachedData) : null;
-        } catch (error) {
-            console.error("Error retrieving cached data:", error);
-            return null;
-        }
-    };
-
     const [apiData, setApiData] = useState<Player | null>(() => {
         if (location.state?.apiData) {
             return location.state.apiData;
         }
-        return getCachedData();
+        return null;
     });
     const [loading, setLoading] = useState(!apiData);
 
@@ -278,13 +269,16 @@ const Summoner: React.FC = () => {
     }, [DD_VERSION]);
 
     useEffect(() => {
-        if (apiData) {
-            try {
-                localStorage.setItem(cacheKey, JSON.stringify(apiData));
-            } catch (error) {
-                console.error("Error caching data:", error);
+        const cacheData = async () => {
+            if (apiData) {
+                try {
+                    await playerCache.setItem(cacheKey, apiData);
+                } catch (error) {
+                    console.error("Error caching data:", error);
+                }
             }
-        }
+        };
+        cacheData();
     }, [apiData, cacheKey]);
 
     useEffect(() => {
@@ -294,6 +288,13 @@ const Summoner: React.FC = () => {
             }
             
             try {
+                const cachedData = await playerCache.getItem(cacheKey);
+                if (cachedData) {
+                    setApiData(cachedData);
+                    setLoading(false);
+                    return;
+                }
+
                 const response = await fetch(`/api/lol/profile/${regionCode}/${summoner}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -307,7 +308,7 @@ const Summoner: React.FC = () => {
             }
         }
         fetchData();
-    }, [regionCode, summoner, apiData]);
+    }, [regionCode, summoner, apiData, cacheKey]);
 
     if (loading || !apiData) {
         return <div className="w-full flex justify-center mt-[125px] mb-[195px]"><DotLottieReact src={loadingAnimation} className="w-[600px] bg-transparent" loop autoplay /></div>
@@ -380,7 +381,7 @@ const Summoner: React.FC = () => {
                             {isTeamIdSame ? (
                                 <div className="flex p-2 cursor-pointer">
                                     {spectatorData.participants.map((participant: Participant) => (
-                                        <div>
+                                        <div key={participant.puuid}>
                                             <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/profileicon/${participant.profileIconId}.png`} alt={`${participant.profileIconId}`} className="h-30 rounded-xl border-2 border-purple-600" />
                                         </div>
                                     ))}
@@ -583,7 +584,7 @@ const Summoner: React.FC = () => {
                             </div>
                             <div>
                                 {preferredRoleData.sort((a: PreferredRole, b: PreferredRole) => b.games - a.games).map((role: PreferredRole) => (
-                                    <div className="grid grid-cols-[20%_23%_23%_23%_10%] mb-1 items-center text-center">
+                                    <div key={role.roleName} className="grid grid-cols-[20%_23%_23%_23%_10%] mb-1 items-center text-center">
                                         <div className="flex justify-end">
                                             <img src={`https://dpm.lol/position/${role.roleName}.svg`} alt={role.roleName} className="h-[35px]" />
                                         </div>
@@ -665,7 +666,7 @@ const Summoner: React.FC = () => {
                                 </div>
                                 <div className="flex flex-col h-full justify-center gap-4">
                                     {pageStats.top3.map(champStats => (
-                                        <div className="flex items-center justify-end gap-6">
+                                        <div key={champStats.championId} className="flex items-center justify-end gap-6">
                                             <ChampionImage championId={champStats.championId} teamId={200} isTeamIdSame={true} classes="h-13" />
                                             <div className="w-[140px] flex flex-col text-lg">
                                                 <div className="flex gap-2">

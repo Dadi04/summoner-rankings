@@ -10,6 +10,7 @@ const RuneSlot: React.FC<{runes: { id: number; icon: string; name: string }[]; p
         <div className="w-[80%] flex justify-evenly">
             {runes.map((rune) => (
                 <Tippy
+                    key={rune.id}
                     content={
                         <div>
                             <RuneName runeTypeId={runeTypeId} runeId={rune.id} classes="text-md font-bold text-purple-500" />
@@ -22,7 +23,6 @@ const RuneSlot: React.FC<{runes: { id: number; icon: string; name: string }[]; p
                 >
                     <div>
                         <IconImage
-                            key={rune.id}
                             icon={rune.icon}
                             alt={rune.name}
                             className={`${height} ${perkIds.includes(rune.id) ? "border-2 rounded-full border-purple-700" : "filter grayscale brightness-50"}`}

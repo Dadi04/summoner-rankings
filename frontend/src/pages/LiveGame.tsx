@@ -1,6 +1,7 @@
 import React, {useState, useEffect, } from "react";
 import { useLocation, useParams } from "react-router-dom"
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { playerCache } from "../utils/playerCache";
 
 import BannedChampionsList from "../components/LiveGame/BannedChampionList";
 import GameTimer from "../components/GameTimer";
@@ -28,27 +29,40 @@ const LiveGame: React.FC = () => {
     const summoner = decodeURIComponent(encodedSummoner);
     const cacheKey = `summoner_${regionCode}_${summoner}`;
     
-    const getCachedData = () => {
-        try {
-            const cachedData = localStorage.getItem(cacheKey);
-            return cachedData ? JSON.parse(cachedData) : null;
-        } catch (error) {
-            console.error("Error retrieving cached data:", error);
-            return null;
+    const [newData, setNewData] = useState<Player>(() => {
+        if (location.state?.apiData) {
+            return location.state.apiData;
         }
-    };
-    
-    const initialData = location.state?.apiData || getCachedData() || {};
-    const [newData, setNewData] = useState(initialData);
+        return {} as Player;
+    });
     
     useEffect(() => {
-        if (newData && Object.keys(newData).length > 0) {
-            try {
-                localStorage.setItem(cacheKey, JSON.stringify(newData));
-            } catch (error) {
-                console.error("Error caching data:", error);
+        const loadCachedData = async () => {
+            if (!location.state?.apiData) {
+                try {
+                    const cachedData = await playerCache.getItem(cacheKey);
+                    if (cachedData) {
+                        setNewData(cachedData);
+                    }
+                } catch (error) {
+                    console.error("Error retrieving cached data:", error);
+                }
             }
-        }
+        };
+        loadCachedData();
+    }, [cacheKey, location.state?.apiData]);
+    
+    useEffect(() => {
+        const cacheData = async () => {
+            if (newData && Object.keys(newData).length > 0) {
+                try {
+                    await playerCache.setItem(cacheKey, newData);
+                } catch (error) {
+                    console.error("Error caching data:", error);
+                }
+            }
+        };
+        cacheData();
     }, [newData, cacheKey]);
     
     const spectatorData = newData.spectatorData;

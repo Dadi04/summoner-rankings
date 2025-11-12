@@ -211,8 +211,8 @@ const MatchDetails: React.FC<{info: MatchDetailsInfo, timeline: any, selectedPla
                 <h1 className="text-xl text-neutral-300 mb-2">BUILD ORDER</h1>
                 <div className="m-auto w-[90%] flex justify-center flex-wrap">
                     {minutes.map((minute, index) => (
-                        <div className="flex gap-2">
-                            <div key={minute} className="flex flex-col items-center p-2 ml-2">
+                        <div key={`${minute}-${index}`} className="flex gap-2">
+                            <div className="flex flex-col items-center p-2 ml-2">
                                 <div className="flex items-center">
                                     {buildOrderByMinute[minute].map(item => (
                                         <div key={item.eventId} className="relative">
@@ -261,7 +261,7 @@ const MatchDetails: React.FC<{info: MatchDetailsInfo, timeline: any, selectedPla
                         const takenAtLevels = levelsBySlot[slot] || [];
 
                         return (
-                            <div className="flex gap-2 justify-center">
+                            <div key={spell.name} className="flex gap-2 justify-center">
                                 <Tippy
                                     content={
                                         <div>

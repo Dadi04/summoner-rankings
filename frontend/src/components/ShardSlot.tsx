@@ -9,6 +9,7 @@ const ShardSlot: React.FC<{slot: {shards: LiveGameShard[]}; selectedId?: number 
     <div className="w-[60%] flex justify-evenly">
         {slot.shards.map((shard, index) => (
             <Tippy
+                key={shard.id}
                 content={
                     <div>
                         <p className="text-md font-bold text-purple-500">{shard.name}</p>
@@ -21,7 +22,6 @@ const ShardSlot: React.FC<{slot: {shards: LiveGameShard[]}; selectedId?: number 
             >
                 <div>
                     <IconImage
-                        key={index}
                         icon={shard.icon}
                         alt={shard.name}
                         className={`h-9 ${selectedId === shard.id ? "border-2 rounded-full border-purple-700" : "filter grayscale brightness-50"}`}

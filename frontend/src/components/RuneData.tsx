@@ -54,6 +54,6 @@ export const RuneTooltip: React.FC<{runeTypeId: number; runeId?: number; classes
     };
 
     return (
-        <p className={classes}>{parse(runeData.longDesc, options)}</p>
+        <div className={classes}>{parse(runeData.longDesc, options)}</div>
     );
 };
