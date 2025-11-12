@@ -1,15 +1,21 @@
-import { DD_VERSION } from "../version";
-
-import championJson from "../assets/json/champion.json";
+import React from "react";
+import { useGameData } from "../contexts/GameDataContext";
 
 import noneicon from "../assets/none.jpg";
 
 export const ChampionImage: React.FC<{championId: number; teamId?: number; isTeamIdSame: boolean; classes?: string;}> = ({championId, teamId, isTeamIdSame, classes}) => {
-    const championData = Object.values(championJson.data).find(c => c.key === String(championId));
+    const { champions } = useGameData();
     const borderClasses = isTeamIdSame ? "" : `border ${teamId === 200 ? "border-red-500" : "border-blue-500"}`;
+
+    if (championId === -1) {
+        return <img src={noneicon} alt="none" className={`${classes} ${borderClasses}`} />;
+    }
+
+    const championData = champions.get(championId);
+    
     return (
         <img 
-            src={championData ? `https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/champion/${championData.id}.png` : noneicon} 
+            src={championData ? `https://cdn.communitydragon.org/latest/champion/${championData.id}/square` : noneicon} 
             alt={championData ? championData.id : "noneicon"} 
             className={`${classes} ${borderClasses}`} 
         />
@@ -24,31 +30,36 @@ export const ChampionSpellName: React.FC<{spell: any; classes?: string;}> = ({sp
 };
 
 export const ChampionSpellCooldowns: React.FC<{spell: any; classes?: string;}> = ({spell, classes}) => {
-    const raw = spell.cooldown?.modifiers?.[0]?.values;
-    const text = raw ? raw.join("/") : "N/A";
+    const cooldown = spell.cooldown;
+    let text = "N/A";
+    
+    if (typeof cooldown === 'object' && cooldown?.modifiers?.[0]?.values) {
+        const values = cooldown.modifiers[0].values;
+        text = values.map((v: number) => v.toFixed(2).replace(/\.?0+$/, '')).join(" / ");
+    } else if (typeof cooldown === 'string') {
+        text = cooldown;
+    }
 
     return (
-        <p className={classes}>Cooldown: {text}</p>
+        <p className={classes}>Cooldown: {text}s</p>
     );
 };
 
 export const ChampionSpellTooltip: React.FC<{spell: any; classes?: string;}> = ({spell, classes}) => {
+    const effects = spell.effects || [];
+    
+    if (effects.length === 0) {
+        return <p className={classes}>{spell.description || spell.dynamicDescription || 'No description available'}</p>;
+    }
 
     return (
         <>
-            {spell.effects.map((effect: any, index: number) => (
-                <div key={index} >
-                    <p className={classes}>{effect.description}</p>
-                    {index < spell.effects.length - 1 && <br />}
+            {effects.map((effect: any, index: number) => (
+                <div key={index}>
+                    <p className={classes} dangerouslySetInnerHTML={{ __html: effect.description || '' }} />
+                    {index < effects.length - 1 && <br />}
                 </div>
             ))}
         </>
-    );
-};
-
-export const ChampionSpellNotes: React.FC<{spell: any; classes?: string;}> = ({spell, classes}) => {
-
-    return (
-        <p className={classes}>{spell.notes}</p>
     );
 };

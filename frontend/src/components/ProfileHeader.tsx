@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
-import { DD_VERSION } from "../version";
 
 import UpdateButton from "./UpdateButton";
 
@@ -158,7 +157,7 @@ const ProfileHeader: React.FC<{data: Player; regionCode: string; encodedSummoner
         <div className="w-full bg-neutral-800 mt-1">
             <div className="flex border-b-1 pt-5 pb-5 pl-5">
                 <div className="relative p-3">
-                    <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/profileicon/${summonerData.profileIconId}.png`} alt={`${summonerData.profileIconId}`} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
+                    <img src={`https://cdn.communitydragon.org/latest/profile-icon/${summonerData.profileIconId}`} alt={`${summonerData.profileIconId}`} className="h-30 rounded-xl border-2 border-purple-600 mr-2" />
                     <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 -translate-y-[10px] z-10 text-neutral-100 bg-black pt-0.5 pb-0.5 pl-1 pr-1 border-2 border-purple-600 mb-1">{summonerData.summonerLevel}</span>
                 </div>
                 <div className="pt-3 pb-3">

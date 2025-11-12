@@ -429,7 +429,7 @@ const Home: React.FC = () => {
                                                 >
                                                     <div className="flex items-center gap-2">
                                                         <img
-                                                            src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/profileicon/${player.profileIcon}.png`}
+                                                            src={`https://cdn.communitydragon.org/latest/profile-icon/${player.profileIcon}`}
                                                             alt={`${player.profileIcon}`}
                                                             className="w-8"
                                                         />

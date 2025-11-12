@@ -6,7 +6,7 @@ import "tippy.js/dist/tippy.css";
 import {ChampionImage} from "../ChampionData";
 import {SummonerSpellImage, SummonerSpellTooltip, SummonerSpellName} from "../SummonerSpellData";
 import {RuneImage, RuneTooltip, RuneName} from "../RuneData";
-import {ItemImage, ItemName, ItemPlaintext, ItemDescription, ItemPrice} from "../ItemData";
+import {ItemImage, ItemName, ItemDescription, ItemPrice} from "../ItemData";
 import MatchParticipantList from "./MatchParticipantList";
 import MatchGeneral from "./MatchGeneral";
 import MatchPerformance from "./MatchPerformance";
@@ -208,8 +208,8 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                             content={
                                 <div>
                                     <ItemName itemId={participant.item0} classes="text-md font-bold text-purple-500" />
-                                    <ItemPlaintext itemId={participant.item0} classes="text-sm" />
                                     <ItemDescription itemId={participant.item0} classes="text-sm" />
+                                    <br />
                                     <ItemPrice itemId={participant.item0} classes="text-sm text-orange-500" />
                                 </div>
                             }
@@ -225,8 +225,8 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                             content={
                                 <div>
                                     <ItemName itemId={participant.item1} classes="text-md font-bold text-purple-500" />
-                                    <ItemPlaintext itemId={participant.item1} classes="text-sm" />
                                     <ItemDescription itemId={participant.item1} classes="text-sm" />
+                                    <br />
                                     <ItemPrice itemId={participant.item1} classes="text-sm text-orange-500" />
                                 </div>
                             }
@@ -242,8 +242,8 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                             content={
                                 <div>
                                     <ItemName itemId={participant.item2} classes="text-md font-bold text-purple-500" />
-                                    <ItemPlaintext itemId={participant.item2} classes="text-sm" />
                                     <ItemDescription itemId={participant.item2} classes="text-sm" />
+                                    <br />
                                     <ItemPrice itemId={participant.item2} classes="text-sm text-orange-500" />
                                 </div>
                             }
@@ -259,8 +259,8 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                             content={
                                 <div>
                                     <ItemName itemId={participant.item3} classes="text-md font-bold text-purple-500" />
-                                    <ItemPlaintext itemId={participant.item3} classes="text-sm" />
                                     <ItemDescription itemId={participant.item3} classes="text-sm" />
+                                    <br />
                                     <ItemPrice itemId={participant.item3} classes="text-sm text-orange-500" />
                                 </div>
                             }
@@ -276,8 +276,8 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                             content={
                                 <div>
                                     <ItemName itemId={participant.item4} classes="text-md font-bold text-purple-500" />
-                                    <ItemPlaintext itemId={participant.item4} classes="text-sm" />
                                     <ItemDescription itemId={participant.item4} classes="text-sm" />
+                                    <br />
                                     <ItemPrice itemId={participant.item4} classes="text-sm text-orange-500" />
                                 </div>
                             }
@@ -293,8 +293,8 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                             content={
                                 <div>
                                     <ItemName itemId={participant.item5} classes="text-md font-bold text-purple-500" />
-                                    <ItemPlaintext itemId={participant.item5} classes="text-sm" />
                                     <ItemDescription itemId={participant.item5} classes="text-sm" />
+                                    <br />
                                     <ItemPrice itemId={participant.item5} classes="text-sm text-orange-500" />
                                 </div>
                             }
@@ -310,8 +310,8 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                             content={
                                 <div>
                                     <ItemName itemId={participant.item6} classes="text-md font-bold text-purple-500" />
-                                    <ItemPlaintext itemId={participant.item6} classes="text-sm" />
                                     <ItemDescription itemId={participant.item6} classes="text-sm" />
+                                    <br />
                                     <ItemPrice itemId={participant.item6} classes="text-sm text-orange-500" />
                                 </div>
                             }

@@ -1,27 +1,26 @@
+import React from "react";
 import parse, {domToReact, HTMLReactParserOptions, Element, DOMNode} from "html-react-parser";
-import { DD_VERSION } from "../version";
-
-import summonerSpellsJson from "../assets/json/summonerSpells.json";
+import { useGameData } from "../contexts/GameDataContext";
 
 export const SummonerSpellImage: React.FC<{spellId: number; classes?: string;}> = ({spellId, classes}) => {
-    const spellData = Object.values(summonerSpellsJson.data).find(
-        (spell) => spell.key === spellId.toString()
-    );
+    const { summonerSpells } = useGameData();
+    const spellData = summonerSpells.get(spellId);
+
     if (!spellData) return <span>Summoner Spell Not Found</span>;
 
     return (
         <img 
-            src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/spell/${spellData.id}.png`}
-            alt={spellData.id}
+            src={spellData.iconPath}
+            alt={spellData.name}
             className={classes}
         />
     );
 };
 
 export const SummonerSpellTooltip: React.FC<{spellId: number; classes?: string;}> = ({spellId, classes}) => {
-    const spellData = Object.values(summonerSpellsJson.data).find(
-        (spell) => spell.key === spellId.toString()
-    );
+    const { summonerSpells } = useGameData();
+    const spellData = summonerSpells.get(spellId);
+
     if (!spellData) return <span>Summoner Spell Not Found</span>;
 
     const options: HTMLReactParserOptions = {
@@ -40,9 +39,9 @@ export const SummonerSpellTooltip: React.FC<{spellId: number; classes?: string;}
 };
 
 export const SummonerSpellName: React.FC<{spellId: number; classes?: string;}> = ({spellId, classes}) => {
-    const spellData = Object.values(summonerSpellsJson.data).find(
-        (spell) => spell.key === spellId.toString()
-    );
+    const { summonerSpells } = useGameData();
+    const spellData = summonerSpells.get(spellId);
+
     if (!spellData) return <span>Summoner Spell Not Found</span>;
 
     return (

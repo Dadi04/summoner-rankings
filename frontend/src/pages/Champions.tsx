@@ -6,13 +6,13 @@ import { playerCache } from "../utils/playerCache";
 
 import ProfileHeader from "../components/ProfileHeader";
 import SelectMenu from "../components/SelectMenu";
-import { ChampionImage, ChampionSpellName, ChampionSpellCooldowns, ChampionSpellTooltip, ChampionSpellNotes } from "../components/ChampionData";
+import { ChampionImage, ChampionSpellName, ChampionSpellCooldowns, ChampionSpellTooltip } from "../components/ChampionData";
 
 import Player from "../interfaces/Player";
 import ChampionStats from "../interfaces/ChampionStats";
 import ChampionSynergy from "../interfaces/ChampionSynergy";
 
-import champions from "../assets/json/championsFull.json";
+import { fetchMultipleChampions } from "../utils/championData";
 
 import arrowDownLight from "../assets/arrow-down-light.png";
 import noneIcon from "../assets/none.jpg";
@@ -79,6 +79,7 @@ const Champions: React.FC = () => {
     const [secondarySortBy, setSecondarySortBy] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: "games", direction: "desc" });
     const [selectedChampionsMode, setSelectedChampionsMode] = useState<string>("Champions General");
     const [selectedChampion, setSelectedChampion] = useState<string>("all-champions")
+    const [championsData, setChampionsData] = useState<Map<number, any>>(new Map());
 
     const summoner = decodeURIComponent(encodedSummoner);
     const cacheKey = `summoner_${regionCode}_${summoner}`;
@@ -153,6 +154,32 @@ const Champions: React.FC = () => {
         
         fetchData();
     }, [regionCode, summoner, apiData, cacheKey]);
+
+    useEffect(() => {
+        if (!apiData) return;
+        
+        const loadChampionsData = async () => {
+            const championIds = new Set<number>();
+            
+            Object.values(apiData.allGamesChampionStatsData).forEach((stat: ChampionStats) => {
+                championIds.add(stat.championId);
+                stat.opponentMatchups?.forEach(opp => championIds.add(opp.championId));
+            });
+            Object.values(apiData.rankedSoloChampionStatsData).forEach((stat: ChampionStats) => {
+                championIds.add(stat.championId);
+                stat.opponentMatchups?.forEach(opp => championIds.add(opp.championId));
+            });
+            Object.values(apiData.rankedFlexChampionStatsData).forEach((stat: ChampionStats) => {
+                championIds.add(stat.championId);
+                stat.opponentMatchups?.forEach(opp => championIds.add(opp.championId));
+            });
+            
+            const champData = await fetchMultipleChampions(Array.from(championIds));
+            setChampionsData(champData);
+        };
+        
+        loadChampionsData();
+    }, [apiData]);
 
     if (loading || !apiData) {
         return <div className="flex justify-center mt-10">Loading...</div>;
@@ -451,9 +478,9 @@ const Champions: React.FC = () => {
                                     <hr />
                                 </div>
                                 {sortedOpponentMatchupsStats.map((stat, i) => {
-                                    const champ = Object.values(champions).find(c => c.key.toLowerCase() === stat.championName.toLowerCase());
-                                    if (!champ) return <div>Champion not found</div>;
-                                    const { abilities,  } = champ;
+                                    const champ = championsData.get(stat.championId);
+                                    if (!champ) return <div key={`${stat.championId}-${i+1}`}>Champion not found</div>;
+                                    const { abilities } = champ;
 
                                     const slots = ["Q","W","E","R"];
                                     const casts = [
@@ -503,19 +530,6 @@ const Champions: React.FC = () => {
                                                                                     <ChampionSpellName spell={spell} classes="text-md font-bold text-purple-500" />
                                                                                     <ChampionSpellCooldowns spell={spell} classes="text-sm text-neutral-400" />
                                                                                     <ChampionSpellTooltip spell={spell} classes="text-sm" />
-                                                                                    <div className="mt-2">
-                                                                                        <Tippy
-                                                                                            content={<ChampionSpellNotes spell={spell} classes="text-sm" />}
-                                                                                            interactive={true}
-                                                                                            placement="right"
-                                                                                            appendTo="parent"
-                                                                                            maxWidth={500}
-                                                                                        >
-                                                                                            <div className="w-fit ml-auto text-lg underline cursor-pointer text-neutral-400">
-                                                                                                <p>Notes</p>
-                                                                                            </div>
-                                                                                        </Tippy>
-                                                                                    </div>
                                                                                 </div>
                                                                             }
                                                                             allowHTML={true}

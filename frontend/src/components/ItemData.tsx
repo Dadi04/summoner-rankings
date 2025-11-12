@@ -1,36 +1,34 @@
+import React from "react";
 import parse, {domToReact, HTMLReactParserOptions, Element, DOMNode} from "html-react-parser";
-import { DD_VERSION } from "../version";
-
-import itemJson from "../assets/json/items.json";
-
-function removeConsecutiveBrTags(html: string): string {
-    return html
-        .replace(/<br\s*\/?>/gi, "<br />")
-        .replace(/(?:<br \/>\s*){2,}/g, "<br /><br />")
-        .trim();
-}
+import { useGameData } from "../contexts/GameDataContext";
 
 export const ItemImage: React.FC<{itemId: number; matchWon?: boolean; classes: string}> = ({itemId, matchWon, classes}) => {
+    const { items } = useGameData();
+
     if (itemId === 0) {
         return (
             <div className={`h-8 w-8 ${itemId ? (matchWon ? "bg-[#2F436E]" : "bg-[#703C47]") : "bg-neutral-800"} `}></div>
         );
     }
 
+    const itemData = items.get(itemId);
+    if (!itemData) {
+        return <div className={classes}></div>;
+    }
+
     return (
-        <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/item/${itemId}.png`} alt={`${itemId}`} className={classes} />
+        <img src={itemData.iconPath} alt={itemData.name} className={classes} />
     );
 }
 
 export const ItemName: React.FC<{itemId: number; classes: string}> = ({itemId, classes}) => {
+    const { items } = useGameData();
+
     if (itemId === 0) {
-        return (
-            <p>Empty slot</p>
-        );
+        return <span>Empty slot</span>;
     }
 
-    const key = itemId.toString();
-    const itemData = itemJson.data[key as keyof typeof itemJson.data];
+    const itemData = items.get(itemId);
     if (!itemData) return <p className={classes}>Unknown item</p>;
 
     return (
@@ -38,46 +36,14 @@ export const ItemName: React.FC<{itemId: number; classes: string}> = ({itemId, c
     );
 }
 
-export const ItemPlaintext: React.FC<{itemId: number; classes: string}> = ({itemId, classes}) => {
-    if (itemId === 0) {
-        return (
-            <p></p>
-        );
-    }
-
-    const key = itemId.toString();
-    const itemData = itemJson.data[key as keyof typeof itemJson.data];
-    if (!itemData) return <p className={classes}>Unknown item</p>;
-
-    const options: HTMLReactParserOptions = {
-        replace(domNode) {
-            if (domNode instanceof Element && domNode.tagName === "lol-uikit-tooltipped-keyword") {
-                return (
-                    <span className="tooltip-keyword">{domToReact(domNode.children as DOMNode[], options)}</span>
-                );
-            }
-        }
-    };
-    
-    const cleaned = removeConsecutiveBrTags(itemData.plaintext)
-
-    return (
-        <>
-            <p className={classes}>{parse(cleaned, options)}</p>
-            <br />
-        </>
-    );
-}
-
 export const ItemDescription: React.FC<{itemId: number; classes: string}> = ({itemId, classes}) => {
+    const { items } = useGameData();
+
     if (itemId === 0) {
-        return (
-            <p></p>
-        );
+        return null;
     }
 
-    const key = itemId.toString();
-    const itemData = itemJson.data[key as keyof typeof itemJson.data];
+    const itemData = items.get(itemId);
     if (!itemData) return <p className={classes}>Unknown item</p>;
 
     const options: HTMLReactParserOptions = {
@@ -89,29 +55,23 @@ export const ItemDescription: React.FC<{itemId: number; classes: string}> = ({it
             }
         }
     };
- 
-    const cleaned = removeConsecutiveBrTags(itemData.description)
-
+  
     return (
-        <>
-            <p className={classes}>{parse(cleaned, options)}</p>
-            <br />
-        </>
+        <p className={classes}>{parse(itemData.description, options)}</p>
     );
 }
 
 export const ItemPrice: React.FC<{itemId: number; classes: string}> = ({itemId, classes}) => {
+    const { items } = useGameData();
+
     if (itemId === 0) {
-        return (
-            <p></p>
-        );
+        return <p></p>;
     }
 
-    const key = itemId.toString();
-    const itemData = itemJson.data[key as keyof typeof itemJson.data];
+    const itemData = items.get(itemId);
     if (!itemData) return <p className={classes}>Unknown item</p>;
- 
+  
     return (
-        <p className={classes}>Cost: {itemData.gold.total}g ({itemData.gold.sell}g)</p>
+        <p className={classes}>Cost: {itemData.priceTotal}g</p>
     );
 }

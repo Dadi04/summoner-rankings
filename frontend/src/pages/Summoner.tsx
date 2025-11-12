@@ -18,7 +18,6 @@ import Player from "../interfaces/Player";
 import Match from "../interfaces/Match";
 
 import queueJson from "../assets/json/queues.json";
-import championsFull from "../assets/json/championsFull.json";
 
 import performance from "../assets/performance.png";
 import goldMedal from "../assets/gold-medal.png";
@@ -105,6 +104,7 @@ const Summoner: React.FC = () => {
         return null;
     });
     const [loading, setLoading] = useState(!apiData);
+    const [allChampions, setAllChampions] = useState<Array<{id: number, key: string, name: string}>>([]);
 
     const [major, minor] = LOL_VERSION.split(".").map(Number);
     const versions = Array.from({length: minor - 0}, (_, i) => `${major}.${minor - i}`);
@@ -309,6 +309,35 @@ const Summoner: React.FC = () => {
         }
         fetchData();
     }, [regionCode, summoner, apiData, cacheKey]);
+
+    useEffect(() => {
+        if (!apiData) return;
+        
+        const loadChampions = async () => {
+            const championMap = new Map<number, {id: number, name: string}>();
+            
+            apiData.allMatchesData.forEach(match => {
+                match.details.info.participants.forEach(participant => {
+                    if (!championMap.has(participant.championId)) {
+                        championMap.set(participant.championId, {
+                            id: participant.championId,
+                            name: participant.championName
+                        });
+                    }
+                });
+            });
+            
+            const champions = Array.from(championMap.values()).map(c => ({
+                id: c.id,
+                key: c.name,
+                name: c.name
+            }));
+            
+            setAllChampions(champions.sort((a, b) => a.name.localeCompare(b.name)));
+        };
+        
+        loadChampions();
+    }, [apiData]);
 
     if (loading || !apiData) {
         return <div className="w-full flex justify-center mt-[125px] mb-[195px]"><DotLottieReact src={loadingAnimation} className="w-[600px] bg-transparent" loop autoplay /></div>
@@ -781,7 +810,7 @@ const Summoner: React.FC = () => {
                                             <span>All Champions</span>
                                         </div>
                                         <div>
-                                            {Object.values(championsFull).filter((champ: any) => champ.key.toLowerCase().startsWith(filterChampions.toLowerCase())).map((champion: any) => (
+                                            {allChampions.filter((champ) => champ.key.toLowerCase().startsWith(filterChampions.toLowerCase())).map((champion) => (
                                                 <div key={champion.id} onClick={() => {setSelectedChampion(champion.name); setFilterChampions(champion.name); setShowSelectChampions(false);}} className={`flex items-center text-lg justify-between pl-4 pr-4 pt-0.5 pb-0.5 cursor-pointer transition-all duration-100 hover:text-neutral-300 ${selectedChampion === champion.name ? "bg-neutral-700" : ""} `}>
                                                     <img src={`https://ddragon.leagueoflegends.com/cdn/${DD_VERSION}/img/champion/${champion.key}.png`} alt={champion.name} className="h-12" />
                                                     <span>{champion.name}</span>

@@ -5,7 +5,7 @@ using backend.Mappings;
 namespace backend.Utils {
     public static class ChampionRoleMapping {
         public static async Task<Dictionary<int, string>> BuildChampionRoleMappingAsync(HttpClient client) {
-            string championDataUrl = "https://ddragon.leagueoflegends.com/cdn/15.7.1/data/en_US/champion.json";
+            string championDataUrl = "https://ddragon.leagueoflegends.com/cdn/15.21.1/data/en_US/champion.json";
             string championJson = await client.GetStringAsync(championDataUrl);
             using JsonDocument doc = JsonDocument.Parse(championJson);
             var root = doc.RootElement;

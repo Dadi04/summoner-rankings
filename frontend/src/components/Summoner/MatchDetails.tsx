@@ -1,14 +1,15 @@
+import React, { useState, useEffect } from "react";
 import Tippy from "@tippyjs/react";
 import "tippy.js/dist/tippy.css";
 
-import {ItemImage, ItemName, ItemPlaintext, ItemDescription, ItemPrice} from "../ItemData";
+import {ItemImage, ItemName, ItemDescription, ItemPrice} from "../ItemData";
 import {SummonerSpellImage, SummonerSpellName, SummonerSpellTooltip} from "../SummonerSpellData";
-import {ChampionSpellName, ChampionSpellCooldowns, ChampionSpellTooltip, ChampionSpellNotes} from "../ChampionData";
+import {ChampionSpellName, ChampionSpellCooldowns, ChampionSpellTooltip} from "../ChampionData";
 
 import MatchDetailsInfo from "../../interfaces/MatchDetailsInfo";
 import MatchParticipant from "../../interfaces/MatchParticipant";
 
-import champions from "../../assets/json/championsFull.json";
+import { fetchChampionData } from "../../utils/championData";
 
 import allInPing from "../../assets/pings/allInPing.webp";
 import assistMePing from "../../assets/pings/assistMePing.webp";
@@ -21,9 +22,23 @@ import onMyWayPing from "../../assets/pings/onMyWayPing.webp";
 import pushPing from "../../assets/pings/pushPing.webp";
 
 const MatchDetails: React.FC<{info: MatchDetailsInfo, timeline: any, selectedPlayer: MatchParticipant}> = ({info, timeline, selectedPlayer}) => {
-    const champ = Object.values(champions).find(c => c.key.toLowerCase() === selectedPlayer.championName.toLowerCase());
-    if (!champ) return <div>Champion not found</div>;
-    const { abilities,  } = champ;
+    const [championData, setChampionData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const loadChampionData = async () => {
+            setLoading(true);
+            const data = await fetchChampionData(selectedPlayer.championId);
+            setChampionData(data);
+            setLoading(false);
+        };
+        loadChampionData();
+    }, [selectedPlayer.championId]);
+
+    if (loading) return <div className="text-neutral-50 p-4">Loading champion data...</div>;
+    if (!championData) return <div className="text-neutral-50 p-4">Champion not found</div>;
+    
+    const { abilities } = championData;
 
     const slots = ["Q","W","E","R"];
     const casts = [
@@ -220,8 +235,8 @@ const MatchDetails: React.FC<{info: MatchDetailsInfo, timeline: any, selectedPla
                                                 content={
                                                     <div>
                                                         <ItemName itemId={item.itemId} classes="text-md font-bold text-purple-500" />
-                                                        <ItemPlaintext itemId={item.itemId} classes="text-sm" />
                                                         <ItemDescription itemId={item.itemId} classes="text-sm" />
+                                                        <br />
                                                         <ItemPrice itemId={item.itemId} classes="text-sm text-orange-500" />
                                                     </div>
                                                 }
@@ -268,19 +283,6 @@ const MatchDetails: React.FC<{info: MatchDetailsInfo, timeline: any, selectedPla
                                             <ChampionSpellName spell={spell} classes="text-md font-bold text-purple-500" />
                                             <ChampionSpellCooldowns spell={spell} classes="text-sm text-neutral-400" />
                                             <ChampionSpellTooltip spell={spell} classes="text-sm" />
-                                            <div className="mt-2">
-                                                <Tippy
-                                                    content={<ChampionSpellNotes spell={spell} classes="text-sm" />}
-                                                    interactive={true}
-                                                    placement="right"
-                                                    appendTo="parent"
-                                                    maxWidth={500}
-                                                >
-                                                    <div className="w-fit ml-auto text-lg underline cursor-pointer text-neutral-400">
-                                                        <p>Notes</p>
-                                                    </div>
-                                                </Tippy>
-                                            </div>
                                         </div>
                                     }
                                     allowHTML={true}
@@ -323,19 +325,6 @@ const MatchDetails: React.FC<{info: MatchDetailsInfo, timeline: any, selectedPla
                                                 <ChampionSpellName spell={spell} classes="text-md font-bold text-purple-500" />
                                                 <ChampionSpellCooldowns spell={spell} classes="text-sm text-neutral-400" />
                                                 <ChampionSpellTooltip spell={spell} classes="text-sm" />
-                                                <div className="mt-2">
-                                                    <Tippy
-                                                        content={<ChampionSpellNotes spell={spell} classes="text-sm" />}
-                                                        interactive={true}
-                                                        placement="right"
-                                                        appendTo="parent"
-                                                        maxWidth={500}
-                                                    >
-                                                        <div className="w-fit ml-auto text-lg underline cursor-pointer text-neutral-400">
-                                                            <p>Notes</p>
-                                                        </div>
-                                                    </Tippy>
-                                                </div>
                                             </div>
                                         }
                                         allowHTML={true}
