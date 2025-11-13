@@ -574,12 +574,14 @@ namespace backend.Endpoints {
                 }
 
                 var championRoleMapping = await ChampionRoleMapping.BuildChampionRoleMappingAsync(client);
+                var championIdToNameMapping = await ChampionIdToNameMapping.BuildChampionIdToNameMappingAsync(client);
 
                 if (spectatorData is JsonElement spectatorElement && spectatorElement.TryGetProperty("participants", out JsonElement participantsElement)) {
                     var participantsWithRole = new List<LiveGameParticipantWithRoleDto>();
                     foreach (var participant in participantsElement.EnumerateArray()) {
                         int champId = participant.GetProperty("championId").GetInt32();
                         string predictedRole = championRoleMapping.ContainsKey(champId) ? championRoleMapping[champId] : "MIDDLE";
+                        string championName = championIdToNameMapping.ContainsKey(champId) ? championIdToNameMapping[champId] : string.Empty;
 
                         int spell1Id = participant.GetProperty("spell1Id").GetInt32();
                         int spell2Id = participant.GetProperty("spell2Id").GetInt32();
@@ -588,16 +590,17 @@ namespace backend.Endpoints {
                         }
 
                         var participantWithRole = new LiveGameParticipantWithRoleDto {
-                            puuid = participant.GetProperty("puuid").GetString() ?? string.Empty,
-                            teamId = participant.GetProperty("teamId").GetInt32(),
-                            spell1Id = participant.GetProperty("spell1Id").GetInt32(),
-                            spell2Id = participant.GetProperty("spell2Id").GetInt32(),
+                            puuid = participant.TryGetProperty("puuid", out var puuidProp) ? puuidProp.GetString() ?? string.Empty : string.Empty,
+                            teamId = participant.TryGetProperty("teamId", out var teamIdProp) ? teamIdProp.GetInt32() : 0,
+                            spell1Id = spell1Id,
+                            spell2Id = spell2Id,
                             championId = champId,
-                            profileIconId = participant.GetProperty("profileIconId").GetInt32(),
-                            riotId = participant.GetProperty("riotId").GetString() ?? string.Empty,
-                            bot = participant.GetProperty("bot").GetBoolean(),
-                            summonerId = participant.GetProperty("summonerId").GetString() ?? string.Empty,
-                            perks = participant.GetProperty("perks"),
+                            championName = championName,
+                            profileIconId = participant.TryGetProperty("profileIconId", out var profileIconProp) ? profileIconProp.GetInt32() : 0,
+                            riotId = participant.TryGetProperty("riotId", out var riotIdProp) ? riotIdProp.GetString() ?? string.Empty : string.Empty,
+                            bot = participant.TryGetProperty("bot", out var botProp) && botProp.GetBoolean(),
+                            summonerId = participant.TryGetProperty("summonerId", out var summonerIdProp) ? summonerIdProp.GetString() ?? string.Empty : string.Empty,
+                            perks = participant.TryGetProperty("perks", out var perksProp) ? perksProp : new JsonElement(),
                             predictedRole = predictedRole
                         };
                         participantsWithRole.Add(participantWithRole);
