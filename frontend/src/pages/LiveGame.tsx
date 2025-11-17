@@ -176,10 +176,6 @@ const LiveGame: React.FC = () => {
                             typeof item.spectatorData === "string" && item.spectatorData.trim()
                                 ? JSON.parse(item.spectatorData)
                                 : item.spectatorData,
-                        clashData:
-                            typeof item.clashData === "string" && item.clashData.trim()
-                                ? JSON.parse(item.clashData)
-                                : item.clashData,
                         addedAt: item.addedAt
                     };
                 });

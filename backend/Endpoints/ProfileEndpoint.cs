@@ -57,7 +57,6 @@ namespace backend.Endpoints {
                         RankedFlexChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStatsDto>>(existingPlayer.RankedFlexChampionStatsData)!,
                         RankedFlexRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRoleDto>>(existingPlayer.RankedFlexRoleStatsData)!,
                         SpectatorData = JsonSerializer.Deserialize<object>(existingPlayer.SpectatorData),
-                        ClashData = JsonSerializer.Deserialize<object>(existingPlayer.ClashData),
                         AddedAt = existingPlayer.AddedAt,
                     };
 
@@ -566,14 +565,12 @@ namespace backend.Endpoints {
                 string summonerUrl = $"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={apiKey}";
                 string masteriesUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}?api_key={apiKey}";
                 string totalMasteryScoreUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/scores/by-puuid/{puuid}?api_key={apiKey}";
-                string clashUrl = $"https://{region}.api.riotgames.com/lol/clash/v1/players/by-puuid/{puuid}?api_key={apiKey}"; // ukoliko nisi u clashu vraca [] i vraca 200
 
                 var summonerTask = GetStringAsyncWithRetry(summonerUrl);
                 var masteriesTask = GetStringAsyncWithRetry(masteriesUrl);
                 var totalMasteryScoreTask = GetStringAsyncWithRetry(totalMasteryScoreUrl);
-                var clashTask = GetStringAsyncWithRetry(clashUrl);
 
-                await Task.WhenAll(summonerTask, masteriesTask, totalMasteryScoreTask, clashTask);
+                await Task.WhenAll(summonerTask, masteriesTask, totalMasteryScoreTask);
 
                 var playerBasicInfo = new PlayerBasicInfo {
                     SummonerName = summonerName,
@@ -593,7 +590,6 @@ namespace backend.Endpoints {
                     TotalMasteryScoreData = JsonSerializer.Deserialize<int>(await totalMasteryScoreTask),
 
                     SpectatorData = spectatorData is string s ? s : JsonSerializer.Serialize(spectatorData),
-                    ClashData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await clashTask)),
 
                     AllMatchIds = JsonSerializer.Serialize(allMatchIds),
                     AllGamesChampionStatsData = JsonSerializer.Serialize(allGamesChampionStats),
@@ -641,7 +637,6 @@ namespace backend.Endpoints {
                     RankedFlexChampionStatsData = championStatsByQueue[rankedFlexQueueId],
                     RankedFlexRoleStatsData = roleStatsByQueue[rankedFlexQueueId],
                     SpectatorData = JsonSerializer.Deserialize<object>(player.SpectatorData),
-                    ClashData = JsonSerializer.Deserialize<object>(player.ClashData),
                     AddedAt = player.AddedAt,
                 };
 

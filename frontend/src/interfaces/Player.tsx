@@ -31,7 +31,6 @@ interface Player {
     rankedFlexChampionStatsData:ChampionStats[];
     rankedFlexRoleStatsData: PreferredRole[];
     spectatorData: any;
-    clashData: any;
     addedAt: number;
 }
 

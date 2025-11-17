@@ -42,7 +42,6 @@ namespace backend.Endpoints {
                     RankedFlexChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStatsDto>>(player.RankedFlexChampionStatsData)!,
                     RankedFlexRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRoleDto>>(player.RankedFlexRoleStatsData)!,
                     SpectatorData = JsonSerializer.Deserialize<object>(player.SpectatorData),
-                    ClashData = JsonSerializer.Deserialize<object>(player.ClashData),
                     AddedAt = player.AddedAt,
                 };
                 

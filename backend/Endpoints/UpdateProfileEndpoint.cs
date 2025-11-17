@@ -681,14 +681,12 @@ namespace backend.Endpoints {
                 string summonerUrl = $"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}?api_key={apiKey}";
                 string masteriesUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}?api_key={apiKey}";
                 string totalMasteryScoreUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/scores/by-puuid/{puuid}?api_key={apiKey}";
-                string clashUrl = $"https://{region}.api.riotgames.com/lol/clash/v1/players/by-puuid/{puuid}?api_key={apiKey}"; // ukoliko nisi u clashu vraca [] i vraca 200
 
                 var summonerTask = GetStringAsyncWithRetry(summonerUrl);
                 var masteriesTask = GetStringAsyncWithRetry(masteriesUrl);
                 var totalMasteryScoreTask = GetStringAsyncWithRetry(totalMasteryScoreUrl);
-                var clashTask = GetStringAsyncWithRetry(clashUrl);
 
-                await Task.WhenAll(summonerTask, masteriesTask, totalMasteryScoreTask, clashTask);
+                await Task.WhenAll(summonerTask, masteriesTask, totalMasteryScoreTask);
 
                 var lastIndex = await dbContext.PlayerMatches
                     .Where(pm => pm.PlayerId == existingPlayer.Id)
@@ -711,7 +709,6 @@ namespace backend.Endpoints {
                 existingPlayer.MasteriesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await masteriesTask));
                 existingPlayer.TotalMasteryScoreData = JsonSerializer.Deserialize<int>(await totalMasteryScoreTask);
                 existingPlayer.SpectatorData = spectatorData is string s ? s : JsonSerializer.Serialize(spectatorData);
-                existingPlayer.ClashData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await clashTask));
 
                 existingPlayer.AllMatchIds = JsonSerializer.Serialize(mergedMatchIds);
                 existingPlayer.AllGamesChampionStatsData = JsonSerializer.Serialize(allGamesChampionStats);
@@ -749,7 +746,6 @@ namespace backend.Endpoints {
                     RankedFlexChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStatsDto>>(existingPlayer.RankedFlexChampionStatsData)!,
                     RankedFlexRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRoleDto>>(existingPlayer.RankedFlexRoleStatsData)!,
                     SpectatorData = JsonSerializer.Deserialize<object>(existingPlayer.SpectatorData),
-                    ClashData = JsonSerializer.Deserialize<object>(existingPlayer.ClashData),
                     AddedAt = existingPlayer.AddedAt,
                 };
                 

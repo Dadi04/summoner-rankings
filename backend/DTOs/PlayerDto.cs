@@ -18,7 +18,6 @@ namespace backend.DTOs {
         public Dictionary<int, ChampionStatsDto> RankedFlexChampionStatsData { get; set; } = new();
         public Dictionary<string, PreferredRoleDto> RankedFlexRoleStatsData { get; set; } = new();
         public object? SpectatorData { get; set; }
-        public object? ClashData { get; set; }
         public long AddedAt { get; set; }
     }
 }

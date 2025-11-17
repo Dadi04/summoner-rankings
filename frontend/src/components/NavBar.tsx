@@ -145,9 +145,10 @@ const NavBar: React.FC = () => {
                     <div className="flex-1 flex justify-center space-x-6">
                         <ul className="flex space-x-8 text-xl">
                             <li><NavLink to="/" className="p-3 transition-color duration-300 hover:text-gray-400">Home</NavLink></li>
-                            <li><NavLink to="/races" className="p-3 transition-color duration-300 hover:text-gray-400">Races</NavLink></li>
                             <li><NavLink to="/leaderboard" className="p-3 transition-color duration-300 hover:text-gray-400">Leaderboard</NavLink></li>
-                            <li><NavLink to="/clash" className="p-3 transition-color duration-300 hover:text-gray-400">Clash</NavLink></li>
+                            <li><NavLink to="/races" className="p-3 transition-color duration-300 hover:text-gray-400">Races</NavLink></li>
+                            <li><NavLink to="/compare" className="p-3 transition-color duration-300 hover:text-gray-400">Compare</NavLink></li>
+                            <li><NavLink to="/analyze" className="p-3 transition-color duration-300 hover:text-gray-400">Analyze</NavLink></li>
                         </ul>
                     </div>
                     <div className="flex-1 flex justify-end">

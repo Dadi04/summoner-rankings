@@ -9,7 +9,8 @@ import Masteries from "./pages/Masteries";
 import LiveGame from "./pages/LiveGame";
 import Races from "./pages/Races";
 import Leaderboard from "./pages/Leaderboard";
-import Clash from "./pages/Clash";
+import Compare from "./pages/Compare";
+import Analyze from "./pages/Analyze";
 import Account from "./pages/Account";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { GameDataProvider } from "./contexts/GameDataContext";
@@ -27,9 +28,10 @@ const App: React.FC = () => {
               <Route path="/lol/profile/:regionCode/:encodedSummoner/champions" element={<Champions />} />
               <Route path="/lol/profile/:regionCode/:encodedSummoner/mastery" element={<Masteries />} />
               <Route path="/lol/profile/:regionCode/:encodedSummoner/livegame" element={<LiveGame />} />
-              <Route path="/races" element={<Races />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
-              <Route path="/clash" element={<Clash />} />
+              <Route path="/races" element={<Races />} />
+              <Route path="/compare" element={<Compare />} />
+              <Route path="/analyze" element={<Analyze />} />
               <Route path="/:username" element={
                 <ProtectedRoute>
                   <Account />
