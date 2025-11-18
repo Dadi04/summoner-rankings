@@ -30,7 +30,8 @@ public static class AuthHelpers {
             audience: config["Jwt:Audience"],
             claims: new[] { 
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim("username", user.Username)
+                new Claim("username", user.Username),
+                new Claim("isAdmin", user.isAdmin.ToString())
             },
             expires: expires,
             signingCredentials: creds

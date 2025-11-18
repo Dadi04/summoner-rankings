@@ -64,5 +64,6 @@ app.MapSearchAccountsEndpoints();
 app.MapProfileEndpoint(apiKey);
 app.MapUpdateProfileEndpoint(apiKey);
 app.MapLiveGameEndpoint();
+app.MapRacesEndpoints();
 
 app.Run();

@@ -28,6 +28,9 @@ export default defineConfig({
       },
       '/api/lol/profile/livegame': {
         target: 'http://localhost:5288',
+      },
+      '/api/races': {
+        target: 'http://localhost:5288',
       }
     },
   },
