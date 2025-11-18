@@ -56,7 +56,7 @@ namespace backend.Endpoints {
                     UserId = Convert.ToInt32(userId),
                     SummonerName = request.SummonerName,
                     Region = request.Region,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTimeOffset.UtcNow
                 };
                 
                 db.Favorites.Add(favorite);

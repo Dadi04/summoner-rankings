@@ -9,7 +9,7 @@ namespace backend.Models {
         public int UserId { get; set; }
         public string SummonerName { get; set; } = string.Empty;
         public string Region { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
         
         [ForeignKey("UserId")]
         public User User { get; set; } = null!;

@@ -1,7 +1,10 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace backend.Models {
     public class Player {
         public int Id { get; set; }
         public PlayerBasicInfo PlayerBasicInfo { get; set; } = new();
+        [Required]
         public string Puuid { get; set; } = string.Empty;
         public string SummonerData { get; set; } = string.Empty;
         public string EntriesData { get; set; } = string.Empty;
@@ -16,7 +19,6 @@ namespace backend.Models {
         public string RankedFlexRoleStatsData { get; set; } = string.Empty;
         public string SpectatorData { get; set; } = string.Empty;
         public long AddedAt { get; set; }
-
-        public ICollection<Race> Races { get; set; } = new List<Race>();
+        public ICollection<RacePlayer> RacePlayers { get; set; } = new List<RacePlayer>();
     }
 }

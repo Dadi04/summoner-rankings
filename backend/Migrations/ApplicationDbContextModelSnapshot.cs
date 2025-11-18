@@ -22,21 +22,6 @@ namespace backend.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("PlayerRace", b =>
-                {
-                    b.Property<int>("PlayersId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RacesId")
-                        .HasColumnType("int");
-
-                    b.HasKey("PlayersId", "RacesId");
-
-                    b.HasIndex("RacesId");
-
-                    b.ToTable("PlayerRace");
-                });
-
             modelBuilder.Entity("backend.Models.Favorite", b =>
                 {
                     b.Property<int>("Id")
@@ -45,8 +30,8 @@ namespace backend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Region")
                         .IsRequired()
@@ -103,7 +88,7 @@ namespace backend.Migrations
 
                     b.Property<string>("Puuid")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("RankedFlexChampionStatsData")
                         .IsRequired()
@@ -135,6 +120,8 @@ namespace backend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("PlayerBasicInfoId");
+
+                    b.HasIndex("Puuid");
 
                     b.ToTable("Players");
                 });
@@ -201,16 +188,45 @@ namespace backend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("Name")
+                    b.Property<DateTimeOffset?>("EndingOn")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("UserId", "IsPublic");
+
                     b.ToTable("Races");
+                });
+
+            modelBuilder.Entity("backend.Models.RacePlayer", b =>
+                {
+                    b.Property<int>("RaceId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PlayerId")
+                        .HasColumnType("int");
+
+                    b.HasKey("RaceId", "PlayerId");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("RacePlayers");
                 });
 
             modelBuilder.Entity("backend.Models.User", b =>
@@ -233,24 +249,12 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("isAdmin")
+                        .HasColumnType("bit");
+
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("PlayerRace", b =>
-                {
-                    b.HasOne("backend.Models.Player", null)
-                        .WithMany()
-                        .HasForeignKey("PlayersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("backend.Models.Race", null)
-                        .WithMany()
-                        .HasForeignKey("RacesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("backend.Models.Favorite", b =>
@@ -286,9 +290,51 @@ namespace backend.Migrations
                     b.Navigation("Player");
                 });
 
+            modelBuilder.Entity("backend.Models.Race", b =>
+                {
+                    b.HasOne("backend.Models.User", "User")
+                        .WithMany("Races")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("backend.Models.RacePlayer", b =>
+                {
+                    b.HasOne("backend.Models.Player", "Player")
+                        .WithMany("RacePlayers")
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.Race", "Race")
+                        .WithMany("RacePlayers")
+                        .HasForeignKey("RaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Player");
+
+                    b.Navigation("Race");
+                });
+
+            modelBuilder.Entity("backend.Models.Player", b =>
+                {
+                    b.Navigation("RacePlayers");
+                });
+
+            modelBuilder.Entity("backend.Models.Race", b =>
+                {
+                    b.Navigation("RacePlayers");
+                });
+
             modelBuilder.Entity("backend.Models.User", b =>
                 {
                     b.Navigation("Favorites");
+
+                    b.Navigation("Races");
                 });
 #pragma warning restore 612, 618
         }
