@@ -7,7 +7,7 @@ export const ItemImage: React.FC<{itemId: number; matchWon?: boolean; classes: s
 
     if (itemId === 0) {
         return (
-            <div className={`h-8 w-8 ${itemId ? (matchWon ? "bg-[#2F436E]" : "bg-[#703C47]") : "bg-neutral-800"} `}></div>
+            <div className={`${classes} ${itemId ? (matchWon ? "bg-[#2F436E]" : "bg-[#703C47]") : "bg-neutral-800"} `}></div>
         );
     }
 

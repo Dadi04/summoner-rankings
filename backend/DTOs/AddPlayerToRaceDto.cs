@@ -1,9 +1,8 @@
-namespace backend.Models {
-    public class PlayerBasicInfoDto {
+namespace backend.DTOs {
+    public class AddPlayerToRaceDto {
         public string SummonerName { get; set; } = string.Empty;
         public string SummonerTag { get; set; } = string.Empty;
         public string Region { get; set; } = string.Empty;
-        public int ProfileIcon { get; set; }
-        public string Puuid { get; set; } = string.Empty;
     }
 }
+
