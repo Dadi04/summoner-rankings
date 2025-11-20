@@ -342,6 +342,27 @@ const Summoner: React.FC = () => {
         loadChampions();
     }, [apiData]);
 
+    useEffect(() => {
+        if (!apiData) return;
+        
+        const hash = window.location.hash.substring(1);
+        if (hash) {
+            const timer = setTimeout(() => {
+                const element = document.getElementById(hash);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    element.style.boxShadow = '0 0 20px rgba(168, 85, 247, 0.6)';
+                    setTimeout(() => {
+                        element.style.transition = 'box-shadow 2s ease-out';
+                        element.style.boxShadow = 'none';
+                    }, 2000);
+                }
+            }, 500);
+            
+            return () => clearTimeout(timer);
+        }
+    }, [apiData, pageMatches]);
+
     if (loading || !apiData) {
         return <div className="w-full flex justify-center mt-[125px] mb-[195px]"><DotLottieReact src={loadingAnimation} className="w-[600px] bg-transparent" loop autoplay /></div>
     }

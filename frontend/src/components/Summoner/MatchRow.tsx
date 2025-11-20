@@ -40,6 +40,8 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
     if (!selectedPlayer) return <div>Detail not found</div>;
       
     const timeline = JSON.parse(timelineJson);
+    
+    const matchId = `${info.platformId}_${info.gameId}`;
 
     let gameEnded = Math.round((Date.now() - info.gameEndTimestamp)/60000);
     let timeUnit = gameEnded === 1 ? "minute ago" : "minutes ago";
@@ -84,11 +86,16 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
         }
     }
 
+    const handleMatchClick = () => {
+        const currentUrl = window.location.pathname + window.location.search;
+        window.history.pushState({}, '', `${currentUrl}#${matchId}`);
+    };
+
     return (
-        <div className={classes}>
+        <div id={matchId} className={classes}>
             <div className={`w-full grid grid-cols-[25%_35%_17.5%_17.5%_5%] items-center ${participant.win ? "bg-[#28344E]" : "bg-[#59343B]"}`}>
                 <div className="p-2">
-                    <div className="w-[80%] border-b-2 border-neutral-400 p-2">
+                    <div onClick={handleMatchClick} className="w-[80%] border-b-2 border-neutral-400 p-2 transition-colors">
                         <p className={`font-bold ${participant.win ? "text-blue-400" : "text-red-400"}`}>{gamemode}</p>
                         <p className="text-sm text-neutral-300">{map}</p>
                         <p>{gameEnded} {timeUnit}</p>
