@@ -9,6 +9,8 @@ import { ItemImage } from "../components/ItemData";
 import arrowdown from "../assets/arrow-down-dark.png";
 import arrowDownLight from "../assets/arrow-down-light.png";
 import close from "../assets/close.png";
+import blueKaynIcon from "../assets/blue-kayn-icon.png";
+import redKaynIcon from "../assets/red-kayn-icon.png";
 
 import queueJson from "../assets/json/queues.json";
 
@@ -49,6 +51,7 @@ interface MatchDetails {
                 riotIdTagline: string;
                 championId: number;
                 championName: string;
+                championTransform: number;
                 kills: number;
                 deaths: number;
                 assists: number;
@@ -573,7 +576,18 @@ const RaceDetail: React.FC = () => {
                                                                                 <div className="flex flex-col gap-3 p-2">
                                                                                     <div className="flex gap-2">
                                                                                         <div className="relative">
-                                                                                            <ChampionImage championId={participant.championId} teamId={100} isTeamIdSame={true} classes="h-12" />
+                                                                                            {(participant.championName === "Kayn" && participant.championTransform > 0) ? (
+                                                                                                <>
+                                                                                                    {participant.championTransform === 1 && (
+                                                                                                        <img src={redKaynIcon} alt="redKaynIcon" className="h-12" />
+                                                                                                    )}
+                                                                                                    {participant.championTransform === 2 && (
+                                                                                                        <img src={blueKaynIcon} alt="blueKaynIcon" className="h-12" />
+                                                                                                    )}
+                                                                                                </>
+                                                                                            ) : (
+                                                                                                <ChampionImage championId={participant.championId} teamId={100} isTeamIdSame={true} classes="h-12" />
+                                                                                            )}
                                                                                             <p className="absolute text-xs right-0 bottom-0 transform translate-x-[2px] translate-y-[2px] bg-neutral-800 border border-neutral-400 px-0.5 text-white">{participant.champLevel}</p>
                                                                                         </div>
                                                                                         <div className="flex flex-col gap-0.5">
@@ -620,7 +634,18 @@ const RaceDetail: React.FC = () => {
                                                                                 <div className="flex flex-col gap-0.5 text-xs p-2">
                                                                                     {match.details.info.participants.filter((p) => p.teamId === 100).map(p => (
                                                                                         <div key={p.puuid} className="flex gap-0.5 items-center">
-                                                                                            <ChampionImage championId={p.championId} teamId={p.teamId} isTeamIdSame={true} classes="h-4" />
+                                                                                            {(p.championName === "Kayn" && p.championTransform > 0) ? (
+                                                                                                <>
+                                                                                                    {p.championTransform === 1 && (
+                                                                                                        <img src={redKaynIcon} alt="redKaynIcon" className="h-4" />
+                                                                                                    )}
+                                                                                                    {p.championTransform === 2 && (
+                                                                                                        <img src={blueKaynIcon} alt="blueKaynIcon" className="h-4" />
+                                                                                                    )}
+                                                                                                </>
+                                                                                            ) : (
+                                                                                                <ChampionImage championId={p.championId} teamId={p.teamId} isTeamIdSame={true} classes="h-4" />
+                                                                                            )}
                                                                                             <p className={`${p.puuid === playerData.playerBasicInfo.puuid ? "text-purple-400" : "text-neutral-100"}`}>
                                                                                                 {p.riotIdGameName}
                                                                                             </p>
@@ -630,7 +655,18 @@ const RaceDetail: React.FC = () => {
                                                                                 <div className="flex flex-col gap-0.5 text-xs p-2">
                                                                                     {match.details.info.participants.filter(p => p.teamId === 200).map(p => (
                                                                                         <div key={p.puuid} className="flex gap-0.5 items-center">
-                                                                                            <ChampionImage championId={p.championId} teamId={p.teamId} isTeamIdSame={true} classes="h-4" />
+                                                                                            {(p.championName === "Kayn" && p.championTransform > 0) ? (
+                                                                                                <>
+                                                                                                    {p.championTransform === 1 && (
+                                                                                                        <img src={redKaynIcon} alt="redKaynIcon" className="h-4" />
+                                                                                                    )}
+                                                                                                    {p.championTransform === 2 && (
+                                                                                                        <img src={blueKaynIcon} alt="blueKaynIcon" className="h-4" />
+                                                                                                    )}
+                                                                                                </>
+                                                                                            ) : (
+                                                                                                <ChampionImage championId={p.championId} teamId={p.teamId} isTeamIdSame={true} classes="h-4" />
+                                                                                            )}
                                                                                             <p className={`${p.puuid === playerData.playerBasicInfo.puuid ? "text-purple-400" : "text-neutral-100"}`}>
                                                                                                 {p.riotIdGameName}
                                                                                             </p>
