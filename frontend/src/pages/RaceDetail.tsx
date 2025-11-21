@@ -633,43 +633,47 @@ const RaceDetail: React.FC = () => {
                                                                                 </div>
                                                                                 <div className="flex flex-col gap-0.5 text-xs p-2">
                                                                                     {match.details.info.participants.filter((p) => p.teamId === 100).map(p => (
-                                                                                        <div key={p.puuid} className="flex gap-0.5 items-center">
-                                                                                            {(p.championName === "Kayn" && p.championTransform > 0) ? (
-                                                                                                <>
-                                                                                                    {p.championTransform === 1 && (
-                                                                                                        <img src={redKaynIcon} alt="redKaynIcon" className="h-4" />
-                                                                                                    )}
-                                                                                                    {p.championTransform === 2 && (
-                                                                                                        <img src={blueKaynIcon} alt="blueKaynIcon" className="h-4" />
-                                                                                                    )}
-                                                                                                </>
-                                                                                            ) : (
-                                                                                                <ChampionImage championId={p.championId} teamId={p.teamId} isTeamIdSame={true} classes="h-4" />
-                                                                                            )}
-                                                                                            <p className={`${p.puuid === playerData.playerBasicInfo.puuid ? "text-purple-400" : "text-neutral-100"}`}>
-                                                                                                {p.riotIdGameName}
-                                                                                            </p>
+                                                                                        <div key={p.puuid}>
+                                                                                            <Link to={`/lol/profile/${player.region}/${p.riotIdGameName}-${p.riotIdTagline}`} className="w-fit flex gap-0.5 items-center cursor-pointer hover:underline decoration-white">
+                                                                                                {(p.championName === "Kayn" && p.championTransform > 0) ? (
+                                                                                                    <>
+                                                                                                        {p.championTransform === 1 && (
+                                                                                                            <img src={redKaynIcon} alt="redKaynIcon" className="h-4" />
+                                                                                                        )}
+                                                                                                        {p.championTransform === 2 && (
+                                                                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className="h-4" />
+                                                                                                        )}
+                                                                                                    </>
+                                                                                                ) : (
+                                                                                                    <ChampionImage championId={p.championId} teamId={p.teamId} isTeamIdSame={true} classes="h-4" />
+                                                                                                )}
+                                                                                                <p className={`${p.puuid === playerData.playerBasicInfo.puuid ? "text-purple-400" : "text-neutral-100"}`}>
+                                                                                                    {p.riotIdGameName}
+                                                                                                </p>
+                                                                                            </Link>
                                                                                         </div>
                                                                                     ))}
                                                                                 </div>
                                                                                 <div className="flex flex-col gap-0.5 text-xs p-2">
                                                                                     {match.details.info.participants.filter(p => p.teamId === 200).map(p => (
-                                                                                        <div key={p.puuid} className="flex gap-0.5 items-center">
-                                                                                            {(p.championName === "Kayn" && p.championTransform > 0) ? (
-                                                                                                <>
-                                                                                                    {p.championTransform === 1 && (
-                                                                                                        <img src={redKaynIcon} alt="redKaynIcon" className="h-4" />
-                                                                                                    )}
-                                                                                                    {p.championTransform === 2 && (
-                                                                                                        <img src={blueKaynIcon} alt="blueKaynIcon" className="h-4" />
-                                                                                                    )}
-                                                                                                </>
-                                                                                            ) : (
-                                                                                                <ChampionImage championId={p.championId} teamId={p.teamId} isTeamIdSame={true} classes="h-4" />
-                                                                                            )}
-                                                                                            <p className={`${p.puuid === playerData.playerBasicInfo.puuid ? "text-purple-400" : "text-neutral-100"}`}>
-                                                                                                {p.riotIdGameName}
-                                                                                            </p>
+                                                                                        <div key={p.puuid}>
+                                                                                            <Link to={`/lol/profile/${player.region}/${p.riotIdGameName}-${p.riotIdTagline}`} className="w-fit flex gap-0.5 items-center cursor-pointer hover:underline decoration-white">
+                                                                                                {(p.championName === "Kayn" && p.championTransform > 0) ? (
+                                                                                                    <>
+                                                                                                        {p.championTransform === 1 && (
+                                                                                                            <img src={redKaynIcon} alt="redKaynIcon" className="h-4" />
+                                                                                                        )}
+                                                                                                        {p.championTransform === 2 && (
+                                                                                                            <img src={blueKaynIcon} alt="blueKaynIcon" className="h-4" />
+                                                                                                        )}
+                                                                                                    </>
+                                                                                                ) : (
+                                                                                                    <ChampionImage championId={p.championId} teamId={p.teamId} isTeamIdSame={true} classes="h-4" />
+                                                                                                )}
+                                                                                                <p className={`${p.puuid === playerData.playerBasicInfo.puuid ? "text-purple-400" : "text-neutral-100"}`}>
+                                                                                                    {p.riotIdGameName}
+                                                                                                </p>
+                                                                                            </Link>
                                                                                         </div>
                                                                                     ))}
                                                                                 </div>
