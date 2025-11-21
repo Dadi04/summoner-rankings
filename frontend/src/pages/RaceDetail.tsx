@@ -151,6 +151,80 @@ const getRankColor = (rank: string): string => {
     return colorMap[tier] || 'text-purple-700';
 };
 
+const getTierValue = (tier: string): number => {
+    const tierMap: { [key: string]: number } = {
+        'CHALLENGER': 9,
+        'GRANDMASTER': 8,
+        'MASTER': 7,
+        'DIAMOND': 6,
+        'EMERALD': 5,
+        'PLATINUM': 4,
+        'GOLD': 3,
+        'SILVER': 2,
+        'BRONZE': 1,
+        'IRON': 0
+    };
+    return tierMap[tier.toUpperCase()] ?? -1;
+};
+
+const getDivisionValue = (division: string): number => {
+    const divisionMap: { [key: string]: number } = {
+        'I': 4,
+        'II': 3,
+        'III': 2,
+        'IV': 1
+    };
+    return divisionMap[division.toUpperCase()] ?? 0;
+};
+
+const sortPlayersByRank = (players: Player[], race: Race | null): Player[] => {
+    return [...players].sort((a, b) => {
+        const aRacePlayer = race?.racePlayers?.find(rp => 
+            rp.player.playerBasicInfo.summonerName === a.summonerName &&
+            rp.player.playerBasicInfo.summonerTag === a.summonerTag &&
+            rp.player.playerBasicInfo.region === a.region
+        );
+        const bRacePlayer = race?.racePlayers?.find(rp => 
+            rp.player.playerBasicInfo.summonerName === b.summonerName &&
+            rp.player.playerBasicInfo.summonerTag === b.summonerTag &&
+            rp.player.playerBasicInfo.region === b.region
+        );
+        
+        const aRank = aRacePlayer?.player.rank;
+        const bRank = bRacePlayer?.player.rank;
+        
+        if (!aRank && !bRank) return 0;
+        if (!aRank) return 1;
+        if (!bRank) return -1;
+        
+        const aRankParts = aRank.split(' ');
+        const bRankParts = bRank.split(' ');
+        
+        const aTier = aRankParts[0];
+        const bTier = bRankParts[0];
+        const aDivision = aRankParts[1] || '';
+        const bDivision = bRankParts[1] || '';
+        
+        const aTierValue = getTierValue(aTier);
+        const bTierValue = getTierValue(bTier);
+        if (aTierValue !== bTierValue) {
+            return bTierValue - aTierValue;
+        }
+        
+        if (aDivision && bDivision) {
+            const aDivisionValue = getDivisionValue(aDivision);
+            const bDivisionValue = getDivisionValue(bDivision);
+            if (aDivisionValue !== bDivisionValue) {
+                return bDivisionValue - aDivisionValue;
+            }
+        }
+        
+        const aLP = aRacePlayer?.player.leaguePoints ?? 0;
+        const bLP = bRacePlayer?.player.leaguePoints ?? 0;
+        return bLP - aLP;
+    });
+};
+
 const RaceDetail: React.FC = () => {
     const { type, raceId } = useParams<{ type: string; raceId: string }>();
     const navigate = useNavigate();
@@ -165,6 +239,7 @@ const RaceDetail: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [showEndRaceDialog, setShowEndRaceDialog] = useState(false);
     const [isAddingPlayer, setIsAddingPlayer] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     
     const dropdownToggleRef = useRef<HTMLDivElement>(null);
     const dropdownListRef = useRef<HTMLDivElement>(null);
@@ -191,7 +266,9 @@ const RaceDetail: React.FC = () => {
                             summonerTag: rp.player.playerBasicInfo.summonerTag,
                             region: rp.player.playerBasicInfo.region
                         }));
-                        setPlayers(loadedPlayers);
+                        
+                        const sortedPlayers = sortPlayersByRank(loadedPlayers, data);
+                        setPlayers(sortedPlayers);
                     }
                 }
             } catch (error) {
@@ -271,17 +348,30 @@ const RaceDetail: React.FC = () => {
                 return;
             }
 
-            const result = await response.json();
+            const raceResponse = await fetch(`/api/races/${raceId}`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                },
+            });
 
-            const newPlayer: Player = {
-                id: `${summonerName}-${summonerTag}-${selectedRegion.code}-${result.playerId}`,
-                playerId: result.playerId,
-                summonerName,
-                summonerTag,
-                region: selectedRegion.code
-            };
+            if (raceResponse.ok) {
+                const data = await raceResponse.json();
+                setRace(data);
+                
+                if (data.racePlayers && data.racePlayers.length > 0) {
+                    const loadedPlayers = data.racePlayers.map((rp: RacePlayer) => ({
+                        id: `${rp.player.playerBasicInfo.summonerName}-${rp.player.playerBasicInfo.summonerTag}-${rp.player.playerBasicInfo.region}-${rp.playerId}`,
+                        playerId: rp.playerId,
+                        summonerName: rp.player.playerBasicInfo.summonerName,
+                        summonerTag: rp.player.playerBasicInfo.summonerTag,
+                        region: rp.player.playerBasicInfo.region
+                    }));
+                    
+                    const sortedPlayers = sortPlayersByRank(loadedPlayers, data);
+                    setPlayers(sortedPlayers);
+                }
+            }
 
-            setPlayers([...players, newPlayer]);
             setShowAddPlayerDialog(false);
             setSummonerInput("");
             setSelectedRegion(REGION_ITEMS[0]);
@@ -334,6 +424,64 @@ const RaceDetail: React.FC = () => {
         }
     };
 
+    const handleRefresh = async () => {
+        if (isRefreshing || players.length === 0) return;
+        
+        setIsRefreshing(true);
+        
+        try {
+            const updatePromises = players.map(async (player) => {
+                try {
+                    const response = await fetch(
+                        `/api/lol/profile/${player.region}/${player.summonerName}-${player.summonerTag}/update`
+                    );
+                    
+                    if (!response.ok) {
+                        console.error(`Failed to update ${player.summonerName}#${player.summonerTag}`);
+                        return false;
+                    }
+                    
+                    return true;
+                } catch (error) {
+                    console.error(`Error updating ${player.summonerName}#${player.summonerTag}:`, error);
+                    return false;
+                }
+            });
+            
+            await Promise.all(updatePromises);
+            
+            const token = localStorage.getItem("jwt");
+            const response = await fetch(`/api/races/${raceId}`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setRace(data);
+                
+                if (data.racePlayers && data.racePlayers.length > 0) {
+                    const loadedPlayers = data.racePlayers.map((rp: RacePlayer) => ({
+                        id: `${rp.player.playerBasicInfo.summonerName}-${rp.player.playerBasicInfo.summonerTag}-${rp.player.playerBasicInfo.region}-${rp.playerId}`,
+                        playerId: rp.playerId,
+                        summonerName: rp.player.playerBasicInfo.summonerName,
+                        summonerTag: rp.player.playerBasicInfo.summonerTag,
+                        region: rp.player.playerBasicInfo.region
+                    }));
+                    
+                    const sortedPlayers = sortPlayersByRank(loadedPlayers, data);
+                    setPlayers(sortedPlayers);
+                }
+            }
+        } catch (error) {
+            console.error("Error refreshing race data:", error);
+            alert("An error occurred while refreshing. Please try again.");
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownToggleRef.current && !dropdownToggleRef.current.contains(event.target as Node) && dropdownListRef.current && !dropdownListRef.current.contains(event.target as Node)) {
@@ -377,13 +525,17 @@ const RaceDetail: React.FC = () => {
                                         {race?.title || `Race ${raceId}`}
                                     </h1>
                                     <button
-                                        onClick={() => {
-                                            // TODO: Implement refresh
-                                            console.log("Refresh clicked");
-                                        }}
-                                        className="px-4 py-2 bg-neutral-800 text-white rounded hover:bg-neutral-700 transition-colors cursor-pointer"
+                                        onClick={handleRefresh}
+                                        disabled={isRefreshing}
+                                        className={`px-4 py-2 bg-neutral-800 text-white rounded transition-colors flex items-center gap-2 ${isRefreshing ? 'opacity-75 cursor-not-allowed' : 'hover:bg-neutral-700 cursor-pointer'}`}
                                     >
-                                        Refresh
+                                        {isRefreshing && (
+                                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        )}
+                                        {isRefreshing ? 'Refreshing...' : 'Refresh'}
                                     </button>
                                 </div>
                                 {race?.endingOn && (
@@ -420,11 +572,47 @@ const RaceDetail: React.FC = () => {
                                     );
                                     const playerData = racePlayer?.player;
                                     
+                                    let position = index + 1;
+                                    if (index > 0) {
+                                        const prevPlayer = players[index - 1];
+                                        const prevRacePlayer = race?.racePlayers?.find(rp => 
+                                            rp.player.playerBasicInfo.summonerName === prevPlayer.summonerName &&
+                                            rp.player.playerBasicInfo.summonerTag === prevPlayer.summonerTag &&
+                                            rp.player.playerBasicInfo.region === prevPlayer.region
+                                        );
+                                        
+                                        const currentRank = playerData?.rank;
+                                        const currentLP = playerData?.leaguePoints ?? 0;
+                                        const prevRank = prevRacePlayer?.player.rank;
+                                        const prevLP = prevRacePlayer?.player.leaguePoints ?? 0;
+                                        
+                                        if (currentRank === prevRank && currentLP === prevLP) {
+                                            let prevIndex = index - 1;
+                                            while (prevIndex > 0) {
+                                                const beforePlayer = players[prevIndex - 1];
+                                                const beforeRacePlayer = race?.racePlayers?.find(rp => 
+                                                    rp.player.playerBasicInfo.summonerName === beforePlayer.summonerName &&
+                                                    rp.player.playerBasicInfo.summonerTag === beforePlayer.summonerTag &&
+                                                    rp.player.playerBasicInfo.region === beforePlayer.region
+                                                );
+                                                const beforeRank = beforeRacePlayer?.player.rank;
+                                                const beforeLP = beforeRacePlayer?.player.leaguePoints ?? 0;
+                                                
+                                                if (beforeRank === currentRank && beforeLP === currentLP) {
+                                                    prevIndex--;
+                                                } else {
+                                                    break;
+                                                }
+                                            }
+                                            position = prevIndex + 1;
+                                        }
+                                    }
+                                    
                                     return (
                                         <div key={player.id} className="border border-neutral-300 rounded overflow-hidden">
                                             <div className="flex items-center bg-neutral-100 p-4">
                                                 <div className="flex items-center gap-4 flex-1">
-                                                    <span className="text-lg font-semibold text-neutral-500">#{index + 1}</span>
+                                                    <span className="text-lg font-semibold text-neutral-500">#{position}</span>
                                                     {playerData?.mostPlayedRole && (
                                                         <img 
                                                             src={`https://dpm.lol/position/${playerData.mostPlayedRole.toUpperCase()}.svg`}
@@ -736,17 +924,6 @@ const RaceDetail: React.FC = () => {
                         <p className="text-center mt-0 mb-4">
                             {isAddingPlayer ? "Fetching player data..." : "Select region and enter summoner name"}
                         </p>
-                        {isAddingPlayer && (
-                            <div className="flex justify-center mb-4">
-                                <div className="flex items-center gap-2 text-purple-700">
-                                    <svg className="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span className="font-medium">Please wait, this may take a moment...</span>
-                                </div>
-                            </div>
-                        )}
                         <div className="flex flex-col">
                             <div className="mb-4 relative">
                                 <label className="font-medium mb-1 block">Region</label>
