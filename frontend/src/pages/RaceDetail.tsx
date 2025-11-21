@@ -782,7 +782,7 @@ const RaceDetail: React.FC = () => {
                                                                                             <SummonerSpellImage spellId={participant.summoner1Id} classes="h-6" />
                                                                                             <SummonerSpellImage spellId={participant.summoner2Id} classes="h-6" />
                                                                                         </div>
-                                                                                        {participant.perks.styles[0] ? (
+                                                                                        {participant.perks.styles[0].style ? (
                                                                                             <div className="flex flex-col gap-0.5">
                                                                                                 <RuneImage runeTypeId={participant.perks.styles[0].style} runeId={participant.perks.styles[0].selections[0].perk} classes="h-6" />
                                                                                                 <RuneImage runeTypeId={participant.perks.styles[1].style} classes="h-6" />
