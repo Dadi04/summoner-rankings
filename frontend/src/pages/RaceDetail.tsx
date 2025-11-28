@@ -13,6 +13,7 @@ import blueKaynIcon from "../assets/blue-kayn-icon.png";
 import redKaynIcon from "../assets/red-kayn-icon.png";
 
 import queueJson from "../assets/json/queues.json";
+import { playerCache, generateCacheKey, dispatchPlayerCacheUpdate } from "../utils/playerCache";
 
 interface RegionItem {
     name: string;
@@ -441,6 +442,13 @@ const RaceDetail: React.FC = () => {
                         return false;
                     }
                     
+                    const newLiveData = await response.json();
+                    const summonerString = `${player.summonerName}-${player.summonerTag}`; 
+                    const cacheKey = generateCacheKey(player.region, summonerString);
+
+                    await playerCache.setItem(cacheKey, newLiveData);
+
+                    dispatchPlayerCacheUpdate(cacheKey, newLiveData);
                     return true;
                 } catch (error) {
                     console.error(`Error updating ${player.summonerName}#${player.summonerTag}:`, error);
@@ -745,10 +753,13 @@ const RaceDetail: React.FC = () => {
                                                                         }
                                                                         
                                                                         return (
-                                                                            <Link 
+                                                                            <div 
                                                                                 key={idx}
-                                                                                to={`/lol/profile/${player.region}/${player.summonerName}-${player.summonerTag}#${matchId}`}
-                                                                                className={`w-full grid grid-cols-[20%_35%_22.5%_22.5%] items-center ${participant.win ? "bg-[#28344E]" : "bg-[#59343B]"} hover:opacity-90 transition-opacity`}
+                                                                                className={`w-full grid grid-cols-[20%_35%_22.5%_22.5%] items-center ${participant.win ? "bg-[#28344E]" : "bg-[#59343B]"} hover:opacity-90 transition-opacity cursor-pointer`}
+                                                                                onClick={e => {
+                                                                                    if ((e.target as HTMLElement).closest('a')) return;
+                                                                                    navigate(`/lol/profile/${player.region}/${player.summonerName}-${player.summonerTag}#${matchId}`);
+                                                                                }}
                                                                             >
                                                                                 <div className="p-2">
                                                                                     <div className="w-[90%] border-b-2 border-neutral-400 p-2">
@@ -865,7 +876,7 @@ const RaceDetail: React.FC = () => {
                                                                                         </div>
                                                                                     ))}
                                                                                 </div>
-                                                                            </Link>
+                                                                            </div>
                                                                         );
                                                                     })}
                                                                 </div>

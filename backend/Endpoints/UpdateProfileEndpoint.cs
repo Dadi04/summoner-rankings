@@ -26,12 +26,16 @@ namespace backend.Endpoints {
                     return Results.NotFound();
                 }
 
+                var matchJsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 var allMatchesData = await dbContext.PlayerMatches
                     .AsNoTracking()
                     .Where(pm => pm.PlayerId == existingPlayer.Id)
-                    .OrderBy(pm => pm.MatchIndex)
-                    .Select(pm => JsonSerializer.Deserialize<LeagueMatchDto>(pm.MatchJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!)
+                    .Select(pm => JsonSerializer.Deserialize<LeagueMatchDto>(pm.MatchJson, matchJsonOptions)!)
                     .ToListAsync();
+
+                allMatchesData = allMatchesData
+                    .OrderByDescending(MatchSortingHelper.GetMatchEndUnixTime)
+                    .ToList();
                                                                     
                 var client = httpClientFactory.CreateClient();
                 
@@ -136,6 +140,7 @@ namespace backend.Endpoints {
                 var fetched = await Task.WhenAll(newMatchIds.Select(FetchMatchWithTimeline));
                 var newMatchesList = fetched
                     .Where(m => m?.details?.info?.participants?.Any() == true)
+                    .OrderByDescending(MatchSortingHelper.GetMatchEndUnixTime)
                     .ToList()!;
 
                 int rankedSoloQueueId = 420;
@@ -510,7 +515,7 @@ namespace backend.Endpoints {
                     .Concat(newMatchesList)
                     .GroupBy(m => m?.details.metadata.matchId)
                     .Select(g => g.First())
-                    .OrderByDescending(m => m?.details.info.gameStartTimestamp)
+                    .OrderByDescending(MatchSortingHelper.GetMatchEndUnixTime)
                     .ToList();
 
                 // odavde
@@ -688,17 +693,12 @@ namespace backend.Endpoints {
 
                 await Task.WhenAll(summonerTask, masteriesTask, totalMasteryScoreTask);
 
-                var lastIndex = await dbContext.PlayerMatches
-                    .Where(pm => pm.PlayerId == existingPlayer.Id)
-                    .Select(pm => (int?)pm.MatchIndex)
-                    .MaxAsync() ?? -1;
-                int nextIndex = lastIndex + 1;
                 foreach (var match in newMatchesList) {
                     var matchJson = JsonSerializer.Serialize(match);
                     dbContext.PlayerMatches.Add(new PlayerMatch {
                         PlayerId = existingPlayer.Id,
-                        MatchIndex = nextIndex++,
-                        MatchJson = matchJson
+                        MatchJson = matchJson,
+                        MatchEndTimestamp = MatchSortingHelper.GetMatchEndUnixTime(match)
                     });
                 }
 

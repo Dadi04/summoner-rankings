@@ -6,6 +6,7 @@ using System.Text.Json;
 using backend.Models;
 using backend.DTOs;
 using backend.Services;
+using backend.Utils;
 
 namespace backend.Endpoints {
     public static class RacesEndpoints {
@@ -100,14 +101,13 @@ namespace backend.Endpoints {
                     
                     var last5Matches = await db.PlayerMatches
                         .Where(pm => pm.PlayerId == player.Id)
-                        .OrderBy(pm => pm.MatchIndex)
+                        .OrderByDescending(pm => pm.MatchEndTimestamp)
                         .Take(5)
                         .Select(pm => JsonSerializer.Deserialize<LeagueMatchDto>(
                             pm.MatchJson,
-                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                        ))
+                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!)
                         .ToListAsync();
-                    
+
                     var playerDto = new PlayerInRaceDto {
                         Id = player.Id,
                         PlayerBasicInfo = new PlayerBasicInfoDto {

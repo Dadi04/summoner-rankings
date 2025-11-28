@@ -22,16 +22,16 @@ namespace backend.Endpoints {
                     .Include(p => p.PlayerBasicInfo)
                     .FirstOrDefaultAsync(p => p.PlayerBasicInfo.SummonerName == summonerName && p.PlayerBasicInfo.SummonerTag == summonerTag && p.PlayerBasicInfo.Region == region);
                 if (existingPlayer != null) {
-                    var pageMatches = await dbContext.PlayerMatches
+                    var matchJsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    var unsortedMatches = await dbContext.PlayerMatches
                         .AsNoTracking()
                         .Where(pm => pm.PlayerId == existingPlayer.Id)
-                        .OrderBy(pm => pm.MatchIndex)
-                        .Select(pm => JsonSerializer.Deserialize<LeagueMatchDto>(
-                                        pm.MatchJson,
-                                        new JsonSerializerOptions {
-                                            PropertyNameCaseInsensitive = true
-                                        })!)
+                        .Select(pm => JsonSerializer.Deserialize<LeagueMatchDto>(pm.MatchJson, matchJsonOptions)!)
                         .ToListAsync();
+
+                    var pageMatches = unsortedMatches
+                        .OrderByDescending(MatchSortingHelper.GetMatchEndUnixTime)
+                        .ToList();
 
                     var existingPlayerBasicInfoDto = new PlayerBasicInfoDto {
                         SummonerName = existingPlayer.PlayerBasicInfo.SummonerName,
@@ -176,6 +176,7 @@ namespace backend.Endpoints {
                 var allMatchesDataList = (await Task.WhenAll(fetchTasks))
                     .Where(m => m != null)
                     .Cast<LeagueMatchDto>()
+                    .OrderByDescending(MatchSortingHelper.GetMatchEndUnixTime)
                     .ToList();
 
                 // odavde
@@ -604,11 +605,11 @@ namespace backend.Endpoints {
                 dbContext.Players.Add(player);
                 await dbContext.SaveChangesAsync();  
 
-                for (int i = 0; i < allMatchesDataList.Count; i++) {
+                foreach (var match in allMatchesDataList) {
                     dbContext.PlayerMatches.Add(new PlayerMatch {
                         PlayerId = player.Id,
-                        MatchIndex = i,
-                        MatchJson = JsonSerializer.Serialize(allMatchesDataList[i])
+                        MatchJson = JsonSerializer.Serialize(match),
+                        MatchEndTimestamp = MatchSortingHelper.GetMatchEndUnixTime(match)
                     });
                 }
                 await dbContext.SaveChangesAsync();   

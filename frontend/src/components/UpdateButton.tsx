@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { playerCache, generateCacheKey, dispatchPlayerCacheUpdate } from "../utils/playerCache";
 
 const UpdateButton: React.FC<{regionCode: string; encodedSummoner: string; api: string; buttonText: string; setData: React.Dispatch<React.SetStateAction<any>>;}> = ({regionCode, encodedSummoner, api, buttonText, setData}) => {
     const [cooldown, setCooldown] = useState(false);
@@ -51,6 +52,13 @@ const UpdateButton: React.FC<{regionCode: string; encodedSummoner: string; api: 
             } else {
                 const newLiveData = await response.json();
                 setData(newLiveData);
+                
+                const decoded = decodeURIComponent(encodedSummoner);
+                const cacheKey = generateCacheKey(regionCode, decoded);
+
+                await playerCache.setItem(cacheKey, newLiveData);
+
+                dispatchPlayerCacheUpdate(cacheKey, newLiveData);
                 navigate(`/lol/profile/${regionCode}/${encodedSummoner}`);
             }
         } catch (error) {

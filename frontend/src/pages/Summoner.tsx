@@ -363,6 +363,20 @@ const Summoner: React.FC = () => {
         }
     }, [apiData, pageMatches]);
 
+    useEffect(() => {
+        const handler = (e: Event) => {
+            const ev = e as CustomEvent<{ cacheKey: string, data: any }>;
+            if (!ev?.detail) return;
+            const { cacheKey: updatedKey, data } = ev.detail;
+            if (updatedKey === cacheKey) {
+                setApiData(data);
+            }
+        };
+
+        window.addEventListener("playerCacheUpdated", handler as EventListener);
+        return () => window.removeEventListener("playerCacheUpdated", handler as EventListener);
+    }, [cacheKey]);
+
     if (loading || !apiData) {
         return <div className="w-full flex justify-center mt-[125px] mb-[195px]"><DotLottieReact src={loadingAnimation} className="w-[600px] bg-transparent" loop autoplay /></div>
     }

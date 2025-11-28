@@ -42,9 +42,6 @@ namespace backend.Services {
             modelBuilder.Entity<Race>().HasIndex(r => new { r.UserId, r.IsPublic });
             modelBuilder.Entity<RacePlayer>().HasIndex(rp => rp.PlayerId);
 
-            modelBuilder.Entity<PlayerMatch>()
-                .HasIndex(pm => new { pm.PlayerId, pm.MatchIndex })
-                .HasDatabaseName("IX_PlayerMatches_PlayerId_MatchIndex");
             modelBuilder.Entity<Favorite>()
                 .HasIndex(f => new { f.UserId, f.SummonerName, f.Region })
                 .IsUnique();

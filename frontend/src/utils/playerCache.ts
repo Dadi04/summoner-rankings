@@ -142,3 +142,17 @@ class PlayerCacheDB {
 
 export const playerCache = new PlayerCacheDB();
 
+export function generateCacheKey(region: string, summonerOrName: string, summonerTag?: string) {
+    if (summonerTag) {
+        return `summoner_${region}_${summonerOrName}-${summonerTag}`;
+    }
+    return `summoner_${region}_${summonerOrName}`;
+}
+
+export function dispatchPlayerCacheUpdate(cacheKey: string, data: any) {
+    try {
+        window.dispatchEvent(new CustomEvent("playerCacheUpdated", { detail: { cacheKey, data } }));
+    } catch (e) {
+        console.log(e)
+    }
+}
