@@ -245,7 +245,7 @@ const MatchDetails: React.FC<{info: MatchDetailsInfo, timeline: any, selectedPla
                                                 placement="top"
                                             >
                                                 <div>
-                                                    <ItemImage itemId={item.itemId} classes={item.type === "ITEM_SOLD" ? "h-10 filter grayscale brightness-70" : "h-10"} />
+                                                    <ItemImage itemId={item.itemId} classes={item.type === "ITEM_SOLD" ? "w-10 h-10 filter grayscale brightness-70" : "w-10 h-10"} />
                                                     {item.type === "ITEM_SOLD" && (
                                                         <svg className="absolute bottom-0 left-0 h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                             <line x1="4" y1="4" x2="20" y2="20" stroke="red" strokeWidth="3" />

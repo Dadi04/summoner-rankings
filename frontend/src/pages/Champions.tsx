@@ -709,7 +709,7 @@ const Champions: React.FC = () => {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="grid grid-cols-[0.5%_19.5%_7%_10%_10%_8%_8%_8%_8%_8%_8%_5%] text-center p-2">
+                                                <div className="grid grid-cols-[0.5%_19.5%_12%_5%_10%_8%_8%_8%_8%_8%_8%_5%] text-center p-2">
                                                     <p></p>
                                                     {sortFields.map(({label, key}) => {
                                                         const isActive = secondarySortBy?.key === key;

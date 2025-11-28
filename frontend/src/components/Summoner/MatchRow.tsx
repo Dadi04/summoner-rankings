@@ -225,7 +225,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                             placement="top"
                         >
                             <div>
-                                <ItemImage itemId={participant.item0} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item0} matchWon={participant.win} classes="w-8 h-8" />
                             </div>
                         </Tippy>
                         <Tippy
@@ -242,7 +242,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                             placement="top"
                         >
                             <div>
-                                <ItemImage itemId={participant.item1} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item1} matchWon={participant.win} classes="w-8 h-8" />
                             </div>
                         </Tippy>
                         <Tippy
@@ -259,7 +259,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                             placement="top"
                         >
                             <div>
-                                <ItemImage itemId={participant.item2} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item2} matchWon={participant.win} classes="w-8 h-8" />
                             </div>
                         </Tippy>
                         <Tippy
@@ -276,7 +276,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                             placement="top"
                         >
                             <div>
-                                <ItemImage itemId={participant.item3} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item3} matchWon={participant.win} classes="w-8 h-8" />
                             </div>
                         </Tippy>
                         <Tippy
@@ -293,7 +293,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                             placement="top"
                         >
                             <div>
-                                <ItemImage itemId={participant.item4} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item4} matchWon={participant.win} classes="w-8 h-8" />
                             </div>
                         </Tippy>
                         <Tippy
@@ -310,7 +310,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                             placement="top"
                         >
                             <div>
-                                <ItemImage itemId={participant.item5} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item5} matchWon={participant.win} classes="w-8 h-8" />
                             </div>
                         </Tippy>
                         <Tippy
@@ -327,7 +327,7 @@ const MatchRow: React.FC<{info: MatchDetailsInfo; timelineJson: string; items: a
                             placement="top"
                         >
                             <div>
-                                <ItemImage itemId={participant.item6} matchWon={participant.win} classes="h-8" />
+                                <ItemImage itemId={participant.item6} matchWon={participant.win} classes="w-8 h-8" />
                             </div>
                         </Tippy>
                     </div>

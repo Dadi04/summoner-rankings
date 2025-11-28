@@ -288,7 +288,7 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                                         <p className="text-sm text-gray-200">{info.participants[event.participantId-1].riotIdGameName}</p>
                                                     </div>
                                                     <p className="text-sm text-white">purchased</p>
-                                                    <ItemImage itemId={event.itemId} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
+                                                    <ItemImage itemId={event.itemId} matchWon={info.participants[event.participantId-1].win} classes="w-10 h-10" />
                                                     <p className="text-sm text-gray-200">{items[event.itemId]?.name || "Unknown Item"}</p>
                                                 </div>
                                             </div>
@@ -318,7 +318,7 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                                     </div>
                                                     <p className="text-sm text-white">sold</p>
                                                     <div className="relative">
-                                                        <ItemImage itemId={event.itemId} matchWon={info.participants[event.participantId-1].win} classes="h-10 filter grayscale brightness-70" />
+                                                        <ItemImage itemId={event.itemId} matchWon={info.participants[event.participantId-1].win} classes="w-10 h-10 filter grayscale brightness-70" />
                                                         <svg className="absolute bottom-0 left-0 h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                             <line x1="4" y1="4" x2="20" y2="20" stroke="red" strokeWidth="3" />
                                                             <line x1="20" y1="4" x2="4" y2="20" stroke="red" strokeWidth="3" />
@@ -354,42 +354,42 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                                     {event.itemId === 3003 && (
                                                         <>  
                                                             <p className="text-sm text-white">completed a quest for</p>
-                                                            <ItemImage itemId={3040} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
+                                                            <ItemImage itemId={3040} matchWon={info.participants[event.participantId-1].win} classes="w-10 h-10" />
                                                             <p className="text-sm text-gray-200">Seraph's Embrace</p>
                                                         </>
                                                     )}
                                                     {event.itemId === 3004 && (
                                                         <>  
                                                             <p className="text-sm text-white">completed a quest for</p>
-                                                            <ItemImage itemId={3042} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
+                                                            <ItemImage itemId={3042} matchWon={info.participants[event.participantId-1].win} classes="w-10 h-10" />
                                                             <p className="text-sm text-gray-200">Muramana</p>
                                                         </>
                                                     )}
                                                     {event.itemId === 3119 && (
                                                         <>  
                                                             <p className="text-sm text-white">completed a quest for</p>
-                                                            <ItemImage itemId={3121} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
+                                                            <ItemImage itemId={3121} matchWon={info.participants[event.participantId-1].win} classes="w-10 h-10" />
                                                             <p className="text-sm text-gray-200">Fimbulwinter</p>
                                                         </>
                                                     )}
                                                     {event.itemId === 3865 && (
                                                         <>  
                                                             <p className="text-sm text-white">completed a quest for</p>
-                                                            <ItemImage itemId={event.itemId+1} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
+                                                            <ItemImage itemId={event.itemId+1} matchWon={info.participants[event.participantId-1].win} classes="w-10 h-10" />
                                                             <p className="text-sm text-gray-200">Runic Compass</p>
                                                         </>
                                                     )}
                                                     {event.itemId === 3866 && (
                                                         <>
                                                             <p className="text-sm text-white">completed a quest for</p>
-                                                            <ItemImage itemId={event.itemId+1} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
+                                                            <ItemImage itemId={event.itemId+1} matchWon={info.participants[event.participantId-1].win} classes="w-10 h-10" />
                                                             <p className="text-sm text-gray-200">Bounty of Worlds</p>
                                                         </>
                                                     )}
                                                     {event.itemId === 3867 && (
                                                         <>
                                                             <p className="text-sm text-white">chose</p>
-                                                            <ItemImage itemId={info.participants[event.participantId-1].teamId === 100 ? blueTeamSupportItemId : redTeamSupportItemId} matchWon={info.participants[event.participantId-1].win} classes="h-10" />
+                                                            <ItemImage itemId={info.participants[event.participantId-1].teamId === 100 ? blueTeamSupportItemId : redTeamSupportItemId} matchWon={info.participants[event.participantId-1].win} classes="w-10 h-10" />
                                                             <p className="text-sm text-gray-200">{items[info.participants[event.participantId-1].teamId === 100 ? blueTeamSupportItemId : redTeamSupportItemId]?.name || "Unknown Item"}</p>
                                                         </>
                                                     )}
@@ -422,19 +422,19 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                                     <p className="text-sm text-white">placed</p>
                                                     {event.wardType === "YELLOW_TRINKET" && (
                                                         <>
-                                                            <ItemImage itemId={3340} matchWon={info.participants[event.creatorId-1].win} classes="h-10" />
+                                                            <ItemImage itemId={3340} matchWon={info.participants[event.creatorId-1].win} classes="w-10 h-10" />
                                                             <p className="text-sm text-gray-200">Stealth Ward</p>
                                                         </>
                                                     )}
                                                     {event.wardType === "CONTROL_WARD" && (
                                                         <>
-                                                            <ItemImage itemId={2055} matchWon={info.participants[event.creatorId-1].win} classes="h-10" />
+                                                            <ItemImage itemId={2055} matchWon={info.participants[event.creatorId-1].win} classes="w-10 h-10" />
                                                             <p className="text-sm text-gray-200">Control Ward</p>
                                                         </>
                                                     )}
                                                     {event.wardType === "BLUE_TRINKET" && (
                                                         <>
-                                                            <ItemImage itemId={3363} matchWon={info.participants[event.creatorId-1].win} classes="h-10" />
+                                                            <ItemImage itemId={3363} matchWon={info.participants[event.creatorId-1].win} classes="w-10 h-10" />
                                                             <p className="text-sm text-gray-200">Farsight Alteration</p>
                                                         </>
                                                     )}
@@ -456,7 +456,7 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
 
                                                         return (
                                                             <>
-                                                                <ItemImage itemId={displayItem.itemId} matchWon={player.win} classes="h-10" />
+                                                                <ItemImage itemId={displayItem.itemId} matchWon={player.win} classes="w-10 h-10" />
                                                                 <p className="text-sm text-gray-200">
                                                                     {items[displayItem.itemId]?.name || "Unknown Item"} Ward
                                                                 </p>
@@ -492,19 +492,19 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
                                                     <p className="text-sm text-white">destroyed</p>
                                                     {event.wardType === "YELLOW_TRINKET" && (
                                                         <>
-                                                            <ItemImage itemId={3340} matchWon={info.participants[event.killerId-1].win} classes="h-10" />
+                                                            <ItemImage itemId={3340} matchWon={info.participants[event.killerId-1].win} classes="w-10 h-10" />
                                                             <p className="text-sm text-gray-200">Stealth Ward</p>
                                                         </>
                                                     )}
                                                     {event.wardType === "CONTROL_WARD" && (
                                                         <>
-                                                            <ItemImage itemId={2055} matchWon={info.participants[event.killerId-1].win} classes="h-10" />
+                                                            <ItemImage itemId={2055} matchWon={info.participants[event.killerId-1].win} classes="w-10 h-10" />
                                                             <p className="text-sm text-gray-200">Control Ward</p>
                                                         </>
                                                     )}
                                                     {event.wardType === "BLUE_TRINKET" && (
                                                         <>
-                                                            <ItemImage itemId={3363} matchWon={info.participants[event.killerId-1].win} classes="h-10" />
+                                                            <ItemImage itemId={3363} matchWon={info.participants[event.killerId-1].win} classes="w-10 h-10" />
                                                             <p className="text-sm text-gray-200">Farsight Alteration</p>
                                                         </>
                                                     )}
@@ -527,7 +527,7 @@ const MatchTimeline: React.FC<{timeline: any; info: MatchDetailsInfo; selectedPl
 
                                                         return (
                                                             <>
-                                                                <ItemImage itemId={displayItem.itemId} matchWon={player.win} classes="h-10" />
+                                                                <ItemImage itemId={displayItem.itemId} matchWon={player.win} classes="w-10 h-10" />
                                                                 <p className="text-sm text-gray-200">
                                                                     {items[displayItem.itemId]?.name || "Unknown Item"} Ward
                                                                 </p>
