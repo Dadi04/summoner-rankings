@@ -183,7 +183,7 @@ const ProfileHeader: React.FC<{data: Player; regionCode: string; encodedSummoner
                         <p className="p-2">Ladder Rank TODO</p>
                     </div>
                     <div className="text-neutral-50">
-                        <UpdateButton regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setData} />
+                        <UpdateButton classes={`font-medium rounded-lg text-sm px-5 py-2.5 bg-purple-700 hover:bg-purple-800`} regionCode={regionCode} encodedSummoner={encodedSummoner} api={`/api/lol/profile/${regionCode}/${encodedSummoner}/update`} buttonText={"Update"} setData={setData} />
                         <p>Last updated: {lastUpdated} {timeUnit}</p>
                     </div>
                 </div>

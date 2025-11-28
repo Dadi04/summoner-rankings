@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
 import { ChampionImage } from "../components/ChampionData";
@@ -14,6 +14,7 @@ import redKaynIcon from "../assets/red-kayn-icon.png";
 
 import queueJson from "../assets/json/queues.json";
 import { playerCache, generateCacheKey, dispatchPlayerCacheUpdate } from "../utils/playerCache";
+import UpdateButton from "../components/UpdateButton";
 
 interface RegionItem {
     name: string;
@@ -245,44 +246,63 @@ const RaceDetail: React.FC = () => {
     const dropdownToggleRef = useRef<HTMLDivElement>(null);
     const dropdownListRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const fetchRace = async () => {
-            try {
-                const token = localStorage.getItem("jwt");
-                const response = await fetch(`/api/races/${raceId}`, {
-                    headers: {
-                        "Authorization": `Bearer ${token}`,
-                    },
-                });
+    const updateRaceState = useCallback((data: Race) => {
+        setRace(data);
 
-                if (response.ok) {
-                    const data = await response.json();
-                    setRace(data);
-                    
-                    if (data.racePlayers && data.racePlayers.length > 0) {
-                        const loadedPlayers = data.racePlayers.map((rp: RacePlayer) => ({
-                            id: `${rp.player.playerBasicInfo.summonerName}-${rp.player.playerBasicInfo.summonerTag}-${rp.player.playerBasicInfo.region}-${rp.playerId}`,
-                            playerId: rp.playerId,
-                            summonerName: rp.player.playerBasicInfo.summonerName,
-                            summonerTag: rp.player.playerBasicInfo.summonerTag,
-                            region: rp.player.playerBasicInfo.region
-                        }));
-                        
-                        const sortedPlayers = sortPlayersByRank(loadedPlayers, data);
-                        setPlayers(sortedPlayers);
-                    }
-                }
-            } catch (error) {
-                console.error("Error fetching race:", error);
+        if (data.racePlayers && data.racePlayers.length > 0) {
+            const loadedPlayers = data.racePlayers.map((rp: RacePlayer) => ({
+                id: `${rp.player.playerBasicInfo.summonerName}-${rp.player.playerBasicInfo.summonerTag}-${rp.player.playerBasicInfo.region}-${rp.playerId}`,
+                playerId: rp.playerId,
+                summonerName: rp.player.playerBasicInfo.summonerName,
+                summonerTag: rp.player.playerBasicInfo.summonerTag,
+                region: rp.player.playerBasicInfo.region
+            }));
+
+            const sortedPlayers = sortPlayersByRank(loadedPlayers, data);
+            setPlayers(sortedPlayers);
+        } else {
+            setPlayers([]);
+        }
+    }, [setRace, setPlayers]);
+
+    const refreshRaceData = useCallback(async () => {
+        if (!raceId) return;
+
+        try {
+            const token = localStorage.getItem("jwt");
+            const response = await fetch(`/api/races/${raceId}`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                updateRaceState(data);
+            }
+        } catch (error) {
+            console.error("Error fetching race:", error);
+        }
+    }, [raceId, updateRaceState]);
+
+    const handlePlayerUpdateSuccess = useCallback(async () => {
+        await refreshRaceData();
+    }, [refreshRaceData]);
+
+    useEffect(() => {
+        if (!raceId) return;
+
+        const loadRace = async () => {
+            setIsLoading(true);
+            try {
+                await refreshRaceData();
             } finally {
                 setIsLoading(false);
             }
         };
 
-        if (raceId) {
-            fetchRace();
-        }
-    }, [raceId]);
+        loadRace();
+    }, [raceId, refreshRaceData]);
 
     const handleBack = () => {
         navigate(`/races/${type}`);
@@ -357,20 +377,7 @@ const RaceDetail: React.FC = () => {
 
             if (raceResponse.ok) {
                 const data = await raceResponse.json();
-                setRace(data);
-                
-                if (data.racePlayers && data.racePlayers.length > 0) {
-                    const loadedPlayers = data.racePlayers.map((rp: RacePlayer) => ({
-                        id: `${rp.player.playerBasicInfo.summonerName}-${rp.player.playerBasicInfo.summonerTag}-${rp.player.playerBasicInfo.region}-${rp.playerId}`,
-                        playerId: rp.playerId,
-                        summonerName: rp.player.playerBasicInfo.summonerName,
-                        summonerTag: rp.player.playerBasicInfo.summonerTag,
-                        region: rp.player.playerBasicInfo.region
-                    }));
-                    
-                    const sortedPlayers = sortPlayersByRank(loadedPlayers, data);
-                    setPlayers(sortedPlayers);
-                }
+                updateRaceState(data);
             }
 
             setShowAddPlayerDialog(false);
@@ -457,31 +464,7 @@ const RaceDetail: React.FC = () => {
             });
             
             await Promise.all(updatePromises);
-            
-            const token = localStorage.getItem("jwt");
-            const response = await fetch(`/api/races/${raceId}`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                },
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setRace(data);
-                
-                if (data.racePlayers && data.racePlayers.length > 0) {
-                    const loadedPlayers = data.racePlayers.map((rp: RacePlayer) => ({
-                        id: `${rp.player.playerBasicInfo.summonerName}-${rp.player.playerBasicInfo.summonerTag}-${rp.player.playerBasicInfo.region}-${rp.playerId}`,
-                        playerId: rp.playerId,
-                        summonerName: rp.player.playerBasicInfo.summonerName,
-                        summonerTag: rp.player.playerBasicInfo.summonerTag,
-                        region: rp.player.playerBasicInfo.region
-                    }));
-                    
-                    const sortedPlayers = sortPlayersByRank(loadedPlayers, data);
-                    setPlayers(sortedPlayers);
-                }
-            }
+            await refreshRaceData();
         } catch (error) {
             console.error("Error refreshing race data:", error);
             alert("An error occurred while refreshing. Please try again.");
@@ -888,12 +871,23 @@ const RaceDetail: React.FC = () => {
                                                         <div className="flex-[40%]">
                                                             <div className="flex items-center justify-between mb-4">
                                                                 <h3 className="text-lg font-semibold">LP Progress</h3>
-                                                                <Link
-                                                                    to={`/compare/${player.region}-${player.summonerName}-${player.summonerTag}/`}
-                                                                    className="px-3 py-1 bg-purple-700 text-white text-sm rounded hover:bg-purple-600 transition-colors"
-                                                                >
-                                                                    Compare With
-                                                                </Link>
+                                                                <div className="flex items-center gap-2">
+                                                                    <UpdateButton
+                                                                        regionCode={player.region}
+                                                                        encodedSummoner={`${player.summonerName}-${player.summonerTag}`}
+                                                                        api={`/api/lol/profile/${player.region}/${player.summonerName}-${player.summonerTag}/update`}
+                                                                        buttonText="Refresh"
+                                                                        shouldNavigate={false}
+                                                                        onSuccess={handlePlayerUpdateSuccess}
+                                                                        classes={`px-3 py-1 bg-purple-700 text-sm rounded hover:bg-purple-600 transition-colors`}
+                                                                    />
+                                                                    <Link
+                                                                        to={`/compare/${player.region}-${player.summonerName}-${player.summonerTag}/`}
+                                                                        className="px-3 py-1 bg-purple-700 text-white text-sm rounded hover:bg-purple-600 transition-colors"
+                                                                    >
+                                                                        Compare With
+                                                                    </Link>
+                                                                </div>
                                                             </div>
                                                             <div className="bg-neutral-100 rounded p-8 text-center border-2 border-dashed border-neutral-300">
                                                                 <svg className="mx-auto h-16 w-16 text-neutral-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1014,7 +1008,7 @@ const RaceDetail: React.FC = () => {
                 <div onClick={() => setShowEndRaceDialog(false)} className="fixed inset-0 flex items-center justify-center bg-black/90 z-150">
                     <div onClick={(e) => e.stopPropagation()} className="bg-white py-6 px-5 rounded-lg shadow-lg relative w-100">
                         <div className="p-2 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-gray-100 active:outline">
-                            <img onClick={() => setShowEndRaceDialog(false)} src={close} alt="close.png" className="h-4" />e
+                            <img onClick={() => setShowEndRaceDialog(false)} src={close} alt="close.png" className="h-4" />
                         </div>
                         
                         <div className="flex justify-center mt-6 mb-4">

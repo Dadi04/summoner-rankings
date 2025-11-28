@@ -2,7 +2,27 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { playerCache, generateCacheKey, dispatchPlayerCacheUpdate } from "../utils/playerCache";
 
-const UpdateButton: React.FC<{regionCode: string; encodedSummoner: string; api: string; buttonText: string; setData: React.Dispatch<React.SetStateAction<any>>;}> = ({regionCode, encodedSummoner, api, buttonText, setData}) => {
+interface UpdateButtonProps {
+    regionCode: string;
+    encodedSummoner: string;
+    api: string;
+    buttonText: string;
+    setData?: React.Dispatch<React.SetStateAction<any>>;
+    onSuccess?: (data: any) => void | Promise<void>;
+    shouldNavigate?: boolean;
+    classes?: string;
+}
+
+const UpdateButton: React.FC<UpdateButtonProps> = ({
+    regionCode,
+    encodedSummoner,
+    api,
+    buttonText,
+    setData,
+    onSuccess,
+    shouldNavigate = true,
+    classes,
+}) => {
     const [cooldown, setCooldown] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [remainingTime, setRemainingTime] = useState(0);
@@ -51,7 +71,7 @@ const UpdateButton: React.FC<{regionCode: string; encodedSummoner: string; api: 
                 console.error("API Error:", response.statusText);
             } else {
                 const newLiveData = await response.json();
-                setData(newLiveData);
+                setData?.(newLiveData);
                 
                 const decoded = decodeURIComponent(encodedSummoner);
                 const cacheKey = generateCacheKey(regionCode, decoded);
@@ -59,7 +79,12 @@ const UpdateButton: React.FC<{regionCode: string; encodedSummoner: string; api: 
                 await playerCache.setItem(cacheKey, newLiveData);
 
                 dispatchPlayerCacheUpdate(cacheKey, newLiveData);
-                navigate(`/lol/profile/${regionCode}/${encodedSummoner}`);
+                if (onSuccess) {
+                    await onSuccess(newLiveData);
+                }
+                if (shouldNavigate) {
+                    navigate(`/lol/profile/${regionCode}/${encodedSummoner}`);
+                }
             }
         } catch (error) {
             console.error("Fetch failed:", error);
@@ -77,8 +102,7 @@ const UpdateButton: React.FC<{regionCode: string; encodedSummoner: string; api: 
         <button 
             onClick={handleClick} 
             disabled={cooldown} 
-            className={`focus:outline-none text-white font-medium rounded-lg text-sm px-5 py-2.5 
-                ${cooldown || isLoading ? "bg-gray-500 cursor-not-allowed brightness-70" : "bg-purple-700 hover:bg-purple-800"} focus:ring-4 focus:ring-purple-300`}>
+            className={`${classes} focus:outline-none text-white ${cooldown || isLoading ? "bg-gray-500 cursor-not-allowed brightness-70" : "cursor-pointer"}`}>
             {isLoading ? (
                 <span className="flex items-center">
                     <svg 
