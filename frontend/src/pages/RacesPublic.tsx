@@ -141,20 +141,16 @@ const RacesPublic: React.FC = () => {
     return (
         <>
             <div className="max-w-4xl mx-auto">
-                <div className="flex justify-end mb-6">
-                    <button
-                        onClick={() => isAdmin && setShowDialog(true)}
-                        disabled={!isAdmin}
-                        className={`px-6 py-3 font-semibold rounded-lg transition-colors duration-300 ${
-                            isAdmin
-                                ? "bg-neutral-800 text-white hover:bg-neutral-700 cursor-pointer"
-                                : "bg-neutral-300 text-neutral-500 cursor-not-allowed"
-                        }`}
-                        title={!isAdmin ? "Only administrators can create public races" : "Create new public race"}
-                    >
-                        Add New
-                    </button>
-                </div>
+                {isAdmin && (
+                    <div className="flex justify-end mb-6">
+                        <button
+                            onClick={() => setShowDialog(true)}
+                            className="px-6 py-3 bg-neutral-800 text-white font-semibold rounded-lg hover:bg-neutral-700 transition-colors duration-300 cursor-pointer"
+                        >
+                            Add New
+                        </button>
+                    </div>
+                )}
                 {isLoading ? (
                     <div className="bg-white border-2 border-neutral-300 rounded-lg p-12 text-center">
                         <div className="flex justify-center mb-4">
@@ -219,7 +215,7 @@ const RacesPublic: React.FC = () => {
             {showDialog && (
                 <div onClick={() => setShowDialog(false)} className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
                     <div onClick={(e) => e.stopPropagation()} className="bg-white py-6 px-5 rounded-lg shadow-lg relative max-w-md w-full mx-4">
-                        <div className="p-2 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-gray-100">
+                        <div className="px-2 pt-2 pb-0.5 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-gray-100">
                             <button
                                 onClick={() => setShowDialog(false)}
                                 className="text-neutral-500 hover:text-neutral-800 transition-colors"
@@ -278,7 +274,7 @@ const RacesPublic: React.FC = () => {
             {showDeleteDialog && raceToDelete && (
                 <div onClick={() => setShowDeleteDialog(false)} className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
                     <div onClick={(e) => e.stopPropagation()} className="bg-white py-6 px-5 rounded-lg shadow-lg relative max-w-md w-full mx-4">
-                        <div className="p-2 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-gray-100">
+                        <div className="px-2 pt-2 pb-0.5 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-gray-100">
                             <button
                                 onClick={() => {
                                     setShowDeleteDialog(false);

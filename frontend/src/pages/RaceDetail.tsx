@@ -15,6 +15,7 @@ import redKaynIcon from "../assets/red-kayn-icon.png";
 import queueJson from "../assets/json/queues.json";
 import { playerCache, generateCacheKey, dispatchPlayerCacheUpdate } from "../utils/playerCache";
 import UpdateButton from "../components/UpdateButton";
+import { jwtDecode } from "jwt-decode";
 
 interface RegionItem {
     name: string;
@@ -242,6 +243,7 @@ const RaceDetail: React.FC = () => {
     const [showEndRaceDialog, setShowEndRaceDialog] = useState(false);
     const [isAddingPlayer, setIsAddingPlayer] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
     
     const dropdownToggleRef = useRef<HTMLDivElement>(null);
     const dropdownListRef = useRef<HTMLDivElement>(null);
@@ -288,6 +290,19 @@ const RaceDetail: React.FC = () => {
     const handlePlayerUpdateSuccess = useCallback(async () => {
         await refreshRaceData();
     }, [refreshRaceData]);
+
+    useEffect(() => {
+        const token = localStorage.getItem("jwt");
+        if (token) {
+            try {
+                const payload = jwtDecode<any>(token);
+                setIsAdmin(payload.isAdmin === true || payload.isAdmin === "True");
+            } catch (error) {
+                console.error("Failed to decode token:", error);
+                setIsAdmin(false);
+            }
+        }
+    }, []);
 
     useEffect(() => {
         if (!raceId) return;
@@ -347,6 +362,15 @@ const RaceDetail: React.FC = () => {
                 alert("You must be logged in to add players");
                 setIsAddingPlayer(false);
                 return;
+            }
+
+            if (type === "public" || race?.isPublic) {
+                const payload = jwtDecode<any>(token);
+                if (!payload.isAdmin) {
+                    alert("You must be administrator to add players to public races");
+                    setIsAddingPlayer(false);
+                    return;
+                }
             }
 
             const response = await fetch(`/api/races/${raceId}/players`, {
@@ -410,6 +434,14 @@ const RaceDetail: React.FC = () => {
             if (!token) {
                 alert("You must be logged in to remove players");
                 return;
+            }
+
+            if (type === "public" || race?.isPublic) {
+                const payload = jwtDecode<any>(token);
+                if (!payload.isAdmin) {
+                    alert("You must be administrator to remove players from public races");
+                    return;
+                }
             }
 
             const response = await fetch(`/api/races/${raceId}/players/${player.playerId}`, {
@@ -497,12 +529,14 @@ const RaceDetail: React.FC = () => {
                         >
                             ← Back to {type === "private" ? "My Races" : "Public Races"}
                         </button>
-                        <button
-                            onClick={() => setShowAddPlayerDialog(true)}
-                            className="px-6 py-2 bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 transition-colors duration-300 cursor-pointer"
-                        >
-                            Add a Player
-                        </button>
+                        {(type !== "public" || isAdmin) && (
+                            <button
+                                onClick={() => setShowAddPlayerDialog(true)}
+                                className="px-6 py-2 bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 transition-colors duration-300 cursor-pointer"
+                            >
+                                Add a Player
+                            </button>
+                        )}
                     </div>
                     <div className="max-w-8xl mx-auto bg-white border-2 border-neutral-300 rounded-lg p-8">
                         {isLoading ? (
@@ -661,16 +695,18 @@ const RaceDetail: React.FC = () => {
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-2 px-2">
-                                                    <button
-                                                        onClick={() => handleRemovePlayer(player)}
-                                                        className="text-red-600 hover:text-red-800 transition-colors p-1"
-                                                        aria-label="Remove player"
-                                                    >
-                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                            <line x1="18" y1="6" x2="6" y2="18" />
-                                                            <line x1="6" y1="6" x2="18" y2="18" />
-                                                        </svg>
-                                                    </button>
+                                                    {(type !== "public" || isAdmin) && (
+                                                        <button
+                                                            onClick={() => handleRemovePlayer(player)}
+                                                            className="text-red-600 hover:text-red-800 transition-colors p-1"
+                                                            aria-label="Remove player"
+                                                        >
+                                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <line x1="18" y1="6" x2="6" y2="18" />
+                                                                <line x1="6" y1="6" x2="18" y2="18" />
+                                                            </svg>
+                                                        </button>
+                                                    )}
                                                     <div 
                                                         onClick={() => setExpandedPlayerId(isExpanded ? null : player.id)}
                                                         className="cursor-pointer p-2 bg-neutral-200 hover:bg-neutral-300 rounded transition-colors"

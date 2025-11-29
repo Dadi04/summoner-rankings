@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
 import logolight from "../assets/logo-light.png";
 import close from "../assets/close.png";
 
 const NavBar: React.FC = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    
     const [showSignInForm, setShowSignInForm] = useState(false);
     const [showSignUpForm, setShowSignUpForm] = useState(false);
 
@@ -129,10 +132,22 @@ const NavBar: React.FC = () => {
     };
 
     const handleSignout = () => {
+        const currentUsername = username;
+        const currentPath = location.pathname;
+        
         localStorage.removeItem("jwt");
         setIsAuthenticated(false);
         setUsername(null);
         window.dispatchEvent(new Event("authStateChanged"));
+        
+        // temporary
+        const isOnPrivateRaces = currentPath === '/races/private' || currentPath.startsWith('/races/private/');
+        const isOnPublicRaces = currentPath === '/races/public' || currentPath.startsWith('/races/public/');
+        const isOnAccountPage = currentUsername && currentPath === `/${currentUsername}`;
+        
+        if (isOnPrivateRaces || isOnPublicRaces || isOnAccountPage) {
+            navigate('/', { replace: true });
+        }
     }
   
     return (

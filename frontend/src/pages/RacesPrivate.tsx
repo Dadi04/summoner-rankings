@@ -165,7 +165,7 @@ const RacesPrivate: React.FC = () => {
                 <div className="flex justify-end mb-6">
                     <button
                         onClick={() => setShowDialog(true)}
-                        className="px-6 py-3 bg-neutral-800 text-white font-semibold rounded-lg hover:bg-neutral-700 transition-colors duration-300"
+                        className="px-6 py-3 bg-neutral-800 text-white font-semibold rounded-lg hover:bg-neutral-700 transition-colors duration-300 cursor-pointer"
                     >
                         Add New
                     </button>
@@ -211,7 +211,7 @@ const RacesPrivate: React.FC = () => {
                                     </div>
                                     <button
                                         onClick={(e) => handleDeleteClick(e, race)}
-                                        className="ml-4 p-2 rounded-lg hover:bg-red-100 transition-colors group-hover:hover:bg-red-500"
+                                        className="ml-4 p-2 rounded-lg hover:bg-red-100 transition-colors group-hover:hover:bg-red-500 cursor-pointer"
                                         title="Delete race"
                                     >
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -229,10 +229,10 @@ const RacesPrivate: React.FC = () => {
             {showDialog && (
                 <div onClick={() => setShowDialog(false)} className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
                     <div onClick={(e) => e.stopPropagation()} className="bg-white py-6 px-5 rounded-lg shadow-lg relative max-w-md w-full mx-4">
-                        <div className="p-2 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-gray-100">
+                        <div className="px-2 pt-2 pb-0.5 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-gray-100">
                             <button
                                 onClick={() => setShowDialog(false)}
-                                className="text-neutral-500 hover:text-neutral-800 transition-colors"
+                                className="text-neutral-500 hover:text-neutral-800 transition-colors cursor-pointer"
                             >
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -288,7 +288,7 @@ const RacesPrivate: React.FC = () => {
             {showDeleteDialog && raceToDelete && (
                 <div onClick={() => setShowDeleteDialog(false)} className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
                     <div onClick={(e) => e.stopPropagation()} className="bg-white py-6 px-5 rounded-lg shadow-lg relative max-w-md w-full mx-4">
-                        <div className="p-2 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-gray-100">
+                        <div className="px-2 pt-2 pb-0.5 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-gray-100">
                             <button
                                 onClick={() => {
                                     setShowDeleteDialog(false);
