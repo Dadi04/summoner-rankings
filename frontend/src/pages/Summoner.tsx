@@ -31,6 +31,7 @@ import loadingAnimation from "../assets/animations/loading.lottie";
 import arrowDownLight from "../assets/arrow-down-light.png";
 import noneicon from "../assets/none.jpg";
 import arrowGoingUp from "../assets/arrow-going-up.png";
+import raceLight from "../assets/race-light.png";
 
 const roleLabels: { role: string; label: string }[] = [
     { role: "TOP", label: "Top" },
@@ -105,6 +106,7 @@ const Summoner: React.FC = () => {
     });
     const [loading, setLoading] = useState(!apiData);
     const [allChampions, setAllChampions] = useState<Array<{id: number, key: string, name: string}>>([]);
+    const [playerRaces, setPlayerRaces] = useState<Array<{id: number; title: string; status: number; isPublic: boolean; createdAt: string; endingOn: string | null}>>([]);
 
     const [major, minor] = LOL_VERSION.split(".").map(Number);
     const versions = Array.from({length: minor - 0}, (_, i) => `${major}.${minor - i}`);
@@ -341,6 +343,23 @@ const Summoner: React.FC = () => {
         
         loadChampions();
     }, [apiData]);
+
+    useEffect(() => {
+        const fetchPlayerRaces = async () => {
+            if (!apiData?.id) return;
+            try {
+                const response = await fetch(`/api/races/public/player/${apiData.id}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setPlayerRaces(data);
+                }
+            } catch (error) {
+                console.error("Error fetching player races:", error);
+            }
+        };
+        
+        fetchPlayerRaces();
+    }, [apiData?.id]);
 
     useEffect(() => {
         if (!apiData) return;
@@ -705,6 +724,39 @@ const Summoner: React.FC = () => {
                             </div>
                             <Link to={`/lol/profile/${regionCode}/${encodedSummoner}/mastery`} state={{apiData: apiData}} className="flex w-full text-xl justify-center p-2 bg-neutral-700 transition-all duration-150 ease-in hover:bg-neutral-600">
                                 See More Masteries
+                            </Link>
+                        </div>
+                        <div className="bg-neutral-800">
+                            <div className="flex gap-2 p-2">
+                                <img src={raceLight} alt="raceLight" className="h-7" />
+                                <h1>Races in which the player participates</h1>
+                            </div>
+                            <div className="">
+                                {playerRaces.length === 0 ? (
+                                    <div className="text-center p-2">
+                                        <p className="text-neutral-400">No races found</p>
+                                    </div>
+                                ) : (
+                                    playerRaces.slice(0, 3).map((race) => (
+                                        <Link 
+                                            key={race.id} 
+                                            to={`/races/public/${race.id}`}
+                                            className="block p-2 mb-1 hover:bg-neutral-700 transition-all duration-150 ease-in"
+                                        >
+                                            <div className="flex justify-between items-center">
+                                                <p className="font-semibold">{race.title}</p>
+                                                {race.endingOn && (
+                                                    <p className="text-sm text-neutral-400">
+                                                        Ends: {new Date(race.endingOn).toLocaleDateString()}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </Link>
+                                    ))
+                                )}
+                            </div>
+                            <Link to={`/races/public`} className="flex w-full text-xl justify-center p-2 bg-neutral-700 transition-all duration-150 ease-in hover:bg-neutral-600">
+                                See All Public Races
                             </Link>
                         </div>
                     </div>

@@ -15,6 +15,7 @@ interface Summoner {
 };
 
 interface Player {
+    id?: number;
     playerBasicInfo: PlayerBasicInfo;
     puuid: string;
     playerData: string;

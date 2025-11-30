@@ -354,6 +354,31 @@ namespace backend.Endpoints {
             .RequireAuthorization()
             .WithName("AddPlayerToRace")
             .WithTags("Races");
+
+            racesGroup.MapGet("/public/player/{playerId}", async (int playerId, ApplicationDbContext db) => {
+                try {
+                    var races = await db.Races
+                        .Where(r => r.IsPublic && r.RacePlayers.Any(rp => rp.PlayerId == playerId))
+                        .OrderByDescending(r => r.CreatedAt)
+                        .Select(r => new {
+                            r.Id,
+                            r.Title,
+                            r.Status,
+                            r.IsPublic,
+                            r.CreatedAt,
+                            r.EndingOn
+                        })
+                        .ToListAsync();
+                    
+                    return Results.Ok(races);
+                } catch (Exception ex) {
+                    Console.WriteLine($"Error fetching public races for player {playerId}: {ex.Message}");
+                    Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                    return Results.Problem($"An error occurred while fetching races: {ex.Message}");
+                }
+            })
+            .WithName("GetPublicRacesByPlayer")
+            .WithTags("Races");
         }
     }
 }
