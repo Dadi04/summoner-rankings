@@ -645,6 +645,30 @@ namespace backend.Endpoints {
             })
             .WithName("GetProfileByRiotId")
             .WithTags("GetProfile");
+
+
+            app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/lp-history", async (string region, string summonerName, string summonerTag, string queueType, int days, ApplicationDbContext dbContext) => {
+                var player = await dbContext.Players
+                    .Include(p => p.PlayerBasicInfo)
+                    .FirstOrDefaultAsync(p =>
+                        p.PlayerBasicInfo.SummonerName == summonerName &&
+                        p.PlayerBasicInfo.SummonerTag == summonerTag &&
+                        p.PlayerBasicInfo.Region == region);
+
+                if (player == null) return Results.NotFound();
+
+                var from = DateTimeOffset.UtcNow.AddDays(-days);
+
+                var snapshots = await dbContext.PlayerLpSnapshots
+                    .Where(s => s.PlayerId == player.Id &&
+                                s.QueueType == queueType &&
+                                s.TakenAt >= from)
+                    .OrderBy(s => s.TakenAt)
+                    .Select(s => new { s.TakenAt, s.LeaguePoints, s.Tier, s.Rank })
+                    .ToListAsync();
+
+                return Results.Ok(snapshots);
+            });
         }
     }
 }

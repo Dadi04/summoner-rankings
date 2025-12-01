@@ -16,6 +16,7 @@ import queueJson from "../assets/json/queues.json";
 import { playerCache, generateCacheKey, dispatchPlayerCacheUpdate } from "../utils/playerCache";
 import UpdateButton from "../components/UpdateButton";
 import { jwtDecode } from "jwt-decode";
+import LpHistoryChart from "../components/LpHistoryChart";
 
 interface RegionItem {
     name: string;
@@ -244,6 +245,9 @@ const RaceDetail: React.FC = () => {
     const [isAddingPlayer, setIsAddingPlayer] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
+
+    const [lpHistoryByPlayer, setLpHistoryByPlayer] = useState<Record<string, { takenAt: string; lp: number, tier: string, rank: string }[]>>({});
+    const [lpHistoryLoadingByPlayer, setLpHistoryLoadingByPlayer] = useState<Record<string, boolean>>({});
     
     const dropdownToggleRef = useRef<HTMLDivElement>(null);
     const dropdownListRef = useRef<HTMLDivElement>(null);
@@ -290,6 +294,46 @@ const RaceDetail: React.FC = () => {
     const handlePlayerUpdateSuccess = useCallback(async () => {
         await refreshRaceData();
     }, [refreshRaceData]);
+
+    const loadPlayerLpHistory = useCallback(
+        async (player: Player) => {
+            if (!race) return;
+            const key = player.id;
+            setLpHistoryLoadingByPlayer((prev) => ({ ...prev, [key]: true }));
+            try {
+                const raceStart = new Date(race.createdAt);
+                const diffMs = Date.now() - raceStart.getTime();
+                const days = Math.max(1, Math.min(365, Math.ceil(diffMs / (1000 * 60 * 60 * 24))));
+
+                const response = await fetch(
+                    `/api/lol/profile/${player.region}/${player.summonerName}-${player.summonerTag}/lp-history?queueType=RANKED_SOLO_5x5&days=${days}`
+                );
+
+                if (!response.ok) {
+                    setLpHistoryByPlayer((prev) => ({ ...prev, [key]: [] }));
+                    return;
+                }
+
+                const data = await response.json();
+                const mapped = (data as any[]).map((d) => {
+                    const takenAt = d.takenAt;
+                    const lp = d.leaguePoints;
+                    const rank = d.rank;
+                    const tier = d.tier;
+                    return { takenAt, lp, rank, tier };
+                });
+
+                const filtered = mapped.filter((p) => new Date(p.takenAt) >= raceStart);
+                setLpHistoryByPlayer((prev) => ({ ...prev, [key]: filtered }));
+            } catch (err) {
+                console.error("Error loading LP history for player", player.summonerName, err);
+                setLpHistoryByPlayer((prev) => ({ ...prev, [key]: [] }));
+            } finally {
+                setLpHistoryLoadingByPlayer((prev) => ({ ...prev, [key]: false }));
+            }
+        },
+        [race]
+    );
 
     useEffect(() => {
         const token = localStorage.getItem("jwt");
@@ -518,6 +562,21 @@ const RaceDetail: React.FC = () => {
         };
     }, []);
 
+    useEffect(() => {
+        if (expandedPlayerId && race) {
+            const player = players.find(p => p.id === expandedPlayerId);
+            if (player) {
+                const key = player.id;
+                const existingHistory = lpHistoryByPlayer[key];
+                const isLoading = lpHistoryLoadingByPlayer[key];
+                
+                if (!existingHistory && !isLoading) {
+                    loadPlayerLpHistory(player);
+                }
+            }
+        }
+    }, [expandedPlayerId, race?.id, loadPlayerLpHistory]);
+
     return (
         <>
             <div className="min-h-screen bg-[#f2f2f2]">
@@ -633,6 +692,9 @@ const RaceDetail: React.FC = () => {
                                         }
                                     }
                                     
+                                    const lpHistory = lpHistoryByPlayer[player.id] || [];
+                                    const lpLoading = lpHistoryLoadingByPlayer[player.id] || false;
+
                                     return (
                                         <div key={player.id} className="border border-neutral-300 rounded overflow-hidden">
                                             <div className="flex items-center bg-neutral-100 p-4">
@@ -914,7 +976,10 @@ const RaceDetail: React.FC = () => {
                                                                         api={`/api/lol/profile/${player.region}/${player.summonerName}-${player.summonerTag}/update`}
                                                                         buttonText="Refresh"
                                                                         shouldNavigate={false}
-                                                                        onSuccess={handlePlayerUpdateSuccess}
+                                                                        onSuccess={async () => {
+                                                                            await handlePlayerUpdateSuccess();
+                                                                            await loadPlayerLpHistory(player);
+                                                                        }}
                                                                         classes={`px-3 py-1 bg-purple-700 text-sm rounded hover:bg-purple-600 transition-colors`}
                                                                     />
                                                                     <Link
@@ -925,14 +990,14 @@ const RaceDetail: React.FC = () => {
                                                                     </Link>
                                                                 </div>
                                                             </div>
-                                                            <div className="bg-neutral-100 rounded p-8 text-center border-2 border-dashed border-neutral-300">
-                                                                <svg className="mx-auto h-16 w-16 text-neutral-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                                                </svg>
-                                                                <p className="text-neutral-600 font-medium">LP Graph Coming Soon</p>
-                                                                <p className="text-sm text-neutral-500 mt-2">
-                                                                    Track LP changes since race start
-                                                                </p>
+                                                            <div className="bg-neutral-100 rounded p-4 text-center border-2 border-dashed border-neutral-300">
+                                                                <LpHistoryChart
+                                                                    history={lpHistory}
+                                                                    loading={lpLoading}
+                                                                    label="LP since race start"
+                                                                    startDate={race ? new Date(race.createdAt) : undefined}
+                                                                    classes="pt-5"
+                                                                />
                                                             </div>
                                                         </div>
                                                     </div>

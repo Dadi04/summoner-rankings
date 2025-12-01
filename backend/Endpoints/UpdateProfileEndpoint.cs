@@ -720,6 +720,32 @@ namespace backend.Endpoints {
 
                 existingPlayer.AddedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
+                foreach (var entry in entries ?? new List<LeagueEntriesDto>()) {
+                    if (entry.queueType != "RANKED_SOLO_5x5" && entry.queueType != "RANKED_FLEX_SR") continue;
+
+                    var lastSnapshot = await dbContext.PlayerLpSnapshots
+                        .Where(s => s.PlayerId == existingPlayer.Id && s.QueueType == entry.queueType)
+                        .OrderByDescending(s => s.TakenAt)
+                        .FirstOrDefaultAsync();
+
+                    bool changed =
+                        lastSnapshot == null ||
+                        lastSnapshot.Tier != entry.tier ||
+                        lastSnapshot.Rank != entry.rank ||
+                        lastSnapshot.LeaguePoints != entry.leaguePoints;
+
+                    if (changed) {
+                        dbContext.PlayerLpSnapshots.Add(new PlayerLpSnapshot {
+                            PlayerId = existingPlayer.Id,
+                            QueueType = entry.queueType,
+                            Tier = entry.tier,
+                            Rank = entry.rank,
+                            LeaguePoints = entry.leaguePoints,
+                            TakenAt = DateTimeOffset.UtcNow
+                        });
+                    }
+                }
+
                 await dbContext.SaveChangesAsync();
 
                 var playerBasicInfoDto = new PlayerBasicInfoDto {

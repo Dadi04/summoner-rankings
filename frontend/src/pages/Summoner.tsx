@@ -32,6 +32,7 @@ import arrowDownLight from "../assets/arrow-down-light.png";
 import noneicon from "../assets/none.jpg";
 import arrowGoingUp from "../assets/arrow-going-up.png";
 import raceLight from "../assets/race-light.png";
+import LpHistoryChart from "../components/LpHistoryChart";
 
 const roleLabels: { role: string; label: string }[] = [
     { role: "TOP", label: "Top" },
@@ -107,6 +108,13 @@ const Summoner: React.FC = () => {
     const [loading, setLoading] = useState(!apiData);
     const [allChampions, setAllChampions] = useState<Array<{id: number, key: string, name: string}>>([]);
     const [playerRaces, setPlayerRaces] = useState<Array<{id: number; title: string; status: number; isPublic: boolean; createdAt: string; endingOn: string | null}>>([]);
+
+    const [selectedSoloPeriod, setSelectedSoloPeriod] = useState<string>("7");
+    const [selectedFlexPeriod, setSelectedFlexPeriod] = useState<string>("7");
+    const [soloLpHistory, setSoloLpHistory] = useState<Array<{ takenAt: string; lp: number; tier: string; rank: string }>>([]);
+    const [flexLpHistory, setFlexLpHistory] = useState<Array<{ takenAt: string; lp: number; tier: string; rank: string }>>([]);
+    const [soloLpLoading, setSoloLpLoading] = useState<boolean>(false);
+    const [flexLpLoading, setFlexLpLoading] = useState<boolean>(false);
 
     const [major, minor] = LOL_VERSION.split(".").map(Number);
     const versions = Array.from({length: minor - 0}, (_, i) => `${major}.${minor - i}`);
@@ -362,6 +370,58 @@ const Summoner: React.FC = () => {
     }, [apiData?.id]);
 
     useEffect(() => {
+        const fetchLpHistory = async (
+            queueType: string,
+            days: string,
+            setHistory: React.Dispatch<React.SetStateAction<Array<{ takenAt: string; lp: number; tier: string; rank:string }>>>,
+            setLoading: React.Dispatch<React.SetStateAction<boolean>>
+        ) => {
+            if (!regionCode || !encodedSummoner) return;
+            setLoading(true);
+            try {
+                const response = await fetch(
+                    `/api/lol/profile/${regionCode}/${summoner}/lp-history?queueType=${encodeURIComponent(queueType)}&days=${encodeURIComponent(days)}`
+                );
+
+                if (!response.ok) {
+                    setHistory([]);
+                    return;
+                }
+                const data = await response.json();
+                const mapped = (data as any[]).map((d) => {
+                    const takenAt = d.takenAt;
+                    const lp = d.leaguePoints;
+                    const rank = d.rank;
+                    const tier = d.tier;
+                    return { takenAt, lp, rank, tier };
+                });
+                setHistory(mapped);
+            } catch (err) {
+                console.error("Error fetching LP history:", err);
+                setHistory([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (apiData) {
+            if (apiData.entriesData?.some((e: any) => e.queueType === "RANKED_SOLO_5x5")) {
+                fetchLpHistory("RANKED_SOLO_5x5", selectedSoloPeriod, setSoloLpHistory, setSoloLpLoading);
+            } else {
+                setSoloLpHistory([]);
+            }
+            if (apiData.entriesData?.some((e: any) => e.queueType === "RANKED_FLEX_SR")) {
+                fetchLpHistory("RANKED_FLEX_SR", selectedFlexPeriod, setFlexLpHistory, setFlexLpLoading);
+            } else {
+                setFlexLpHistory([]);
+            }
+        } else {
+            setSoloLpHistory([]);
+            setFlexLpHistory([]);
+        }
+    }, [apiData, regionCode, summoner, selectedSoloPeriod, selectedFlexPeriod]);
+
+    useEffect(() => {
         if (!apiData) return;
         
         const hash = window.location.hash.substring(1);
@@ -525,9 +585,16 @@ const Summoner: React.FC = () => {
                                             <h1>Ranked Solo/Duo</h1>
                                         </div>
                                         <div>
-                                            <select name="" id="" className="bg-neutral-800 outline-none border-none" defaultValue={"Last 7 days"}>
-                                                <option value="">Last 7 days</option>
-                                                <option value="">Last 30 days</option>
+                                            <select
+                                                name=""
+                                                id=""
+                                                className="bg-neutral-800 outline-none border-none"
+                                                value={selectedSoloPeriod}
+                                                onChange={(e) => setSelectedSoloPeriod(e.target.value)}
+                                            >
+                                                <option value="7">Last week</option>
+                                                <option value="30">Last month</option>
+                                                <option value="365">Last year</option>
                                             </select>
                                         </div>
                                     </div>
@@ -539,8 +606,8 @@ const Summoner: React.FC = () => {
                                             <p>{rankedSoloDuoEntry.wins}W-{rankedSoloDuoEntry.losses}L ({rankedSoloDuoWinrate}%)</p>
                                         </div>
                                     </div>
-                                    <div className="text-center">
-                                        GRAPH TODO
+                                    <div className="text-center mb-2">
+                                        <LpHistoryChart history={soloLpHistory} loading={soloLpLoading} label="LP" daysToShow={Number(selectedSoloPeriod)} />
                                     </div>
                                 </>
                             ) : (
@@ -562,9 +629,16 @@ const Summoner: React.FC = () => {
                                             <h1>Ranked Flex</h1>
                                         </div>
                                         <div>
-                                            <select name="" id="" className="bg-neutral-800 outline-none border-none" defaultValue={"Last 7 days"}>
-                                                <option value="">Last 7 days</option>
-                                                <option value="">Last 30 days</option>
+                                            <select
+                                                name=""
+                                                id=""
+                                                className="bg-neutral-800 outline-none border-none"
+                                                value={selectedFlexPeriod}
+                                                onChange={(e) => setSelectedFlexPeriod(e.target.value)}
+                                            >
+                                                <option value="7">Last week</option>
+                                                <option value="30">Last month</option>
+                                                <option value="365">Last year</option>
                                             </select>
                                         </div>
                                     </div>
@@ -577,7 +651,7 @@ const Summoner: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="text-center">
-                                        GRAPH TODO
+                                        <LpHistoryChart history={flexLpHistory} loading={flexLpLoading} label="LP" />
                                     </div>
                                 </>
                             ) : (

@@ -15,6 +15,7 @@ namespace backend.Services {
         public DbSet<Race> Races { get; set; } = null!;
         public DbSet<User> Users { get; set; }
         public DbSet<RacePlayer> RacePlayers { get; set; }
+        public DbSet<PlayerLpSnapshot> PlayerLpSnapshots { get; set; }
         public DbSet<Favorite> Favorites { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
@@ -36,6 +37,11 @@ namespace backend.Services {
                 .HasOne(r => r.User)
                 .WithMany(u => u.Races)
                 .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<PlayerLpSnapshot>()
+                .HasOne(lp => lp.Player)
+                .WithMany(p => p.PlayerLpSnapshots)
+                .HasForeignKey(lp => lp.PlayerId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Player>().HasIndex(p => p.Puuid);

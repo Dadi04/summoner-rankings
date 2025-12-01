@@ -20,5 +20,6 @@ namespace backend.Models {
         public string SpectatorData { get; set; } = string.Empty;
         public long AddedAt { get; set; }
         public ICollection<RacePlayer> RacePlayers { get; set; } = new List<RacePlayer>();
+        public ICollection<PlayerLpSnapshot> PlayerLpSnapshots { get; set; } = new List<PlayerLpSnapshot>();
     }
 }
