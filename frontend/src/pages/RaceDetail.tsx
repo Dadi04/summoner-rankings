@@ -579,39 +579,39 @@ const RaceDetail: React.FC = () => {
 
     return (
         <>
-            <div className="min-h-screen bg-[#f2f2f2]">
+            <div className="min-h-screen bg-neutral-800 border border-t-1 border-neutral-600">
                 <div className="container mx-auto px-4 py-8">
                     <div className="flex justify-between items-start mb-6">
                         <button
                             onClick={handleBack}
-                            className="px-6 py-2 bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 transition-colors duration-300 cursor-pointer"
+                            className="px-6 py-2 bg-neutral-700 text-white rounded hover:bg-neutral-600 transition-colors duration-300 cursor-pointer"
                         >
                             ← Back to {type === "private" ? "My Races" : "Public Races"}
                         </button>
                         {(type !== "public" || isAdmin) && (
                             <button
                                 onClick={() => setShowAddPlayerDialog(true)}
-                                className="px-6 py-2 bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 transition-colors duration-300 cursor-pointer"
+                                className="px-6 py-2 bg-neutral-700 text-white rounded hover:bg-neutral-600 transition-colors duration-300 cursor-pointer"
                             >
                                 Add a Player
                             </button>
                         )}
                     </div>
-                    <div className="max-w-8xl mx-auto bg-white border-2 border-neutral-300 rounded-lg p-8">
+                    <div className="max-w-8xl mx-auto bg-neutral-800 border border-neutral-600 rounded p-8">
                         {isLoading ? (
                             <div className="text-center py-8">
-                                <p className="text-xl text-neutral-600">Loading race...</p>
+                                <p className="text-xl text-neutral-300">Loading race...</p>
                             </div>
                         ) : (
                             <>
                                 <div className="flex items-center justify-between mb-2">
-                                    <h1 className="text-4xl font-bold">
+                                    <h1 className="text-4xl font-bold text-neutral-50">
                                         {race?.title || `Race ${raceId}`}
                                     </h1>
                                     <button
                                         onClick={handleRefresh}
                                         disabled={isRefreshing}
-                                        className={`px-4 py-2 bg-neutral-800 text-white rounded transition-colors flex items-center gap-2 ${isRefreshing ? 'opacity-75 cursor-not-allowed' : 'hover:bg-neutral-700 cursor-pointer'}`}
+                                        className={`px-4 py-2 bg-neutral-700 text-white rounded transition-colors flex items-center gap-2 ${isRefreshing ? 'opacity-75 cursor-not-allowed' : 'hover:bg-neutral-600 cursor-pointer'}`}
                                     >
                                         {isRefreshing && (
                                             <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -624,7 +624,7 @@ const RaceDetail: React.FC = () => {
                                 </div>
                                 {race?.endingOn && (
                                     <div className="flex items-center justify-between mb-4">
-                                        <p className="text-lg text-neutral-600">
+                                        <p className="text-lg text-neutral-300">
                                             This race ends on {new Date(race.endingOn).toLocaleString('en-US', {
                                                 month: 'long',
                                                 day: 'numeric',
@@ -696,10 +696,10 @@ const RaceDetail: React.FC = () => {
                                     const lpLoading = lpHistoryLoadingByPlayer[player.id] || false;
 
                                     return (
-                                        <div key={player.id} className="border border-neutral-300 rounded overflow-hidden">
-                                            <div className="flex items-center bg-neutral-100 p-4">
+                                        <div key={player.id} className="border border-neutral-600 rounded overflow-hidden">
+                                            <div className="flex items-center bg-neutral-700 p-4">
                                                 <div className="flex items-center gap-4 flex-1">
-                                                    <span className="text-lg font-semibold text-neutral-500">#{position}</span>
+                                                    <span className="text-lg font-semibold text-neutral-300">#{position}</span>
                                                     {playerData?.mostPlayedRole && (
                                                         <img 
                                                             src={`https://dpm.lol/position/${playerData.mostPlayedRole.toUpperCase()}.svg`}
@@ -711,23 +711,23 @@ const RaceDetail: React.FC = () => {
                                                     <img 
                                                         src={`https://cdn.communitydragon.org/latest/profile-icon/${playerData?.playerBasicInfo.profileIcon || 0}`}
                                                         alt="Profile Icon"
-                                                        className="w-16 h-16 rounded-full border-2 border-neutral-300"
+                                                        className="w-16 h-16 rounded-full border-2 border-neutral-500"
                                                     />
                                                     
                                                     <div className="flex flex-col gap-1">
                                                         <div className="flex items-center gap-2">
-                                                            <p className="bg-purple-700 text-neutral-50 rounded-lg px-2 py-1 font-semibold text-sm">
+                                                            <p className="bg-purple-700 text-neutral-50 rounded px-2 py-1 font-semibold text-sm">
                                                                 {region?.abbr || player.region.toUpperCase()}
                                                             </p>
                                                             <Link 
                                                                 to={profileUrl}
-                                                                className="text-lg font-medium text-neutral-800 hover:text-purple-700 hover:underline transition-colors"
+                                                                className="text-lg font-medium text-neutral-50 hover:text-purple-400 hover:underline transition-colors"
                                                             >
                                                                 {player.summonerName}#{player.summonerTag}
                                                             </Link>
                                                         </div>
                                                         
-                                                        <div className="flex items-center gap-3 text-sm text-neutral-600">
+                                                        <div className="flex items-center gap-3 text-sm text-neutral-300">
                                                             {playerData?.rank && (
                                                                 <span className={`font-bold ${getRankColor(playerData.rank)} drop-shadow-sm`}>
                                                                     {playerData.rank} {playerData.leaguePoints !== undefined && `(${playerData.leaguePoints} LP)`}
@@ -771,7 +771,7 @@ const RaceDetail: React.FC = () => {
                                                     )}
                                                     <div 
                                                         onClick={() => setExpandedPlayerId(isExpanded ? null : player.id)}
-                                                        className="cursor-pointer p-2 bg-neutral-200 hover:bg-neutral-300 rounded transition-colors"
+                                                        className="cursor-pointer p-2 bg-neutral-600 hover:bg-neutral-500 rounded transition-colors"
                                                     >
                                                         <img 
                                                             src={arrowDownLight} 
@@ -782,10 +782,10 @@ const RaceDetail: React.FC = () => {
                                                 </div>
                                             </div>
                                             {isExpanded && (
-                                                <div className="bg-neutral-50 border-t border-neutral-300 p-6">
+                                                <div className="bg-neutral-800 border-t border-neutral-600 p-6">
                                                     <div className="flex gap-6">
                                                         <div className="flex-[70%]">
-                                                            <h3 className="text-lg font-semibold mb-4">Last 5 Matches</h3>
+                                                            <h3 className="text-lg font-semibold mb-4 text-neutral-50">Last 5 Matches</h3>
                                                             {playerData?.last5Matches && playerData.last5Matches.length > 0 ? (
                                                                 <div className="space-y-1">
                                                                     {playerData.last5Matches.map((match, idx) => {
@@ -962,13 +962,13 @@ const RaceDetail: React.FC = () => {
                                                                     })}
                                                                 </div>
                                                             ) : (
-                                                                <p className="text-neutral-500">No match data available</p>
+                                                                <p className="text-neutral-400">No match data available</p>
                                                             )}
                                                         </div>
                                                         
                                                         <div className="flex-[40%]">
                                                             <div className="flex items-center justify-between mb-4">
-                                                                <h3 className="text-lg font-semibold">LP Progress</h3>
+                                                                <h3 className="text-lg font-semibold text-neutral-50">LP Progress</h3>
                                                                 <div className="flex items-center gap-2">
                                                                     <UpdateButton
                                                                         regionCode={player.region}
@@ -990,7 +990,7 @@ const RaceDetail: React.FC = () => {
                                                                     </Link>
                                                                 </div>
                                                             </div>
-                                                            <div className="bg-neutral-100 rounded p-4 text-center border-2 border-dashed border-neutral-300">
+                                                            <div className="bg-neutral-700 rounded p-4 text-center border border-dashed">
                                                                 <LpHistoryChart
                                                                     history={lpHistory}
                                                                     loading={lpLoading}
@@ -1007,7 +1007,7 @@ const RaceDetail: React.FC = () => {
                                     );
                                 })
                             ) : (
-                                <p className="text-neutral-500 text-center py-4">
+                                <p className="text-neutral-400 text-center py-4">
                                     No participants yet. Click "Add a Player" to get started.
                                 </p>
                             )}
@@ -1020,23 +1020,23 @@ const RaceDetail: React.FC = () => {
 
             {showAddPlayerDialog && (
                 <div onClick={isAddingPlayer ? undefined : handleCancel} className="fixed inset-0 flex items-center justify-center bg-black/90 z-150">
-                    <div onClick={(e) => e.stopPropagation()} className="bg-white py-6 px-5 rounded-lg shadow-lg relative w-100">
+                    <div onClick={(e) => e.stopPropagation()} className="bg-neutral-800 py-6 px-5 rounded shadow-lg relative w-100 border border-neutral-600">
                         {!isAddingPlayer && (
-                            <div className="p-2 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-gray-100 active:outline">
+                            <div className="p-2 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-neutral-700 active:outline">
                                 <img onClick={handleCancel} src={close} alt="close.png" className="h-4" />
                             </div>
                         )}
-                        <h2 className="text-2xl font-bold mt-6 text-center">Add a Player</h2>
-                        <p className="text-center mt-0 mb-4">
+                        <h2 className="text-2xl font-bold mt-6 text-center text-neutral-50">Add a Player</h2>
+                        <p className="text-center mt-0 mb-4 text-neutral-300">
                             {isAddingPlayer ? "Fetching player data..." : "Select region and enter summoner name"}
                         </p>
                         <div className="flex flex-col">
                             <div className="mb-4 relative">
-                                <label className="font-medium mb-1 block">Region</label>
+                                <label className="font-medium mb-1 block text-neutral-300">Region</label>
                                 <div 
                                     ref={dropdownToggleRef} 
                                     onClick={isAddingPlayer ? undefined : () => setShowRegion((prev) => !prev)} 
-                                    className={`flex justify-between items-center border rounded p-2 transition-all duration-300 ${isAddingPlayer ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gray-500'}`}
+                                    className={`flex justify-between items-center border border-neutral-600 bg-neutral-700 text-neutral-50 rounded p-2 transition-all duration-300 ${isAddingPlayer ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-neutral-500'}`}
                                 >
                                     <span>{selectedRegion.name}</span>
                                     <img 
@@ -1054,7 +1054,7 @@ const RaceDetail: React.FC = () => {
                                             <li 
                                                 key={region.code} 
                                                 onClick={() => handleSelect(region)} 
-                                                className="flex justify-between border-b-1 border-white items-center px-3 py-2 hover:bg-neutral-600 cursor-pointer"
+                                                className="flex justify-between border-b-1 border-neutral-600 items-center px-3 py-2 hover:bg-neutral-600 cursor-pointer"
                                             >
                                                 {region.name}
                                                 <span className="text-xl font-bold">{region.abbr}</span>
@@ -1064,21 +1064,21 @@ const RaceDetail: React.FC = () => {
                                 </div>
                             </div>
                             <div className="mb-4">
-                                <label className="font-medium mb-1 block">Game Name + Tag</label>
+                                <label className="font-medium mb-1 block text-neutral-300">Game Name + Tag</label>
                                 <input 
                                     type="text" 
                                     value={summonerInput} 
                                     onChange={(e) => setSummonerInput(e.target.value)} 
                                     placeholder="Game Name + #TAG" 
                                     disabled={isAddingPlayer}
-                                    className={`w-full p-2 border rounded transition-all duration-300 ease-in-out outline-none ${isAddingPlayer ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-500 hover:shadow-md focus:border-gray-500 focus:ring-2 focus:ring-gray-400'}`}
+                                    className={`w-full p-2 border border-neutral-600 bg-neutral-700 text-neutral-50 rounded transition-all duration-300 ease-in-out outline-none ${isAddingPlayer ? 'opacity-50 cursor-not-allowed' : 'hover:border-neutral-500 focus:border-neutral-500 focus:ring-2 focus:ring-neutral-500'}`}
                                 />
                             </div>
                             <div className="flex gap-3 mt-2">
                                 <button 
                                     onClick={handleCancel} 
                                     disabled={isAddingPlayer}
-                                    className={`flex-1 p-2 rounded transition duration-300 ${isAddingPlayer ? 'opacity-50 cursor-not-allowed bg-gray-300 text-gray-800' : 'cursor-pointer bg-gray-300 text-gray-800 hover:bg-gray-400'}`}
+                                    className={`flex-1 p-2 rounded transition duration-300 ${isAddingPlayer ? 'opacity-50 cursor-not-allowed bg-neutral-600 text-neutral-300' : 'cursor-pointer bg-neutral-600 text-neutral-200 hover:bg-neutral-500'}`}
                                 >
                                     Cancel
                                 </button>
@@ -1107,8 +1107,8 @@ const RaceDetail: React.FC = () => {
 
             {showEndRaceDialog && (
                 <div onClick={() => setShowEndRaceDialog(false)} className="fixed inset-0 flex items-center justify-center bg-black/90 z-150">
-                    <div onClick={(e) => e.stopPropagation()} className="bg-white py-6 px-5 rounded-lg shadow-lg relative w-100">
-                        <div className="p-2 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-gray-100 active:outline">
+                    <div onClick={(e) => e.stopPropagation()} className="bg-neutral-800 py-6 px-5 rounded shadow-lg relative w-100 border border-neutral-600">
+                        <div className="p-2 absolute top-4 right-4 cursor-pointer rounded transition duration-200 ease-in-out hover:bg-neutral-700 active:outline">
                             <img onClick={() => setShowEndRaceDialog(false)} src={close} alt="close.png" className="h-4" />
                         </div>
                         
@@ -1119,8 +1119,8 @@ const RaceDetail: React.FC = () => {
                                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
                             </svg>
                         </div>
-                        <h2 className="text-2xl font-bold text-center">Are you sure?</h2>
-                        <p className="text-center mt-2 mb-4 text-neutral-600">
+                        <h2 className="text-2xl font-bold text-center text-neutral-50">Are you sure?</h2>
+                        <p className="text-center mt-2 mb-4 text-neutral-300">
                             Do you want to end this race early? This action cannot be undone.
                         </p>
 
@@ -1128,7 +1128,7 @@ const RaceDetail: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setShowEndRaceDialog(false)}
-                                className="flex-1 cursor-pointer bg-gray-300 text-gray-800 p-2 rounded transition duration-300 hover:bg-gray-400"
+                                className="flex-1 cursor-pointer bg-neutral-600 text-neutral-200 p-2 rounded transition duration-300 hover:bg-neutral-500"
                             >
                                 No
                             </button>
