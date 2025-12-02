@@ -140,16 +140,16 @@ const getRankColor = (rank: string): string => {
     const tier = rank.split(' ')[0].toUpperCase();
     
     const colorMap: { [key: string]: string } = {
-        'IRON': 'text-[#3E312C]',
-        'BRONZE': 'text-[#785249]',
-        'SILVER': 'text-[#515D66]',
-        'GOLD': 'text-[#6D4A17]',
-        'PLATINUM': 'text-[#0F4B59]',
-        'EMERALD': 'text-[#074E2F]',
+        'IRON': 'text-[#4F4643]',
+        'BRONZE': 'text-[#8A5E54]',
+        'SILVER': 'text-[#62707A]',
+        'GOLD': 'text-[#A87428]',
+        'PLATINUM': 'text-[#18768C]',
+        'EMERALD': 'text-[#0DA362]',
         'DIAMOND': 'text-[#4A6BB5]',
         'MASTER': 'text-[#701A88]',
-        'GRANDMASTER': 'text-[#9C2E27]',
-        'CHALLENGER': 'text-[#546B5F]'
+        'GRANDMASTER': 'text-[#B53A33]',
+        'CHALLENGER': 'text-[#F4A460]'
     };
     
     return colorMap[tier] || 'text-purple-700';

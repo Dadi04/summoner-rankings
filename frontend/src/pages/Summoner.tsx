@@ -606,7 +606,7 @@ const Summoner: React.FC = () => {
                                             <p>{rankedSoloDuoEntry.wins}W-{rankedSoloDuoEntry.losses}L ({rankedSoloDuoWinrate}%)</p>
                                         </div>
                                     </div>
-                                    <div className="text-center mb-2">
+                                    <div className="text-center">
                                         <LpHistoryChart history={soloLpHistory} loading={soloLpLoading} label="LP" daysToShow={Number(selectedSoloPeriod)} />
                                     </div>
                                 </>

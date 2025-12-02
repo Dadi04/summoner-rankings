@@ -273,7 +273,7 @@ const LpHistoryChart: React.FC<LpHistoryChartProps> = ({
 
     if (loading) {
         return (
-            <div className="w-full h-64 flex items-center justify-center bg-neutral-800 rounded">
+            <div className="w-full h-16 flex items-center justify-center bg-neutral-800 rounded">
                 <p className="text-neutral-400">Loading chart...</p>
             </div>
         );
@@ -281,7 +281,7 @@ const LpHistoryChart: React.FC<LpHistoryChartProps> = ({
 
     if (chartData.length === 0) {
         return (
-            <div className="w-full h-64 flex items-center justify-center bg-neutral-800 rounded">
+            <div className="w-full h-16 flex items-center justify-center bg-neutral-800 rounded">
                 <p className="text-neutral-400">No data available</p>
             </div>
         );

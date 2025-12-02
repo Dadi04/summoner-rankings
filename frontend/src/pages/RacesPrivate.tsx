@@ -143,7 +143,7 @@ const RacesPrivate: React.FC = () => {
     if (!isAuthenticated) {
         return (
             <div className="max-w-4xl mx-auto">
-                <div className="bg-neutral-800 border border-neutral-600 rounded p-12 text-center">
+                <div className="border border-neutral-600 rounded p-12 text-center">
                     <div className="flex justify-center mb-4">
                         <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#404040" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"></path>
@@ -151,9 +151,9 @@ const RacesPrivate: React.FC = () => {
                             <path d="M12 8h.01"></path>
                         </svg>
                     </div>
-                    <h2 className="text-3xl font-bold text-neutral-50 mb-4">Authentication Required</h2>
-                    <p className="text-xl text-neutral-300">You must be logged in to view your races.</p>
-                    <p className="text-lg text-neutral-400 mt-2">Please sign in to access this page.</p>
+                    <h2 className="text-3xl font-bold text-neutral-800 mb-4">Authentication Required</h2>
+                    <p className="text-xl text-neutral-600">You must be logged in to view your races.</p>
+                    <p className="text-lg text-neutral-700 mt-2">Please sign in to access this page.</p>
                 </div>
             </div>
         );

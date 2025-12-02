@@ -161,7 +161,7 @@ const RacesPublic: React.FC = () => {
                         <p className="text-xl text-neutral-300">Loading public races...</p>
                     </div>
                 ) : races.length === 0 ? (
-                <div className="bg-neutral-800 border border-neutral-600 rounded p-12 text-center">
+                <div className="border border-neutral-600 rounded p-12 text-center">
                     <div className="flex justify-center mb-4">
                         <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#737373" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
@@ -169,9 +169,9 @@ const RacesPublic: React.FC = () => {
                             <line x1="12" y1="16" x2="12.01" y2="16"></line>
                         </svg>
                     </div>
-                    <h2 className="text-3xl font-bold text-neutral-50 mb-4">No Public Races Available</h2>
-                    <p className="text-xl text-neutral-300">There are no public races at the moment.</p>
-                    <p className="text-lg text-neutral-400 mt-2">Check back later for new races!</p>
+                    <h2 className="text-3xl font-bold text-neutral-800 mb-4">No Public Races Available</h2>
+                    <p className="text-xl text-neutral-600">There are no public races at the moment.</p>
+                    <p className="text-lg text-neutral-700 mt-2">Check back later for new races!</p>
                 </div>
             ) : (
                     <div className="space-y-4">
