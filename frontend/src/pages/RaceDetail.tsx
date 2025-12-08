@@ -245,6 +245,7 @@ const RaceDetail: React.FC = () => {
     const [isAddingPlayer, setIsAddingPlayer] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
+    const [raceError, setRaceError] = useState<string | null>(null);
 
     const [lpHistoryByPlayer, setLpHistoryByPlayer] = useState<Record<string, { takenAt: string; lp: number, tier: string, rank: string }[]>>({});
     const [lpHistoryLoadingByPlayer, setLpHistoryLoadingByPlayer] = useState<Record<string, boolean>>({});
@@ -281,9 +282,15 @@ const RaceDetail: React.FC = () => {
                     "Authorization": `Bearer ${token}`,
                 },
             });
+            
+            if (response.status === 404) {
+                setRaceError("404");
+                return;
+            }
 
             if (response.ok) {
                 const data = await response.json();
+                setRaceError(null);
                 updateRaceState(data);
             }
         } catch (error) {
@@ -576,6 +583,16 @@ const RaceDetail: React.FC = () => {
             }
         }
     }, [expandedPlayerId, race?.id, loadPlayerLpHistory]);
+
+    if (raceError === "404") {
+        return (
+            <div className="mx-auto w-[800px] flex flex-col justify-center items-center mt-[125px] mb-[195px] text-neutral-800 p-4 gap-4">
+                <p className="text-7xl font-bold">Error 404</p>
+                <p className="text-xl font-bold">Race not found</p>
+                <p>The race you are looking for doesn't exist or has been removed. Go back to the <Link to={`/races/${type}`} className="text-blue-500 hover:text-blue-600">races page</Link>.</p>
+            </div>
+        )
+    }
 
     return (
         <>

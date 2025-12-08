@@ -608,8 +608,18 @@ const Summoner: React.FC = () => {
         return () => window.removeEventListener("playerCacheUpdated", handler as EventListener);
     }, [cacheKey]);
 
-    if (loading || !apiData) {
+    if (loading) {
         return <div className="w-full flex justify-center mt-[125px] mb-[195px]"><DotLottieReact src={loadingAnimation} className="w-[600px] bg-transparent" loop autoplay /></div>
+    }
+
+    if (!apiData) {
+        return (
+            <div className="mx-auto w-[800px] flex flex-col justify-center items-center mt-[125px] mb-[195px] text-neutral-800 p-4 gap-4">
+                <p className="text-7xl font-bold">Error 404</p>
+                <p className="text-xl font-bold">Player not found</p>
+                <p>The page you are looking for doesn't exist or has been removed. Go back to the <Link to="/" className="text-blue-500 hover:text-blue-600">home page</Link>.</p>
+            </div>
+        )
     }
 
     const championStatsSoloDuoData = Object.values(apiData.rankedSoloChampionStatsData);
