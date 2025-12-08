@@ -80,6 +80,7 @@ const Champions: React.FC = () => {
     const [selectedChampionsMode, setSelectedChampionsMode] = useState<string>("Champions General");
     const [selectedChampion, setSelectedChampion] = useState<string>("all-champions")
     const [championsData, setChampionsData] = useState<Map<number, any>>(new Map());
+    const [loadingChampionsData, setLoadingChampionsData] = useState<boolean>(false);
 
     const summoner = decodeURIComponent(encodedSummoner);
     const cacheKey = `summoner_${regionCode}_${summoner}`;
@@ -130,7 +131,6 @@ const Champions: React.FC = () => {
             }
             
             try {
-                // Try to get from cache first
                 const cachedData = await playerCache.getItem(cacheKey);
                 if (cachedData) {
                     setApiData(cachedData);
@@ -138,7 +138,6 @@ const Champions: React.FC = () => {
                     return;
                 }
 
-                // If not in cache, fetch from API
                 const response = await fetch(`/api/lol/profile/${regionCode}/${summoner}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -159,23 +158,30 @@ const Champions: React.FC = () => {
         if (!apiData) return;
         
         const loadChampionsData = async () => {
-            const championIds = new Set<number>();
-            
-            Object.values(apiData.allGamesChampionStatsData).forEach((stat: ChampionStats) => {
-                championIds.add(stat.championId);
-                stat.opponentMatchups?.forEach(opp => championIds.add(opp.championId));
-            });
-            Object.values(apiData.rankedSoloChampionStatsData).forEach((stat: ChampionStats) => {
-                championIds.add(stat.championId);
-                stat.opponentMatchups?.forEach(opp => championIds.add(opp.championId));
-            });
-            Object.values(apiData.rankedFlexChampionStatsData).forEach((stat: ChampionStats) => {
-                championIds.add(stat.championId);
-                stat.opponentMatchups?.forEach(opp => championIds.add(opp.championId));
-            });
-            
-            const champData = await fetchMultipleChampions(Array.from(championIds));
-            setChampionsData(champData);
+            setLoadingChampionsData(true);
+            try {
+                const championIds = new Set<number>();
+                
+                Object.values(apiData.allGamesChampionStatsData).forEach((stat: ChampionStats) => {
+                    championIds.add(stat.championId);
+                    stat.opponentMatchups?.forEach(opp => championIds.add(opp.championId));
+                });
+                Object.values(apiData.rankedSoloChampionStatsData).forEach((stat: ChampionStats) => {
+                    championIds.add(stat.championId);
+                    stat.opponentMatchups?.forEach(opp => championIds.add(opp.championId));
+                });
+                Object.values(apiData.rankedFlexChampionStatsData).forEach((stat: ChampionStats) => {
+                    championIds.add(stat.championId);
+                    stat.opponentMatchups?.forEach(opp => championIds.add(opp.championId));
+                });
+                
+                const champData = await fetchMultipleChampions(Array.from(championIds));
+                setChampionsData(champData);
+            } catch (error) {
+                console.error("Error loading champions data:", error);
+            } finally {
+                setLoadingChampionsData(false);
+            }
         };
         
         loadChampionsData();
@@ -477,9 +483,25 @@ const Champions: React.FC = () => {
                                     ))}
                                     <hr />
                                 </div>
-                                {sortedOpponentMatchupsStats.map((stat, i) => {
-                                    const champ = championsData.get(stat.championId);
-                                    if (!champ) return <div key={`${stat.championId}-${i+1}`}>Champion not found</div>;
+                                {(() => {
+                                    const isMissingChampion = sortedOpponentMatchupsStats.some(stat => !championsData.has(stat.championId));
+                                    const shouldShowLoading = loadingChampionsData || championsData.size === 0 || isMissingChampion;
+                                    
+                                    if (shouldShowLoading) {
+                                        return (
+                                            <div className="text-neutral-50 py-8 flex flex-col items-center justify-center">
+                                                <svg className="animate-spin h-12 w-12 text-neutral-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                <p className="text-xl text-neutral-300">Loading champion data...</p>
+                                            </div>
+                                        );
+                                    }
+                                    
+                                    return sortedOpponentMatchupsStats.map((stat, i) => {
+                                        const champ = championsData.get(stat.championId);
+                                        if (!champ) return <div key={`${stat.championId}-${i+1}`}>Champion not found</div>;
                                     const { abilities } = champ;
 
                                     const slots = ["Q","W","E","R"];
@@ -751,8 +773,9 @@ const Champions: React.FC = () => {
                                                 <hr />
                                             </div>
                                         </div>
-                                    )
-                                })}
+                                    );
+                                    });
+                                })()}
                             </div>
                         </div>
                     ) : (
