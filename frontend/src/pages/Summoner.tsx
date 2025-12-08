@@ -99,6 +99,7 @@ const Summoner: React.FC = () => {
         return pageParam ? parseInt(pageParam, 10) : 1;
     });
     const [fetchedPages, setFetchedPages] = useState<Set<number>>(new Set([1]));
+    const [matchesByPage, setMatchesByPage] = useState<Map<number, Match[]>>(new Map());
     const inputPatchesRef = useRef<HTMLDivElement>(null);
     const dropdownPatchesRef = useRef<HTMLDivElement>(null);
     const inputChampionsRef = useRef<HTMLDivElement>(null);
@@ -137,6 +138,12 @@ const Summoner: React.FC = () => {
             }
             const data = await response.json();
             const incomingMatches: Match[] = data.matches ?? data;
+
+            setMatchesByPage(prev => {
+                const newMap = new Map(prev);
+                newMap.set(page, incomingMatches);
+                return newMap;
+            });
 
             setApiData(prev => {
                 if (!prev) return prev;
@@ -198,17 +205,34 @@ const Summoner: React.FC = () => {
         })
     }, [apiData, selectedRole, selectedQueue, selectedPatch, selectedChampion])
 
+    const hasActiveFilters = selectedRole !== "fill" || selectedQueue !== "all-queues" || selectedPatch !== "all-patches" || selectedChampion !== "All Champions";
+
     const { grouped: matchesByDate, pageMatches } = useMemo(() => {
-        if (!filteredMatches.length) return { grouped: {}, pageMatches: [] };
+        let pageMatches: Match[] = [];
 
-        const sorted = [...filteredMatches].sort(
-            (a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp
-        );
+        if (hasActiveFilters) {
+            if (!filteredMatches.length) return { grouped: {}, pageMatches: [] };
 
-        const start = (paginatorPage - 1) * GAMES_PER_PAGE;
-        const end = start + GAMES_PER_PAGE;
+            const sorted = [...filteredMatches].sort(
+                (a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp
+            );
 
-        const pageMatches = sorted.slice(start, end);
+            const start = (paginatorPage - 1) * GAMES_PER_PAGE;
+            const end = start + GAMES_PER_PAGE;
+
+            pageMatches = sorted.slice(start, end);
+        } else {
+            const serverPageMatches = matchesByPage.get(paginatorPage);
+            if (serverPageMatches && serverPageMatches.length > 0) {
+                pageMatches = [...serverPageMatches].sort(
+                    (a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp
+                );
+            } else if (paginatorPage === 1 && apiData?.allMatchesData) {
+                pageMatches = [...apiData.allMatchesData]
+                    .sort((a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp)
+                    .slice(0, GAMES_PER_PAGE);
+            }
+        }
         
         const grouped = pageMatches.reduce<Record<string, Match[]>>((acc, match) => {
             const date = new Date(match.details.info.gameStartTimestamp).toLocaleDateString("en-US", { day: "numeric", month: "short" });
@@ -217,7 +241,7 @@ const Summoner: React.FC = () => {
         }, {});
         
         return { grouped, pageMatches };
-    }, [filteredMatches, paginatorPage]);
+    }, [filteredMatches, paginatorPage, hasActiveFilters, matchesByPage, apiData?.allMatchesData]);
 
     useEffect(() => {
         setPaginatorPage(1);
@@ -380,6 +404,16 @@ const Summoner: React.FC = () => {
     useEffect(() => {
         const fetchData = async () => {
             if (apiData) {
+                if (!matchesByPage.has(1) && apiData.allMatchesData.length > 0) {
+                    const page1Matches = [...apiData.allMatchesData]
+                        .sort((a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp)
+                        .slice(0, GAMES_PER_PAGE);
+                    setMatchesByPage(prev => {
+                        const newMap = new Map(prev);
+                        newMap.set(1, page1Matches);
+                        return newMap;
+                    });
+                }
                 return;
             }
             
@@ -387,6 +421,16 @@ const Summoner: React.FC = () => {
                 const cachedData = await playerCache.getItem(cacheKey);
                 if (cachedData) {
                     setApiData(cachedData);
+                    if (cachedData.allMatchesData.length > 0) {
+                        const page1Matches = [...cachedData.allMatchesData]
+                            .sort((a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp)
+                            .slice(0, GAMES_PER_PAGE);
+                        setMatchesByPage(prev => {
+                            const newMap = new Map(prev);
+                            newMap.set(1, page1Matches);
+                            return newMap;
+                        });
+                    }
                     setLoading(false);
                     return;
                 }
@@ -397,6 +441,16 @@ const Summoner: React.FC = () => {
                 }
                 const data = await response.json();
                 setApiData(data);
+                if (data.allMatchesData && data.allMatchesData.length > 0) {
+                    const page1Matches = [...data.allMatchesData]
+                        .sort((a: Match, b: Match) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp)
+                        .slice(0, GAMES_PER_PAGE);
+                    setMatchesByPage(prev => {
+                        const newMap = new Map(prev);
+                        newMap.set(1, page1Matches);
+                        return newMap;
+                    });
+                }
             } catch (error) {
                 console.error("Error fetching API data:", error);
             } finally {
@@ -404,7 +458,7 @@ const Summoner: React.FC = () => {
             }
         }
         fetchData();
-    }, [regionCode, summoner, apiData, cacheKey]);
+    }, [regionCode, summoner, apiData, cacheKey, matchesByPage]);
 
     useEffect(() => {
         if (!apiData) return;
@@ -1129,7 +1183,7 @@ const Summoner: React.FC = () => {
                                         ))}
                                     </div>
                                 ))}
-                                <div className="flex justify-center mt-4">
+                                <div className="flex justify-center mt-4 pb-2">
                                     {pageNumbers.length > 1 && (
                                         <ul className="flex items-center h-10 text-base">
                                             <li>
