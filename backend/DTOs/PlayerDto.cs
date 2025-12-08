@@ -11,6 +11,7 @@ namespace backend.DTOs {
         public int TotalMasteryScoreData { get; set; }
         public List<string> AllMatchIds { get; set; } = new();
         public List<LeagueMatchDto> AllMatchesData { get; set; } = new();
+        public int TotalMatches { get; set; }
         public Dictionary<int, ChampionStatsDto> AllGamesChampionStatsData { get; set; } = new();
         public Dictionary<string, PreferredRoleDto> AllGamesRoleStatsData { get; set; } = new();
         public Dictionary<int, ChampionStatsDto> RankedSoloChampionStatsData { get; set; } = new();

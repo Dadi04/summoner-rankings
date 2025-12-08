@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
-import { useParams, Link, useLocation } from "react-router-dom";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useParams, Link, useLocation, useSearchParams } from "react-router-dom";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { DD_VERSION, LOL_VERSION } from "../version";
-import { playerCache } from "../utils/playerCache";
+import { playerCache, dispatchPlayerCacheUpdate } from "../utils/playerCache";
 
 import GameTimer from "../components/GameTimer";
 import {ChampionImage} from "../components/ChampionData";
@@ -70,6 +70,7 @@ const GAMES_PER_PAGE = 20;
 const Summoner: React.FC = () => {
     const {regionCode, encodedSummoner} = useParams<{regionCode: string; encodedSummoner: string }>(); 
     const location = useLocation();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     if (!encodedSummoner) {
         return <div>Error: Summoner parameter is missing.</div>;
@@ -93,7 +94,11 @@ const Summoner: React.FC = () => {
     const [filterChampions, setFilterChampions] = useState("");
     const [items, setItems] = useState<any>({});
     const [showSelectChampions, setShowSelectChampions] = useState<boolean>(false);
-    const [paginatorPage, setPaginatorPage] = useState<number>(1);
+    const [paginatorPage, setPaginatorPage] = useState<number>(() => {
+        const pageParam = searchParams.get("page");
+        return pageParam ? parseInt(pageParam, 10) : 1;
+    });
+    const [fetchedPages, setFetchedPages] = useState<Set<number>>(new Set([1]));
     const inputPatchesRef = useRef<HTMLDivElement>(null);
     const dropdownPatchesRef = useRef<HTMLDivElement>(null);
     const inputChampionsRef = useRef<HTMLDivElement>(null);
@@ -106,6 +111,7 @@ const Summoner: React.FC = () => {
         return null;
     });
     const [loading, setLoading] = useState(!apiData);
+    const [matchesLoading, setMatchesLoading] = useState<boolean>(false);
     const [allChampions, setAllChampions] = useState<Array<{id: number, key: string, name: string}>>([]);
     const [playerRaces, setPlayerRaces] = useState<Array<{id: number; title: string; status: number; isPublic: boolean; createdAt: string; endingOn: string | null}>>([]);
 
@@ -115,6 +121,54 @@ const Summoner: React.FC = () => {
     const [flexLpHistory, setFlexLpHistory] = useState<Array<{ takenAt: string; lp: number; tier: string; rank: string }>>([]);
     const [soloLpLoading, setSoloLpLoading] = useState<boolean>(false);
     const [flexLpLoading, setFlexLpLoading] = useState<boolean>(false);
+
+    const ensureMatchesForPage = useCallback(async (page: number) => {
+        if (!apiData) return;
+        
+        if (fetchedPages.has(page)) {
+            return;
+        }
+
+        setMatchesLoading(true);
+        try {
+            const response = await fetch(`/api/lol/profile/${regionCode}/${summoner}/matches?page=${page}&pageSize=${GAMES_PER_PAGE}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            const incomingMatches: Match[] = data.matches ?? data;
+
+            setApiData(prev => {
+                if (!prev) return prev;
+
+                const merged = [...prev.allMatchesData];
+                incomingMatches.forEach(match => {
+                    if (!merged.find(m => m.details.metadata.matchId === match.details.metadata.matchId)) {
+                        merged.push(match);
+                    }
+                });
+
+                merged.sort((a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp);
+
+                const updated = {
+                    ...prev,
+                    allMatchesData: merged,
+                    totalMatches: data.totalMatches ?? prev.totalMatches ?? prev.allMatchIds?.length
+                };
+
+                playerCache.setItem(cacheKey, updated).catch(err => console.error("Error caching data:", err));
+                dispatchPlayerCacheUpdate(cacheKey, updated);
+                return updated;
+            });
+
+            setFetchedPages(prev => new Set(prev).add(page));
+
+        } catch (error) {
+            console.error("Error fetching matches page:", error);
+        } finally {
+            setMatchesLoading(false);
+        }
+    }, [apiData, cacheKey, regionCode, summoner, fetchedPages]);
 
     const [major, minor] = LOL_VERSION.split(".").map(Number);
     const versions = Array.from({length: minor - 0}, (_, i) => `${major}.${minor - i}`);
@@ -168,6 +222,35 @@ const Summoner: React.FC = () => {
     useEffect(() => {
         setPaginatorPage(1);
     }, [selectedRole, selectedQueue, selectedPatch, selectedChampion]);
+
+    useEffect(() => {
+        ensureMatchesForPage(paginatorPage);
+    }, [paginatorPage, ensureMatchesForPage]);
+
+    useEffect(() => {
+        const pageParam = searchParams.get("page");
+        const pageFromUrl = pageParam ? parseInt(pageParam, 10) : 1;
+        setPaginatorPage(prev => {
+            if (pageFromUrl >= 1 && pageFromUrl !== prev) {
+                return pageFromUrl;
+            }
+            return prev;
+        });
+    }, [searchParams]);
+
+    useEffect(() => {
+        setSearchParams(prev => {
+            const newParams = new URLSearchParams(prev);
+            const currentUrlPage = newParams.get("page");
+            const expectedUrlPage = paginatorPage.toString();
+            
+            if (currentUrlPage !== expectedUrlPage) {
+                newParams.set("page", paginatorPage.toString());
+                return newParams;
+            }
+            return prev;
+        }, { replace: true });
+    }, [paginatorPage, setSearchParams]);
 
     const pageStats = useMemo(() => {
         const matches = pageMatches;
@@ -308,7 +391,7 @@ const Summoner: React.FC = () => {
                     return;
                 }
 
-                const response = await fetch(`/api/lol/profile/${regionCode}/${summoner}`);
+                const response = await fetch(`/api/lol/profile/${regionCode}/${summoner}?page=1&pageSize=${GAMES_PER_PAGE}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -496,8 +579,47 @@ const Summoner: React.FC = () => {
         rankedFlexWinrate = Math.round(rankedFlexEntry.wins / (rankedFlexEntry.wins + rankedFlexEntry.losses) * 100);
     }
     
-    const totalPages = Math.ceil(filteredMatches.length / GAMES_PER_PAGE);
+    const totalPages = Math.max(
+        1,
+        Math.ceil(
+            ((apiData?.totalMatches ?? apiData?.allMatchIds?.length ?? filteredMatches.length) || 0) / GAMES_PER_PAGE
+        )
+    );
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+    const getVisiblePages = () => {
+        if (totalPages <= 10) {
+            return pageNumbers;
+        }
+
+        const pages: (number | string)[] = [];
+        const current = paginatorPage;
+
+        pages.push(1, 2);
+
+        const leftBound = Math.max(3, current - 2);
+        const rightBound = Math.min(totalPages - 2, current + 2);
+
+        if (leftBound > 3) {
+            pages.push('dots-1');
+        }
+
+        for (let i = leftBound; i <= rightBound; i++) {
+            if (i > 2 && i < totalPages - 1) {
+                pages.push(i);
+            }
+        }
+
+        if (rightBound < totalPages - 2) {
+            pages.push('dots-2');
+        }
+
+        pages.push(totalPages - 1, totalPages);
+
+        return pages;
+    };
+
+    const visiblePages = getVisiblePages();
 
     function getWinrateColor(winrate: number, games: number) {
         if (games == 0) return "";
@@ -984,7 +1106,12 @@ const Summoner: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                        {Object.values(matchesByDate).length > 0 && (
+                        {matchesLoading ? (
+                            <div className="flex flex-col items-center justify-center py-4 px-4 min-h-[400px]">
+                                <DotLottieReact src={loadingAnimation} className="bg-transparent" loop autoplay />
+                                <p className="text-neutral-800 text-lg font-semibold mt-2 animate-pulse">Loading matches...</p>
+                            </div>
+                        ) : Object.values(matchesByDate).length > 0 ? (
                             <div className="bg-neutral-800">
                                 {Object.entries(matchesByDate).map(([date, matches]) => (
                                     <div key={date}>
@@ -1006,33 +1133,65 @@ const Summoner: React.FC = () => {
                                     {pageNumbers.length > 1 && (
                                         <ul className="flex items-center h-10 text-base">
                                             <li>
-                                                <span onClick={() => setPaginatorPage((prev) => Math.max(prev - 1, 1))} className="flex items-center justify-center px-4 h-10 leading-tight border cursor-pointer transition-all border-gray-300 rounded-s-lg hover:bg-neutral-900 hover:text-neutral-100">
+                                                <Link 
+                                                    to={`?page=${Math.max(paginatorPage - 1, 1)}`}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        setPaginatorPage((prev) => Math.max(prev - 1, 1));
+                                                    }}
+                                                    className="flex items-center justify-center px-4 h-10 leading-tight border cursor-pointer transition-all border-gray-300 rounded-s-lg hover:bg-neutral-900 hover:text-neutral-100"
+                                                >
                                                     <span className="sr-only">Previous</span>
                                                     <svg className="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
                                                         <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 1 1 5l4 4"/>
                                                     </svg>
-                                                </span>
+                                                </Link>
                                             </li>
-                                            {pageNumbers.map((page: number) => (
-                                                <li key={page} onClick={() => setPaginatorPage(page)}>
-                                                    <span className={`flex items-center justify-center px-4 h-10 leading-tight border-y border-r cursor-pointer transition-all ${paginatorPage === page ? "text-purple-600 border-purple-300 bg-purple-100 hover:bg-purple-200 hover:text-purple-700" : "border-gray-300 hover:bg-neutral-900 hover:text-neutral-100"}`}>
-                                                        {page}
-                                                    </span>
-                                                </li>
-                                            ))}
+                                            {visiblePages.map((page) => {
+                                                if (typeof page === 'string') {
+                                                    return (
+                                                        <li key={page}>
+                                                            <span className="flex items-center justify-center px-4 h-10 leading-tight border-y border-r border-gray-300">
+                                                                ...
+                                                            </span>
+                                                        </li>
+                                                    );
+                                                }
+                                                return (
+                                                    <li key={page}>
+                                                        <Link
+                                                            to={`?page=${page}`}
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                setPaginatorPage(page);
+                                                            }}
+                                                            className={`flex items-center justify-center px-4 h-10 leading-tight border-y border-r cursor-pointer transition-all ${paginatorPage === page ? "text-purple-600 border-purple-300 bg-purple-100 hover:bg-purple-200 hover:text-purple-700" : "border-gray-300 hover:bg-neutral-900 hover:text-neutral-100"}`}
+                                                        >
+                                                            {page}
+                                                        </Link>
+                                                    </li>
+                                                );
+                                            })}
                                             <li>
-                                                <span onClick={() => setPaginatorPage((prev) => Math.min(prev + 1, totalPages))} className="flex items-center justify-center px-4 h-10 leading-tight border-y border-r cursor-pointer transition-all border-gray-300 rounded-e-lg hover:bg-neutral-900 hover:text-neutral-100">
+                                                <Link
+                                                    to={`?page=${Math.min(paginatorPage + 1, totalPages)}`}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        setPaginatorPage((prev) => Math.min(prev + 1, totalPages));
+                                                    }}
+                                                    className="flex items-center justify-center px-4 h-10 leading-tight border-y border-r cursor-pointer transition-all border-gray-300 rounded-e-lg hover:bg-neutral-900 hover:text-neutral-100"
+                                                >
                                                     <span className="sr-only">Next</span>
                                                     <svg className="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
                                                         <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
                                                     </svg>
-                                                </span>
+                                                </Link>
                                             </li>
                                         </ul>
                                     )}
                                 </div>
                             </div>
-                        )}
+                        ) : null}
                     </div>
                 </div>
             </div>

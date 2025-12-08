@@ -14,24 +14,30 @@ using backend.Utils;
 namespace backend.Endpoints {
     public static class ProfileEndpoint {
         public static void MapProfileEndpoint(this WebApplication app, string apiKey) {
+            const int matchesPageSize = 20;
+            
             app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}", async (string region, string summonerName, string summonerTag, IHttpClientFactory httpClientFactory, ApplicationDbContext dbContext) => {
                 if (!RegionMappingProvider.RegionMapping.TryGetValue(region, out var continent)) {
                     return Results.Problem("Invalid region specified.");
                 }
+
                 var existingPlayer = await dbContext.Players
                     .Include(p => p.PlayerBasicInfo)
                     .FirstOrDefaultAsync(p => p.PlayerBasicInfo.SummonerName == summonerName && p.PlayerBasicInfo.SummonerTag == summonerTag && p.PlayerBasicInfo.Region == region);
                 if (existingPlayer != null) {
                     var matchJsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                    var unsortedMatches = await dbContext.PlayerMatches
+                    var totalMatches = await dbContext.PlayerMatches
                         .AsNoTracking()
                         .Where(pm => pm.PlayerId == existingPlayer.Id)
+                        .CountAsync();
+
+                    var pageMatches = await dbContext.PlayerMatches
+                        .AsNoTracking()
+                        .Where(pm => pm.PlayerId == existingPlayer.Id)
+                        .OrderByDescending(pm => pm.MatchEndTimestamp)
+                        .Take(matchesPageSize)
                         .Select(pm => JsonSerializer.Deserialize<LeagueMatchDto>(pm.MatchJson, matchJsonOptions)!)
                         .ToListAsync();
-
-                    var pageMatches = unsortedMatches
-                        .OrderByDescending(MatchSortingHelper.GetMatchEndUnixTime)
-                        .ToList();
 
                     var existingPlayerBasicInfoDto = new PlayerBasicInfoDto {
                         SummonerName = existingPlayer.PlayerBasicInfo.SummonerName,
@@ -50,6 +56,7 @@ namespace backend.Endpoints {
                         TotalMasteryScoreData = JsonSerializer.Deserialize<int>(existingPlayer.TotalMasteryScoreData)!,
                         AllMatchIds = JsonSerializer.Deserialize<List<string>>(existingPlayer.AllMatchIds)!,
                         AllMatchesData = pageMatches,
+                        TotalMatches = totalMatches,
                         AllGamesChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStatsDto>>(existingPlayer.AllGamesChampionStatsData)!,
                         AllGamesRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRoleDto>>(existingPlayer.AllGamesRoleStatsData)!,
                         RankedSoloChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStatsDto>>(existingPlayer.RankedSoloChampionStatsData)!,
@@ -177,6 +184,10 @@ namespace backend.Endpoints {
                     .Where(m => m != null)
                     .Cast<LeagueMatchDto>()
                     .OrderByDescending(MatchSortingHelper.GetMatchEndUnixTime)
+                    .ToList();
+
+                var firstPageMatches = allMatchesDataList
+                    .Take(matchesPageSize)
                     .ToList();
 
                 // odavde
@@ -630,7 +641,8 @@ namespace backend.Endpoints {
                     MasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(player.MasteriesData)!,
                     TotalMasteryScoreData = JsonSerializer.Deserialize<int>(player.TotalMasteryScoreData)!,
                     AllMatchIds = allMatchIds,
-                    AllMatchesData = allMatchesDataList,
+                    AllMatchesData = firstPageMatches,
+                    TotalMatches = allMatchesDataList.Count,
                     AllGamesChampionStatsData = allGamesChampionStats,
                     AllGamesRoleStatsData = allGamesRoleStats,
                     RankedSoloChampionStatsData = championStatsByQueue[rankedSoloQueueId],
@@ -644,6 +656,45 @@ namespace backend.Endpoints {
                 return Results.Ok(playerDto);
             })
             .WithName("GetProfileByRiotId")
+            .WithTags("GetProfile");
+
+
+            app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/matches", async (string region, string summonerName, string summonerTag, int page, int pageSize, ApplicationDbContext dbContext) => {
+                const int defaultPageSize = matchesPageSize;
+                int resolvedPage = page > 0 ? page : 1;
+                int resolvedPageSize = pageSize > 0 ? Math.Min(pageSize, 100) : defaultPageSize;
+
+                var player = await dbContext.Players
+                    .Include(p => p.PlayerBasicInfo)
+                    .FirstOrDefaultAsync(p => p.PlayerBasicInfo.SummonerName == summonerName && p.PlayerBasicInfo.SummonerTag == summonerTag && p.PlayerBasicInfo.Region == region);
+
+                if (player == null) {
+                    return Results.NotFound("Player not found.");
+                }
+
+                var matchJsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var totalMatches = await dbContext.PlayerMatches
+                    .AsNoTracking()
+                    .Where(pm => pm.PlayerId == player.Id)
+                    .CountAsync();
+
+                var pageMatches = await dbContext.PlayerMatches
+                    .AsNoTracking()
+                    .Where(pm => pm.PlayerId == player.Id)
+                    .OrderByDescending(pm => pm.MatchEndTimestamp)
+                    .Skip((resolvedPage - 1) * resolvedPageSize)
+                    .Take(resolvedPageSize)
+                    .Select(pm => JsonSerializer.Deserialize<LeagueMatchDto>(pm.MatchJson, matchJsonOptions)!)
+                    .ToListAsync();
+
+                return Results.Ok(new {
+                    page = resolvedPage,
+                    pageSize = resolvedPageSize,
+                    totalMatches,
+                    matches = pageMatches
+                });
+            })
+            .WithName("GetProfileMatchesPage")
             .WithTags("GetProfile");
 
 

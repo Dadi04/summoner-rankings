@@ -25,6 +25,7 @@ interface Player {
     totalMasteryScoreData: number;
     allMatchIds: string[];
     allMatchesData: Match[];
+    totalMatches?: number;
     allGamesChampionStatsData: ChampionStats[];
     allGamesRoleStatsData: PreferredRole[];
     rankedSoloChampionStatsData: ChampionStats[];

@@ -19,6 +19,8 @@ namespace backend.Endpoints {
                     return Results.Problem("Invalid region specified.");
                 }
 
+                const int matchesPageSize = 20;
+
                 var existingPlayer = await dbContext.Players
                     .Include(p => p.PlayerBasicInfo)
                     .FirstOrDefaultAsync(p => p.PlayerBasicInfo.SummonerName == summonerName && p.PlayerBasicInfo.SummonerTag == summonerTag && p.PlayerBasicInfo.Region == region);
@@ -755,6 +757,12 @@ namespace backend.Endpoints {
                     ProfileIcon = JsonSerializer.Deserialize<RiotSummonerDto>(existingPlayer.SummonerData)!.profileIconId,
                 };
 
+                var firstPageMatches = mergedMatchList!
+                    .Where(m => m != null)
+                    .Take(matchesPageSize)
+                    .Select(m => m!)
+                    .ToList();
+
                 var playerDto = new PlayerDto {
                     Id = existingPlayer.Id,
                     PlayerBasicInfo = playerBasicInfoDto,
@@ -764,7 +772,8 @@ namespace backend.Endpoints {
                     MasteriesData = JsonSerializer.Deserialize<List<ChampionMasteryDto>>(existingPlayer.MasteriesData)!,
                     TotalMasteryScoreData = JsonSerializer.Deserialize<int>(existingPlayer.TotalMasteryScoreData)!,
                     AllMatchIds = JsonSerializer.Deserialize<List<string>>(existingPlayer.AllMatchIds)!,
-                    AllMatchesData = mergedMatchList!,
+                    AllMatchesData = firstPageMatches,
+                    TotalMatches = mergedMatchIds.Count,
                     AllGamesChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStatsDto>>(existingPlayer.AllGamesChampionStatsData)!,
                     AllGamesRoleStatsData = JsonSerializer.Deserialize<Dictionary<string, PreferredRoleDto>>(existingPlayer.AllGamesRoleStatsData)!,
                     RankedSoloChampionStatsData = JsonSerializer.Deserialize<Dictionary<int, ChampionStatsDto>>(existingPlayer.RankedSoloChampionStatsData)!,
