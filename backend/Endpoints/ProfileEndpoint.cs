@@ -659,7 +659,19 @@ namespace backend.Endpoints {
             .WithTags("GetProfile");
 
 
-            app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/matches", async (string region, string summonerName, string summonerTag, int page, int pageSize, ApplicationDbContext dbContext) => {
+            app.MapGet("/api/lol/profile/{region}/{summonerName}-{summonerTag}/matches", async (
+                string region, 
+                string summonerName, 
+                string summonerTag, 
+                int page, 
+                int pageSize,
+                string? role,
+                string? queueIds,
+                long? startTime,
+                long? endTime,
+                string? championName,
+                ApplicationDbContext dbContext) => {
+                
                 const int defaultPageSize = matchesPageSize;
                 int resolvedPage = page > 0 ? page : 1;
                 int resolvedPageSize = pageSize > 0 ? Math.Min(pageSize, 100) : defaultPageSize;
@@ -673,25 +685,95 @@ namespace backend.Endpoints {
                 }
 
                 var matchJsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var totalMatches = await dbContext.PlayerMatches
-                    .AsNoTracking()
-                    .Where(pm => pm.PlayerId == player.Id)
-                    .CountAsync();
+                
+                int[]? parsedQueueIds = null;
+                if (!string.IsNullOrEmpty(queueIds)) {
+                    parsedQueueIds = queueIds.Split(',').Select(int.Parse).ToArray();
+                }
 
-                var pageMatches = await dbContext.PlayerMatches
+                bool hasFilters = !string.IsNullOrEmpty(role) || parsedQueueIds != null || startTime.HasValue || endTime.HasValue || !string.IsNullOrEmpty(championName);
+
+                if (!hasFilters) {
+                    var totalMatches = await dbContext.PlayerMatches
+                        .AsNoTracking()
+                        .Where(pm => pm.PlayerId == player.Id)
+                        .CountAsync();
+
+                    var pageMatches = await dbContext.PlayerMatches
+                        .AsNoTracking()
+                        .Where(pm => pm.PlayerId == player.Id)
+                        .OrderByDescending(pm => pm.MatchEndTimestamp)
+                        .Skip((resolvedPage - 1) * resolvedPageSize)
+                        .Take(resolvedPageSize)
+                        .Select(pm => JsonSerializer.Deserialize<LeagueMatchDto>(pm.MatchJson, matchJsonOptions)!)
+                        .ToListAsync();
+
+                    return Results.Ok(new {
+                        page = resolvedPage,
+                        pageSize = resolvedPageSize,
+                        totalMatches,
+                        matches = pageMatches,
+                        filtered = false
+                    });
+                }
+
+                var allMatches = await dbContext.PlayerMatches
                     .AsNoTracking()
                     .Where(pm => pm.PlayerId == player.Id)
                     .OrderByDescending(pm => pm.MatchEndTimestamp)
-                    .Skip((resolvedPage - 1) * resolvedPageSize)
-                    .Take(resolvedPageSize)
                     .Select(pm => JsonSerializer.Deserialize<LeagueMatchDto>(pm.MatchJson, matchJsonOptions)!)
                     .ToListAsync();
+
+                var filteredMatches = allMatches.Where(match => {
+                    if (match?.details?.info?.participants == null) return false;
+                    
+                    var participant = match.details.info.participants.FirstOrDefault(p => p.puuid == player.Puuid);
+                    if (participant == null) return false;
+
+                    // Filter by role
+                    if (!string.IsNullOrEmpty(role) && !role.Equals("fill", StringComparison.OrdinalIgnoreCase)) {
+                        if (!participant.teamPosition.Equals(role, StringComparison.OrdinalIgnoreCase)) {
+                            return false;
+                        }
+                    }
+
+                    // Filter by queue IDs
+                    if (parsedQueueIds != null && parsedQueueIds.Length > 0) {
+                        if (!parsedQueueIds.Contains(match.details.info.queueId)) {
+                            return false;
+                        }
+                    }
+
+                    // Filter by (patch)
+                    if (startTime.HasValue && match.details.info.gameStartTimestamp < startTime.Value) {
+                        return false;
+                    }
+                    if (endTime.HasValue && match.details.info.gameStartTimestamp >= endTime.Value) {
+                        return false;
+                    }
+
+                    // Filter by champion
+                    if (!string.IsNullOrEmpty(championName) && !championName.Equals("All Champions", StringComparison.OrdinalIgnoreCase)) {
+                        if (!participant.championName.Equals(championName, StringComparison.OrdinalIgnoreCase)) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }).ToList();
+
+                var totalFilteredMatches = filteredMatches.Count;
+                var pagedFilteredMatches = filteredMatches
+                    .Skip((resolvedPage - 1) * resolvedPageSize)
+                    .Take(resolvedPageSize)
+                    .ToList();
 
                 return Results.Ok(new {
                     page = resolvedPage,
                     pageSize = resolvedPageSize,
-                    totalMatches,
-                    matches = pageMatches
+                    totalMatches = totalFilteredMatches,
+                    matches = pagedFilteredMatches,
+                    filtered = true
                 });
             })
             .WithName("GetProfileMatchesPage")

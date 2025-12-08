@@ -100,10 +100,22 @@ const Summoner: React.FC = () => {
     const [selectedChampionPerformanceMode, setSelectedChampionPerformanceMode] = useState<string>("soloduo");
     const [selectedRolePerformanceMode, setSelectedRolePerformanceMode] = useState<string>("soloduo");
 
-    const [selectedRole, setSelectedRole] = useState<string>("fill");
-    const [selectedPatch, setSelectedPatch] = useState<string>("all-patches");
-    const [selectedQueue, setSelectedQueue] = useState<string>("all-queues");
-    const [selectedChampion, setSelectedChampion] = useState<string>("All Champions");
+    const [selectedRole, setSelectedRole] = useState<string>(() => {
+        const roleParam = searchParams.get("role");
+        return roleParam || "fill";
+    });
+    const [selectedPatch, setSelectedPatch] = useState<string>(() => {
+        const patchParam = searchParams.get("patch");
+        return patchParam || "all-patches";
+    });
+    const [selectedQueue, setSelectedQueue] = useState<string>(() => {
+        const queueParam = searchParams.get("queue");
+        return queueParam || "all-queues";
+    });
+    const [selectedChampion, setSelectedChampion] = useState<string>(() => {
+        const championParam = searchParams.get("champion");
+        return championParam || "All Champions";
+    });
     const [showFilter, setShowFilter] = useState<boolean>(false);
     const [showPatch, setShowPatch] = useState<boolean>(false);
     const [filterChampions, setFilterChampions] = useState("");
@@ -115,6 +127,9 @@ const Summoner: React.FC = () => {
     });
     const [fetchedPages, setFetchedPages] = useState<Set<number>>(new Set([1]));
     const [matchesByPage, setMatchesByPage] = useState<Map<number, Match[]>>(new Map());
+    const [filteredMatchesByPage, setFilteredMatchesByPage] = useState<Map<number, Match[]>>(new Map());
+    const [filteredTotalMatches, setFilteredTotalMatches] = useState<number | null>(null);
+    const [lastFilterKey, setLastFilterKey] = useState<string>("");
     const inputPatchesRef = useRef<HTMLDivElement>(null);
     const dropdownPatchesRef = useRef<HTMLDivElement>(null);
     const inputChampionsRef = useRef<HTMLDivElement>(null);
@@ -138,104 +153,135 @@ const Summoner: React.FC = () => {
     const [soloLpLoading, setSoloLpLoading] = useState<boolean>(false);
     const [flexLpLoading, setFlexLpLoading] = useState<boolean>(false);
 
+    const hasActiveFilters = selectedRole !== "fill" || selectedQueue !== "all-queues" || selectedPatch !== "all-patches" || selectedChampion !== "All Champions";
+
+    const currentFilterKey = useMemo(() => {
+        if (!hasActiveFilters) return "";
+        return `${selectedRole}-${selectedQueue}-${selectedPatch}-${selectedChampion}`;
+    }, [hasActiveFilters, selectedRole, selectedQueue, selectedPatch, selectedChampion]);
+
+    useEffect(() => {
+        if (currentFilterKey !== lastFilterKey) {
+            setFilteredMatchesByPage(new Map());
+            setFilteredTotalMatches(null);
+            setLastFilterKey(currentFilterKey);
+        }
+    }, [currentFilterKey, lastFilterKey]);
+
     const ensureMatchesForPage = useCallback(async (page: number) => {
         if (!apiData) return;
-        
-        if (fetchedPages.has(page)) {
-            return;
+
+        const buildFilterParams = () => {
+            const params = new URLSearchParams();
+            params.set("page", page.toString());
+            params.set("pageSize", GAMES_PER_PAGE.toString());
+
+            if (hasActiveFilters) {
+                if (selectedRole !== "fill") {
+                    params.set("role", selectedRole);
+                }
+                
+                const allowedQueues = queueDefs.find(q => q.key === selectedQueue)?.modeIds;
+                if (allowedQueues) {
+                    params.set("queueIds", allowedQueues.join(","));
+                }
+                
+                const { startMs, endMs } = patchWindows[selectedPatch] || {};
+                if (startMs && startMs !== -Infinity) {
+                    params.set("startTime", startMs.toString());
+                }
+                if (endMs && endMs !== Infinity) {
+                    params.set("endTime", endMs.toString());
+                }
+                
+                if (selectedChampion !== "All Champions") {
+                    params.set("championName", selectedChampion);
+                }
+            }
+            
+            return params.toString();
+        };
+
+        if (hasActiveFilters) {
+            if (filteredMatchesByPage.has(page) && currentFilterKey === lastFilterKey) {
+                return;
+            }
+        } else {
+            if (fetchedPages.has(page)) {
+                return;
+            }
         }
 
         setMatchesLoading(true);
         try {
-            const response = await fetch(`/api/lol/profile/${regionCode}/${summoner}/matches?page=${page}&pageSize=${GAMES_PER_PAGE}`);
+            const queryParams = buildFilterParams();
+            const response = await fetch(`/api/lol/profile/${regionCode}/${summoner}/matches?${queryParams}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
             const incomingMatches: Match[] = data.matches ?? data;
 
-            setMatchesByPage(prev => {
-                const newMap = new Map(prev);
-                newMap.set(page, incomingMatches);
-                return newMap;
-            });
-
-            setApiData(prev => {
-                if (!prev) return prev;
-
-                const merged = [...prev.allMatchesData];
-                incomingMatches.forEach(match => {
-                    if (!merged.find(m => m.details.metadata.matchId === match.details.metadata.matchId)) {
-                        merged.push(match);
-                    }
+            if (hasActiveFilters) {
+                setFilteredMatchesByPage(prev => {
+                    const newMap = new Map(prev);
+                    newMap.set(page, incomingMatches);
+                    return newMap;
+                });
+                setFilteredTotalMatches(data.totalMatches);
+            } else {
+                setMatchesByPage(prev => {
+                    const newMap = new Map(prev);
+                    newMap.set(page, incomingMatches);
+                    return newMap;
                 });
 
-                merged.sort((a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp);
+                setApiData(prev => {
+                    if (!prev) return prev;
 
-                const updated = {
-                    ...prev,
-                    allMatchesData: merged,
-                    totalMatches: data.totalMatches ?? prev.totalMatches ?? prev.allMatchIds?.length
-                };
+                    const merged = [...prev.allMatchesData];
+                    incomingMatches.forEach(match => {
+                        if (!merged.find(m => m.details.metadata.matchId === match.details.metadata.matchId)) {
+                            merged.push(match);
+                        }
+                    });
 
-                playerCache.setItem(cacheKey, updated).catch(err => console.error("Error caching data:", err));
-                dispatchPlayerCacheUpdate(cacheKey, updated);
-                return updated;
-            });
+                    merged.sort((a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp);
 
-            setFetchedPages(prev => new Set(prev).add(page));
+                    const updated = {
+                        ...prev,
+                        allMatchesData: merged,
+                        totalMatches: data.totalMatches ?? prev.totalMatches ?? prev.allMatchIds?.length
+                    };
+
+                    playerCache.setItem(cacheKey, updated).catch(err => console.error("Error caching data:", err));
+                    dispatchPlayerCacheUpdate(cacheKey, updated);
+                    return updated;
+                });
+
+                setFetchedPages(prev => new Set(prev).add(page));
+            }
 
         } catch (error) {
             console.error("Error fetching matches page:", error);
         } finally {
             setMatchesLoading(false);
         }
-    }, [apiData, cacheKey, regionCode, summoner, fetchedPages]);
+    }, [apiData, cacheKey, regionCode, summoner, fetchedPages, hasActiveFilters, selectedRole, selectedQueue, selectedPatch, selectedChampion, filteredMatchesByPage, currentFilterKey, lastFilterKey]);
 
     const [major, minor] = LOL_VERSION.split(".").map(Number);
     const versions = Array.from({length: minor - 0}, (_, i) => `${major}.${minor - i}`);
-
-    const filteredMatches = useMemo(() => {
-        if (!apiData) return [];
-        return apiData.allMatchesData.filter(match => {
-            if (selectedRole !== "fill" && match.details.info.participants.find(p => p.puuid === apiData.puuid)?.teamPosition.toLowerCase() !== selectedRole.toLowerCase()) {
-                return false;
-            }
-
-            const allowedQueues = queueDefs.find(q => q.key === selectedQueue)?.modeIds;
-            if (allowedQueues && !allowedQueues.includes(match.details.info.queueId)) {
-                return false;
-            }
-
-            const { startMs, endMs } = patchWindows[selectedPatch] || { startMs: -Infinity, endMs: Infinity };
-            if (match.details.info.gameStartTimestamp < startMs || match.details.info.gameStartTimestamp >= endMs) {
-                return false;
-            }
-
-            if (selectedChampion !== "All Champions" && match.details.info.participants.find(p => p.puuid === apiData.puuid)?.championName !== selectedChampion) {
-                return false;
-            }
-            
-            return true;
-        })
-    }, [apiData, selectedRole, selectedQueue, selectedPatch, selectedChampion])
-
-    const hasActiveFilters = selectedRole !== "fill" || selectedQueue !== "all-queues" || selectedPatch !== "all-patches" || selectedChampion !== "All Champions";
 
     const { grouped: matchesByDate, pageMatches } = useMemo(() => {
         let pageMatches: Match[] = [];
 
         if (hasActiveFilters) {
-            if (!filteredMatches.length) return { grouped: {}, pageMatches: [] };
-
-            const sorted = [...filteredMatches].sort(
-                (a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp
-            );
-
-            const start = (paginatorPage - 1) * GAMES_PER_PAGE;
-            const end = start + GAMES_PER_PAGE;
-
-            pageMatches = sorted.slice(start, end);
+            const serverFilteredMatches = filteredMatchesByPage.get(paginatorPage);
+            if (serverFilteredMatches && serverFilteredMatches.length > 0) {
+                pageMatches = [...serverFilteredMatches].sort(
+                    (a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp
+                );
+            }
         } else {
             const serverPageMatches = matchesByPage.get(paginatorPage);
             if (serverPageMatches && serverPageMatches.length > 0) {
@@ -256,7 +302,61 @@ const Summoner: React.FC = () => {
         }, {});
         
         return { grouped, pageMatches };
-    }, [filteredMatches, paginatorPage, hasActiveFilters, matchesByPage, apiData?.allMatchesData]);
+    }, [paginatorPage, hasActiveFilters, matchesByPage, filteredMatchesByPage, apiData?.allMatchesData]);
+
+    useEffect(() => {
+        const roleParam = searchParams.get("role") || "fill";
+        const patchParam = searchParams.get("patch") || "all-patches";
+        const queueParam = searchParams.get("queue") || "all-queues";
+        const championParam = searchParams.get("champion") || "All Champions";
+
+        if (roleParam !== selectedRole) {
+            setSelectedRole(roleParam);
+        }
+        if (patchParam !== selectedPatch) {
+            setSelectedPatch(patchParam);
+        }
+        if (queueParam !== selectedQueue) {
+            setSelectedQueue(queueParam);
+        }
+        if (championParam !== selectedChampion) {
+            setSelectedChampion(championParam);
+        }
+    }, [searchParams]);
+
+    useEffect(() => {
+        setSearchParams(prev => {
+            const newParams = new URLSearchParams(prev);
+            
+            newParams.set("page", paginatorPage.toString());
+            
+            if (selectedRole !== "fill") {
+                newParams.set("role", selectedRole);
+            } else {
+                newParams.delete("role");
+            }
+            
+            if (selectedPatch !== "all-patches") {
+                newParams.set("patch", selectedPatch);
+            } else {
+                newParams.delete("patch");
+            }
+            
+            if (selectedQueue !== "all-queues") {
+                newParams.set("queue", selectedQueue);
+            } else {
+                newParams.delete("queue");
+            }
+            
+            if (selectedChampion !== "All Champions") {
+                newParams.set("champion", selectedChampion);
+            } else {
+                newParams.delete("champion");
+            }
+            
+            return newParams;
+        }, { replace: true });
+    }, [selectedRole, selectedPatch, selectedQueue, selectedChampion, paginatorPage, setSearchParams]);
 
     useEffect(() => {
         setPaginatorPage(1);
@@ -264,7 +364,7 @@ const Summoner: React.FC = () => {
 
     useEffect(() => {
         ensureMatchesForPage(paginatorPage);
-    }, [paginatorPage, ensureMatchesForPage]);
+    }, [paginatorPage, ensureMatchesForPage, currentFilterKey]);
 
     useEffect(() => {
         const pageParam = searchParams.get("page");
@@ -276,20 +376,6 @@ const Summoner: React.FC = () => {
             return prev;
         });
     }, [searchParams]);
-
-    useEffect(() => {
-        setSearchParams(prev => {
-            const newParams = new URLSearchParams(prev);
-            const currentUrlPage = newParams.get("page");
-            const expectedUrlPage = paginatorPage.toString();
-            
-            if (currentUrlPage !== expectedUrlPage) {
-                newParams.set("page", paginatorPage.toString());
-                return newParams;
-            }
-            return prev;
-        }, { replace: true });
-    }, [paginatorPage, setSearchParams]);
 
     const pageStats = useMemo(() => {
         const matches = pageMatches;
@@ -651,7 +737,10 @@ const Summoner: React.FC = () => {
     const totalPages = Math.max(
         1,
         Math.ceil(
-            ((apiData?.totalMatches ?? apiData?.allMatchIds?.length ?? filteredMatches.length) || 0) / GAMES_PER_PAGE
+            (hasActiveFilters 
+                ? (filteredTotalMatches ?? 0) 
+                : (apiData?.totalMatches ?? apiData?.allMatchIds?.length ?? 0)
+            ) / GAMES_PER_PAGE
         )
     );
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
