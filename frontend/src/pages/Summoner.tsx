@@ -62,7 +62,22 @@ const patchWindows: { [key: string]: { startMs: number; endMs: number } } = {
     "15.6": { startMs: Date.parse("2025-03-19T00:00:00Z"), endMs: Date.parse("2025-04-02T00:00:00Z") },
     "15.7": { startMs: Date.parse("2025-04-02T00:00:00Z"), endMs: Date.parse("2025-04-16T00:00:00Z") },
     "15.8": { startMs: Date.parse("2025-04-16T00:00:00Z"), endMs: Date.parse("2025-04-30T00:00:00Z") },
-    "15.9": { startMs: Date.parse("2025-04-30T00:00:00Z"), endMs: Date.parse("2025-05-14T00:00:00Z") }
+    "15.9": { startMs: Date.parse("2025-04-30T00:00:00Z"), endMs: Date.parse("2025-05-14T00:00:00Z") },
+    "15.10": { startMs: Date.parse("2025-05-14T00:00:00Z"), endMs: Date.parse("2025-05-29T00:00:00Z") },
+    "15.11": { startMs: Date.parse("2025-05-29T00:00:00Z"), endMs: Date.parse("2025-06-11T00:00:00Z") },
+    "15.12": { startMs: Date.parse("2025-06-11T00:00:00Z"), endMs: Date.parse("2025-06-25T00:00:00Z") },
+    "15.13": { startMs: Date.parse("2025-06-25T00:00:00Z"), endMs: Date.parse("2025-07-16T00:00:00Z") },
+    "15.14": { startMs: Date.parse("2025-07-16T00:00:00Z"), endMs: Date.parse("2025-07-30T00:00:00Z") },
+    "15.15": { startMs: Date.parse("2025-07-30T00:00:00Z"), endMs: Date.parse("2025-08-13T00:00:00Z") },
+    "15.16": { startMs: Date.parse("2025-08-13T00:00:00Z"), endMs: Date.parse("2025-08-27T00:00:00Z") },
+    "15.17": { startMs: Date.parse("2025-08-27T00:00:00Z"), endMs: Date.parse("2025-09-10T00:00:00Z") },
+    "15.18": { startMs: Date.parse("2025-09-10T00:00:00Z"), endMs: Date.parse("2025-09-24T00:00:00Z") },
+    "15.19": { startMs: Date.parse("2025-09-24T00:00:00Z"), endMs: Date.parse("2025-10-08T00:00:00Z") },
+    "15.20": { startMs: Date.parse("2025-10-08T00:00:00Z"), endMs: Date.parse("2025-10-22T00:00:00Z") },
+    "15.21": { startMs: Date.parse("2025-10-22T00:00:00Z"), endMs: Date.parse("2025-11-05T00:00:00Z") },
+    "15.22": { startMs: Date.parse("2025-11-05T00:00:00Z"), endMs: Date.parse("2025-11-19T00:00:00Z") },
+    "15.23": { startMs: Date.parse("2025-11-19T00:00:00Z"), endMs: Date.parse("2025-12-03T00:00:00Z") },
+    "15.24": { startMs: Date.parse("2025-12-03T00:00:00Z"), endMs: Date.parse("2026-01-07T00:00:00Z") }
 };
 
 const GAMES_PER_PAGE = 20;
@@ -1121,7 +1136,7 @@ const Summoner: React.FC = () => {
                                         ))}
                                     </div>
                                     <div className="relative">
-                                        <div ref={inputPatchesRef} className="flex items-center justify-center p-2 text-lg font-bold">
+                                        <div ref={inputPatchesRef} className="flex items-center justify-center p-2 text-lg font-bold cursor-pointer">
                                             <p onClick={() => setShowPatch(prev => !prev)}>Select Patch</p>
                                             <img src={arrowDownLight} alt="arrowDownLight" onClick={() => setShowPatch(prev => !prev)} className={`h-4 transform transition-transform ${showPatch ? "rotate-180" : ""}`} />
                                         </div>
