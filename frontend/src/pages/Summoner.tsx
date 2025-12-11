@@ -476,6 +476,25 @@ const Summoner: React.FC = () => {
     }, [regionCode, summoner, apiData, cacheKey, matchesByPage]);
 
     useEffect(() => {
+        if (!apiData?.allMatchesData?.length) return;
+
+        const sorted = [...apiData.allMatchesData].sort(
+            (a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp
+        );
+        const latestId = sorted[0]?.details.metadata.matchId;
+        const currentLatestId = matchesByPage.get(1)?.[0]?.details.metadata.matchId;
+
+        if (latestId && latestId !== currentLatestId) {
+            setMatchesByPage(prev => {
+                const newMap = new Map(prev);
+                newMap.set(1, sorted.slice(0, GAMES_PER_PAGE));
+                return newMap;
+            });
+            setFetchedPages(new Set([1]));
+        }
+    }, [apiData?.allMatchesData, matchesByPage]);
+
+    useEffect(() => {
         if (!apiData) return;
         
         const loadChampions = async () => {
@@ -1036,76 +1055,78 @@ const Summoner: React.FC = () => {
                         </div>
                     </div>
                     <div className="w-[75%] flex flex-col">
-                        <div className="bg-neutral-800 text-center p-2 pb-4 mb-2 border-b-6 border-purple-600 rounded-b-lg shadow-xl">
-                            <div className="flex justify-center items-center gap-2 p-2">
-                                <img src={arrowGoingUp} alt="arrowGoingUp" className="h-8" />
-                                <h1 className="text-lg">Last 20 Games Pefrormance</h1>
-                            </div>
-                            <div className="grid grid-cols-[25%_25%_25%_25%]">
-                                <div className="flex flex-col items-center justify-center space-y-10 relative">
-                                    <div className="relative w-52 h-52 rounded-full" style={{ background: `conic-gradient( #3b82f6 0deg ${pageStats.winrate * 3.6}deg, #ef4444 ${pageStats.winrate * 3.6}deg 360deg)`}}>
-                                        <div className="absolute inset-0 m-auto w-40 h-40 bg-neutral-800 rounded-full flex items-center justify-center">
-                                            <div className="flex flex-col items-center justify-center">
-                                                <p className={`text-xl font-semibold m-0 ${getWinrateColor(pageStats.winrate, pageStats.totalGames)}`}>
-                                                    {pageStats.winrate}%
-                                                </p>
-                                                <p className="text-neutral-400 text-lg mb-2">Winrate</p>
-                                                <p className="text-xl text-neutral-300 font-semibold">
-                                                    {pageStats.allWins}W - {pageStats.allLosses}L
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
+                        {pageStats.totalGames > 0 && (
+                            <div className="bg-neutral-800 text-center p-2 pb-4 mb-2 border-b-6 border-purple-600 rounded-b-lg shadow-xl">
+                                <div className="flex justify-center items-center gap-2 p-2">
+                                    <img src={arrowGoingUp} alt="arrowGoingUp" className="h-8" />
+                                    <h1 className="text-lg">Current Page Performance</h1>
                                 </div>
-                                <div className="flex flex-col h-full justify-center gap-4">
-                                    {pageStats.top3.map(champStats => (
-                                        <div key={champStats.championId} className="flex items-center justify-end gap-6">
-                                            <ChampionImage championId={champStats.championId} teamId={200} isTeamIdSame={true} classes="h-13" />
-                                            <div className="w-[140px] flex flex-col text-lg">
-                                                <div className="flex gap-2">
-                                                    <p className={`${getWinrateColor(champStats.winrate, champStats.games)}`}>{Math.round(champStats.winrate)}%</p>
-                                                    <p className="text-neutral-400">{champStats.wins}W-{champStats.games-champStats.wins}L</p>
-                                                </div>
-                                                <div>
-                                                    <p className={`text-left ${getKDAColor(champStats.averageKDA)}`}>{champStats.averageKDA.toFixed(1)} KDA</p>
+                                <div className="grid grid-cols-[25%_25%_25%_25%]">
+                                    <div className="flex flex-col items-center justify-center space-y-10 relative">
+                                        <div className="relative w-52 h-52 rounded-full" style={{ background: `conic-gradient( #3b82f6 0deg ${pageStats.winrate * 3.6}deg, #ef4444 ${pageStats.winrate * 3.6}deg 360deg)`}}>
+                                            <div className="absolute inset-0 m-auto w-40 h-40 bg-neutral-800 rounded-full flex items-center justify-center">
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <p className={`text-xl font-semibold m-0 ${getWinrateColor(pageStats.winrate, pageStats.totalGames)}`}>
+                                                        {pageStats.winrate}%
+                                                    </p>
+                                                    <p className="text-neutral-400 text-lg mb-2">Winrate</p>
+                                                    <p className="text-xl text-neutral-300 font-semibold">
+                                                        {pageStats.allWins}W - {pageStats.allLosses}L
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                                <div>
-                                    <p className="text-neutral-400 text-lg">KDA</p>
-                                    <p className="text-6xl text-purple-400 font-semibold mt-12 mb-5">{pageStats.avgKDA}</p>
-                                    <div className="flex items-center justify-center">
-                                        <p className="text-xl">{(pageStats.totalKills/GAMES_PER_PAGE).toFixed(1)}</p>
-                                        <p className="text-md text-neutral-600 px-2">/</p>
-                                        <p className="text-xl text-purple-300">{(pageStats.totalDeaths/GAMES_PER_PAGE).toFixed(1)}</p>
-                                        <p className="text-md text-neutral-600 px-2">/</p>
-                                        <p className="text-xl">{(pageStats.totalAssists/GAMES_PER_PAGE).toFixed(1)}</p>
                                     </div>
-                                    <p className="text-neutral-400 mt-4">Average Kill Participation {pageStats.avgKP}%</p>
-                                </div>
-                                <div>
-                                    <p className="text-neutral-400 text-lg">Preferred Roles</p>
-                                    <div className="space-y-2 p-2">
-                                        {roleLabels.map(({ role, }) => {
-                                            const percent = pageStats.rolePercents[role];
-                                            return (
-                                                <div key={role}>
-                                                    <div className="flex justify-between mb-1 text-sm text-neutral-300 items-center">
-                                                        <img src={`https://dpm.lol/position/${role}.svg`} alt="" />
-                                                        <span>{percent}%</span>
+                                    <div className="flex flex-col h-full justify-center gap-4">
+                                        {pageStats.top3.map(champStats => (
+                                            <div key={champStats.championId} className="flex items-center justify-end gap-6">
+                                                <ChampionImage championId={champStats.championId} teamId={200} isTeamIdSame={true} classes="h-13" />
+                                                <div className="w-[140px] flex flex-col text-lg">
+                                                    <div className="flex gap-2">
+                                                        <p className={`${getWinrateColor(champStats.winrate, champStats.games)}`}>{Math.round(champStats.winrate)}%</p>
+                                                        <p className="text-neutral-400">{champStats.wins}W-{champStats.games-champStats.wins}L</p>
                                                     </div>
-                                                    <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
-                                                        <div className="h-full rounded-full bg-purple-500" style={{ width: `${percent}%` }} />
+                                                    <div>
+                                                        <p className={`text-left ${getKDAColor(champStats.averageKDA)}`}>{champStats.averageKDA.toFixed(1)} KDA</p>
                                                     </div>
                                                 </div>
-                                            );
-                                        })}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div>
+                                        <p className="text-neutral-400 text-lg">KDA</p>
+                                        <p className="text-6xl text-purple-400 font-semibold mt-12 mb-5">{pageStats.avgKDA}</p>
+                                        <div className="flex items-center justify-center">
+                                            <p className="text-xl">{(pageStats.totalKills/GAMES_PER_PAGE).toFixed(1)}</p>
+                                            <p className="text-md text-neutral-600 px-2">/</p>
+                                            <p className="text-xl text-purple-300">{(pageStats.totalDeaths/GAMES_PER_PAGE).toFixed(1)}</p>
+                                            <p className="text-md text-neutral-600 px-2">/</p>
+                                            <p className="text-xl">{(pageStats.totalAssists/GAMES_PER_PAGE).toFixed(1)}</p>
+                                        </div>
+                                        <p className="text-neutral-400 mt-4">Average Kill Participation {pageStats.avgKP}%</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-neutral-400 text-lg">Preferred Roles</p>
+                                        <div className="space-y-2 p-2">
+                                            {roleLabels.map(({ role, }) => {
+                                                const percent = pageStats.rolePercents[role];
+                                                return (
+                                                    <div key={role}>
+                                                        <div className="flex justify-between mb-1 text-sm text-neutral-300 items-center">
+                                                            <img src={`https://dpm.lol/position/${role}.svg`} alt="" />
+                                                            <span>{percent}%</span>
+                                                        </div>
+                                                        <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
+                                                            <div className="h-full rounded-full bg-purple-500" style={{ width: `${percent}%` }} />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                         <div className="flex justify-between items-center mb-2">
                             <div className="flex bg-neutral-700 rounded-xl gap-3 p-2 border border-purple-500">
                                 <img key="fill" 
