@@ -48,6 +48,7 @@ namespace backend.Mappings {
             { "XinZhao", "TOP" },
             { "Yorick", "TOP" },
             { "Zac", "TOP" },
+            { "Zaahen", "TOP" },
 
             { "Ahri", "MIDDLE" },
             { "Akshan", "MIDDLE" },

@@ -215,6 +215,19 @@ const Champions: React.FC = () => {
             const bVal = b[primarySortBy.key as keyof ChampionStats] ?? 0;
 
             if (typeof aVal === "number" && typeof bVal === "number") {
+                if (primarySortBy.key === "winrate" && aVal === bVal) {
+                    const aLosses = a.games - a.wins;
+                    const bLosses = b.games - b.wins;
+                    if (aLosses === bLosses) {
+                        const winDiff = a.wins - b.wins;
+                        return primarySortBy.direction === "desc" ? -winDiff : winDiff;
+                    }
+                    const gameDiff = a.games - b.games;
+                    return primarySortBy.direction === "desc" ? gameDiff : -gameDiff;
+                }
+                if (primarySortBy.key === "games" && aVal === bVal) {
+                    return b.winrate - a.winrate;
+                }
                 return primarySortBy.direction === "desc" ? bVal - aVal : aVal - bVal;
             }
 
@@ -240,6 +253,19 @@ const Champions: React.FC = () => {
                 const bVal = b[secondarySortBy.key as keyof ChampionStats] ?? 0;
                 
                 if (typeof aVal === "number" && typeof bVal === "number") {
+                    if (secondarySortBy.key === "winrate" && aVal === bVal) {
+                        const aLosses = a.games - a.wins;
+                        const bLosses = b.games - b.wins;
+                        if (aLosses === bLosses) {
+                            const winDiff = a.wins - b.wins;
+                            return secondarySortBy.direction === "desc" ? -winDiff : winDiff;
+                        }
+                        const gameDiff = a.games - b.games;
+                        return secondarySortBy.direction === "desc" ? gameDiff : -gameDiff;
+                    }
+                    if (secondarySortBy.key === "games" && aVal === bVal) {
+                        return b.winrate - a.winrate;
+                    }
                     return secondarySortBy.direction === "desc" ? bVal - aVal : aVal - bVal;
                 }
                 
@@ -515,7 +541,18 @@ const Champions: React.FC = () => {
 
                                     return (
                                         <div key={`${stat.championId}-${i+1}`} className="text-neutral-50">
-                                            <div onClick={() => setOpenMatchupDiv(prev => prev === i ? null : i)} className="grid grid-cols-[5%_15%_17%_10%_8%_8%_8%_8%_8%_8%_5%] items-center text-center my-1 transition-all hover:bg-neutral-900">
+                                            <div
+                                                onClick={() => {
+                                                    setOpenMatchupDiv(prev => {
+                                                        const next = prev === i ? null : i;
+                                                        if (next !== null) {
+                                                            setSecondarySortBy({ key: "games", direction: "desc" });
+                                                        }
+                                                        return next;
+                                                    });
+                                                }}
+                                                className="grid grid-cols-[5%_15%_17%_10%_8%_8%_8%_8%_8%_8%_5%] items-center text-center my-1 transition-all hover:bg-neutral-900"
+                                            >
                                                 <p>{i+1}</p>
                                                 <div className="flex items-center gap-1">
                                                     <ChampionImage championId={stat.championId} isTeamIdSame={true} classes="h-12" />
