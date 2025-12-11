@@ -29,15 +29,7 @@ namespace backend.Endpoints {
                 }
 
                 var matchJsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var allMatchesData = await dbContext.PlayerMatches
-                    .AsNoTracking()
-                    .Where(pm => pm.PlayerId == existingPlayer.Id)
-                    .Select(pm => JsonSerializer.Deserialize<LeagueMatchDto>(pm.MatchJson, matchJsonOptions)!)
-                    .ToListAsync();
-
-                allMatchesData = allMatchesData
-                    .OrderByDescending(MatchSortingHelper.GetMatchEndUnixTime)
-                    .ToList();
+                var allMatchesData = new List<LeagueMatchDto>();
                                                                     
                 var client = httpClientFactory.CreateClient();
                 
@@ -68,6 +60,29 @@ namespace backend.Endpoints {
                     return await retryPolicyString.ExecuteAsync(() => client.GetStringAsync(url));
                 }
 
+                async Task<(string? matchId, long endTimestamp)> GetLatestMatchInfoAsync(string playerPuuid, string cont) {
+                    try {
+                        string latestIdsUrl = $"https://{cont}.api.riotgames.com/lol/match/v5/matches/by-puuid/{playerPuuid}/ids?start=0&count=1&api_key={apiKey}";
+                        string latestIdsJson = await GetStringAsyncWithRetry(latestIdsUrl);
+                        var ids = JsonSerializer.Deserialize<string[]>(latestIdsJson);
+                        var latestId = ids?.FirstOrDefault();
+                        if (string.IsNullOrWhiteSpace(latestId)) return (null, 0);
+
+                        string latestDetailUrl = $"https://{cont}.api.riotgames.com/lol/match/v5/matches/{latestId}?api_key={apiKey}";
+                        string latestDetailJson = await GetStringAsyncWithRetry(latestDetailUrl);
+                        var latestDetails = JsonSerializer.Deserialize<LeagueMatchDetailsDto>(
+                            JsonDocument.Parse(latestDetailJson).RootElement.GetRawText(),
+                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                        );
+
+                        long endTs = latestDetails?.info?.gameEndTimestamp ?? 0;
+                        return (latestId, endTs);
+                    } catch (Exception ex) {
+                        Console.WriteLine($"[LatestMatchCheck] Failed to fetch latest match info: {ex.Message}");
+                        return (null, 0);
+                    }
+                }
+
                 string accountUrl = $"https://{continent}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{summonerName}/{summonerTag}?api_key={apiKey}";
                 var accountResponse = await GetAsyncWithRetry(accountUrl);
                 if (!accountResponse.IsSuccessStatusCode) {
@@ -92,17 +107,33 @@ namespace backend.Endpoints {
                     PropertyNameCaseInsensitive = true
                 });
 
+                long existingLatestEnd = existingPlayer.PlayerBasicInfo.LatestTimestamp;
+                if (existingLatestEnd == 0) {
+                    existingLatestEnd = await dbContext.PlayerMatches
+                        .AsNoTracking()
+                        .Where(pm => pm.PlayerId == existingPlayer.Id)
+                        .OrderByDescending(pm => pm.MatchEndTimestamp)
+                        .Select(pm => pm.MatchEndTimestamp)
+                        .FirstOrDefaultAsync();
+                }
+
+                const long endToleranceMs = 60_000;
+                var (latestMatchId, latestEndTs) = await GetLatestMatchInfoAsync(puuid, continent);
+                bool matchesUpToDate = existingLatestEnd > 0 && latestEndTs > 0 && Math.Abs(latestEndTs - existingLatestEnd) <= endToleranceMs;
+
                 int totalMatchesToFetch = 1000;
                 int loopTimes = (int)Math.Ceiling(totalMatchesToFetch / 100.0);
                 var newMatchIds = new List<string>();
                 long startTime = existingPlayer.AddedAt > 0 ? existingPlayer.AddedAt-300 : 1736409600;
-                for (int i = 0; i < loopTimes; i++) {
-                    int startAt = i * 100;
-                    string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={startTime}&start={startAt}&count=100&api_key={apiKey}";
-                    string matchIdsJson = await GetStringAsyncWithRetry(url);
-                    var matchIds = JsonSerializer.Deserialize<string[]>(matchIdsJson);
-                    if (matchIds != null) {
-                        newMatchIds.AddRange(matchIds);
+                if (!matchesUpToDate) {
+                    for (int i = 0; i < loopTimes; i++) {
+                        int startAt = i * 100;
+                        string url = $"https://{continent}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={startTime}&start={startAt}&count=100&api_key={apiKey}";
+                        string matchIdsJson = await GetStringAsyncWithRetry(url);
+                        var matchIds = JsonSerializer.Deserialize<string[]>(matchIdsJson);
+                        if (matchIds != null) {
+                            newMatchIds.AddRange(matchIds);
+                        }
                     }
                 }
 
@@ -513,6 +544,14 @@ namespace backend.Endpoints {
                     roleStatsByQueue[rankedFlexQueueId] = MergeRoleStats(existingRankedFlexRoleStats, roleStatsByQueue[rankedFlexQueueId]);
                 }
 
+                allMatchesData = await dbContext.PlayerMatches
+                    .AsNoTracking()
+                    .Where(pm => pm.PlayerId == existingPlayer.Id)
+                    .OrderByDescending(pm => pm.MatchEndTimestamp)
+                    .Take(matchesPageSize)
+                    .Select(pm => JsonSerializer.Deserialize<LeagueMatchDto>(pm.MatchJson, matchJsonOptions)!)
+                    .ToListAsync();
+
                 var mergedMatchList = allMatchesData
                     .Concat(newMatchesList)
                     .GroupBy(m => m?.details.metadata.matchId)
@@ -721,6 +760,10 @@ namespace backend.Endpoints {
                 existingPlayer.RankedFlexRoleStatsData = JsonSerializer.Serialize(roleStatsByQueue[rankedFlexQueueId]);
 
                 existingPlayer.AddedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                var mergedLatestEnd = mergedMatchList.FirstOrDefault() != null ? MatchSortingHelper.GetMatchEndUnixTime(mergedMatchList.First()) : 0;
+                if (mergedLatestEnd > 0) {
+                    existingPlayer.PlayerBasicInfo.LatestTimestamp = mergedLatestEnd;
+                }
 
                 foreach (var entry in entries ?? new List<LeagueEntriesDto>()) {
                     if (entry.queueType != "RANKED_SOLO_5x5" && entry.queueType != "RANKED_FLEX_SR") continue;

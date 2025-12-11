@@ -584,11 +584,14 @@ namespace backend.Endpoints {
 
                 await Task.WhenAll(summonerTask, masteriesTask, totalMasteryScoreTask);
 
+                long latestTimestamp = allMatchesDataList.FirstOrDefault() != null ? MatchSortingHelper.GetMatchEndUnixTime(allMatchesDataList.First()) : 0;
+
                 var playerBasicInfo = new PlayerBasicInfo {
                     SummonerName = summonerName,
                     SummonerTag = summonerTag,
                     Region = region,
-                    ProfileIcon = JsonSerializer.Deserialize<RiotSummonerDto>(await summonerTask)!.profileIconId
+                    ProfileIcon = JsonSerializer.Deserialize<RiotSummonerDto>(await summonerTask)!.profileIconId,
+                    LatestTimestamp = latestTimestamp
                 };
                 dbContext.PlayersBasicInfo.Add(playerBasicInfo);
 

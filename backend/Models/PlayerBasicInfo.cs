@@ -8,5 +8,6 @@ namespace backend.Models {
         public string SummonerTag { get; set; } = string.Empty;
         public string Region { get; set; } = string.Empty;
         public int ProfileIcon { get; set; }
+        public long LatestTimestamp { get; set; }
     }
 }
