@@ -481,15 +481,12 @@ const Summoner: React.FC = () => {
             }
 
             if ([500, 502, 503, 504].includes(response.status)) {
-                if (transientErrorRetriesRef.current < 5) {
-                    transientErrorRetriesRef.current += 1;
-                    if (pollRef.current) {
-                        clearTimeout(pollRef.current);
-                    }
-                    setLoading(true);
-                    pollRef.current = window.setTimeout(fetchData, 3000);
-                    return;
+                if (pollRef.current) {
+                    clearTimeout(pollRef.current);
                 }
+                setLoading(true);
+                pollRef.current = window.setTimeout(fetchData, 3000);
+                return;
             }
 
             if (!response.ok) {
