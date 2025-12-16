@@ -127,6 +127,7 @@ const Summoner: React.FC = () => {
         return null;
     });
     const [loading, setLoading] = useState(!apiData);
+    const [error, setError] = useState<"NOT_FOUND" | "GENERIC" | null>(null);
     const [matchesLoading, setMatchesLoading] = useState<boolean>(false);
     const [allChampions, setAllChampions] = useState<Array<{id: number, key: string, name: string}>>([]);
     const [playerRaces, setPlayerRaces] = useState<Array<{id: number; title: string; status: number; isPublic: boolean; createdAt: string; endingOn: string | null}>>([]);
@@ -137,6 +138,9 @@ const Summoner: React.FC = () => {
     const [flexLpHistory, setFlexLpHistory] = useState<Array<{ takenAt: string; lp: number; tier: string; rank: string }>>([]);
     const [soloLpLoading, setSoloLpLoading] = useState<boolean>(false);
     const [flexLpLoading, setFlexLpLoading] = useState<boolean>(false);
+
+    const pollRef = useRef<number | null>(null);
+    const transientErrorRetriesRef = useRef<number>(0);
 
     const ensureMatchesForPage = useCallback(async (page: number) => {
         if (!apiData) return;
@@ -417,10 +421,36 @@ const Summoner: React.FC = () => {
     }, [apiData, cacheKey]);
 
     useEffect(() => {
-        const fetchData = async () => {
-            if (apiData) {
-                if (!matchesByPage.has(1) && apiData.allMatchesData.length > 0) {
-                    const page1Matches = [...apiData.allMatchesData]
+        return () => {
+            if (pollRef.current) {
+                clearTimeout(pollRef.current);
+                pollRef.current = null;
+            }
+        };
+    }, []);
+
+    const fetchData = useCallback(async () => {
+        if (apiData) {
+            if (!matchesByPage.has(1) && apiData.allMatchesData.length > 0) {
+                const page1Matches = [...apiData.allMatchesData]
+                    .sort((a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp)
+                    .slice(0, GAMES_PER_PAGE);
+                setMatchesByPage(prev => {
+                    const newMap = new Map(prev);
+                    newMap.set(1, page1Matches);
+                    return newMap;
+                });
+            }
+            setLoading(false);
+            return;
+        }
+        
+        try {
+            const cachedData = await playerCache.getItem(cacheKey);
+            if (cachedData) {
+                setApiData(cachedData);
+                if (cachedData.allMatchesData.length > 0) {
+                    const page1Matches = [...cachedData.allMatchesData]
                         .sort((a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp)
                         .slice(0, GAMES_PER_PAGE);
                     setMatchesByPage(prev => {
@@ -429,51 +459,67 @@ const Summoner: React.FC = () => {
                         return newMap;
                     });
                 }
+                setLoading(false);
                 return;
             }
-            
-            try {
-                const cachedData = await playerCache.getItem(cacheKey);
-                if (cachedData) {
-                    setApiData(cachedData);
-                    if (cachedData.allMatchesData.length > 0) {
-                        const page1Matches = [...cachedData.allMatchesData]
-                            .sort((a, b) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp)
-                            .slice(0, GAMES_PER_PAGE);
-                        setMatchesByPage(prev => {
-                            const newMap = new Map(prev);
-                            newMap.set(1, page1Matches);
-                            return newMap;
-                        });
+
+            const response = await fetch(`/api/lol/profile/${regionCode}/${summoner}?page=1&pageSize=${GAMES_PER_PAGE}`);
+            if (response.status === 404) {
+                setError("NOT_FOUND");
+                setLoading(false);
+                return;
+            }
+
+            if (response.status === 202) {
+                if (pollRef.current) {
+                    clearTimeout(pollRef.current);
+                }
+                transientErrorRetriesRef.current = 0;
+                setLoading(true);
+                pollRef.current = window.setTimeout(fetchData, 3000);
+                return;
+            }
+
+            if ([500, 502, 503, 504].includes(response.status)) {
+                if (transientErrorRetriesRef.current < 5) {
+                    transientErrorRetriesRef.current += 1;
+                    if (pollRef.current) {
+                        clearTimeout(pollRef.current);
                     }
-                    setLoading(false);
+                    setLoading(true);
+                    pollRef.current = window.setTimeout(fetchData, 3000);
                     return;
                 }
-
-                const response = await fetch(`/api/lol/profile/${regionCode}/${summoner}?page=1&pageSize=${GAMES_PER_PAGE}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                setApiData(data);
-                if (data.allMatchesData && data.allMatchesData.length > 0) {
-                    const page1Matches = [...data.allMatchesData]
-                        .sort((a: Match, b: Match) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp)
-                        .slice(0, GAMES_PER_PAGE);
-                    setMatchesByPage(prev => {
-                        const newMap = new Map(prev);
-                        newMap.set(1, page1Matches);
-                        return newMap;
-                    });
-                }
-            } catch (error) {
-                console.error("Error fetching API data:", error);
-            } finally {
-                setLoading(false);
             }
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const data = await response.json();
+            transientErrorRetriesRef.current = 0;
+            setApiData(data);
+            setError(null);
+            setLoading(false);
+            if (data.allMatchesData && data.allMatchesData.length > 0) {
+                const page1Matches = [...data.allMatchesData]
+                    .sort((a: Match, b: Match) => b.details.info.gameStartTimestamp - a.details.info.gameStartTimestamp)
+                    .slice(0, GAMES_PER_PAGE);
+                setMatchesByPage(prev => {
+                    const newMap = new Map(prev);
+                    newMap.set(1, page1Matches);
+                    return newMap;
+                });
+            }
+        } catch (error) {
+            console.error("Error fetching API data:", error);
+            setError("GENERIC");
+            setLoading(false);
         }
+    }, [cacheKey, regionCode, summoner]);
+
+    useEffect(() => {
         fetchData();
-    }, [regionCode, summoner, apiData, cacheKey, matchesByPage]);
+    }, [fetchData]);
 
     useEffect(() => {
         if (!apiData?.allMatchesData?.length) return;
@@ -631,7 +677,7 @@ const Summoner: React.FC = () => {
         return <div className="w-full flex justify-center mt-[125px] mb-[195px]"><DotLottieReact src={loadingAnimation} className="w-[600px] bg-transparent" loop autoplay /></div>
     }
 
-    if (!apiData) {
+    if (error === "NOT_FOUND") {
         return (
             <div className="mx-auto w-[800px] flex flex-col justify-center items-center mt-[125px] mb-[195px] text-neutral-800 p-4 gap-4">
                 <p className="text-7xl font-bold">Error 404</p>
@@ -639,6 +685,30 @@ const Summoner: React.FC = () => {
                 <p>The page you are looking for doesn't exist or has been removed. Go back to the <Link to="/" className="text-blue-500 hover:text-blue-600">home page</Link>.</p>
             </div>
         )
+    }
+
+    if (error === "GENERIC") {
+        return (
+            <div className="mx-auto w-[800px] flex flex-col justify-center items-center mt-[125px] mb-[195px] text-neutral-800 p-4 gap-4">
+                <p className="text-3xl font-bold">Something went wrong</p>
+                <p className="text-lg">Please retry in a few moments.</p>
+                <button
+                    onClick={() => {
+                        setError(null);
+                        setLoading(true);
+                        setApiData(null);
+                        fetchData();
+                    }}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded text-white cursor-pointer"
+                >
+                    Retry
+                </button>
+            </div>
+        )
+    }
+
+    if (!apiData) {
+        return null;
     }
 
     const championStatsSoloDuoData = Object.values(apiData.rankedSoloChampionStatsData);

@@ -181,6 +181,8 @@ const getDivisionValue = (division: string): number => {
     return divisionMap[division.toUpperCase()] ?? 0;
 };
 
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 const sortPlayersByRank = (players: Player[], race: Race | null): Player[] => {
     return [...players].sort((a, b) => {
         const aRacePlayer = race?.racePlayers?.find(rp => 
@@ -272,31 +274,60 @@ const RaceDetail: React.FC = () => {
         }
     }, [setRace, setPlayers]);
 
-    const refreshRaceData = useCallback(async () => {
-        if (!raceId) return;
+    const refreshRaceData = useCallback(
+        async ({ manageLoading = false }: { manageLoading?: boolean } = {}) => {
+            if (!raceId) return;
 
-        try {
-            const token = localStorage.getItem("jwt");
-            const response = await fetch(`/api/races/${raceId}`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                },
-            });
-            
-            if (response.status === 404) {
-                setRaceError("404");
-                return;
-            }
+            if (manageLoading) setIsLoading(true);
+            let transientErrorRetries = 0;
 
-            if (response.ok) {
-                const data = await response.json();
-                setRaceError(null);
-                updateRaceState(data);
+            try {
+                while (true) {
+                    const token = localStorage.getItem("jwt");
+                    const response = await fetch(`/api/races/${raceId}`, {
+                        headers: {
+                            "Authorization": token ? `Bearer ${token}` : "",
+                        },
+                    });
+                    
+                    if (response.status === 404) {
+                        setRaceError("404");
+                        return;
+                    }
+
+                    if (response.status === 202) {
+                        transientErrorRetries = 0;
+                        await wait(3000);
+                        continue;
+                    }
+
+                    if ([500, 502, 503, 504].includes(response.status)) {
+                        if (transientErrorRetries < 5) {
+                            transientErrorRetries += 1;
+                            await wait(3000);
+                            continue;
+                        }
+                    }
+
+                    if (!response.ok) {
+                        setRaceError("GENERIC");
+                        return;
+                    }
+
+                    const data = await response.json();
+                    setRaceError(null);
+                    updateRaceState(data);
+                    return;
+                }
+            } catch (error) {
+                console.error("Error fetching race:", error);
+                setRaceError("GENERIC");
+            } finally {
+                if (manageLoading) setIsLoading(false);
             }
-        } catch (error) {
-            console.error("Error fetching race:", error);
-        }
-    }, [raceId, updateRaceState]);
+        },
+        [raceId, updateRaceState]
+    );
 
     const handlePlayerUpdateSuccess = useCallback(async () => {
         await refreshRaceData();
@@ -357,17 +388,7 @@ const RaceDetail: React.FC = () => {
 
     useEffect(() => {
         if (!raceId) return;
-
-        const loadRace = async () => {
-            setIsLoading(true);
-            try {
-                await refreshRaceData();
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        loadRace();
+        refreshRaceData({ manageLoading: true });
     }, [raceId, refreshRaceData]);
 
     const handleBack = () => {
@@ -444,16 +465,7 @@ const RaceDetail: React.FC = () => {
                 return;
             }
 
-            const raceResponse = await fetch(`/api/races/${raceId}`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                },
-            });
-
-            if (raceResponse.ok) {
-                const data = await raceResponse.json();
-                updateRaceState(data);
-            }
+            await refreshRaceData();
 
             setShowAddPlayerDialog(false);
             setSummonerInput("");

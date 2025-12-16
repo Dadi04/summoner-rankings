@@ -83,7 +83,7 @@ namespace backend.Endpoints {
                         });
 
                 var retryPolicyString = Policy
-                    .Handle<HttpRequestException>()
+                    .Handle<HttpRequestException>(ex => ex.StatusCode != HttpStatusCode.NotFound)
                     .WaitAndRetryAsync(
                         retryCount: 3,
                         sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)), // 2, 4, 8 sec...
@@ -95,8 +95,13 @@ namespace backend.Endpoints {
                     return await retryPolicyResponse.ExecuteAsync(() => client.GetAsync(url));
                 }
 
-                async Task<string> GetStringAsyncWithRetry(string url) {
-                    return await retryPolicyString.ExecuteAsync(() => client.GetStringAsync(url));
+                async Task<string?> GetStringAsyncWithRetry(string url, bool allowNotFound = false) {
+                    var response = await retryPolicyResponse.ExecuteAsync(() => client.GetAsync(url));
+                    if (allowNotFound && response.StatusCode == HttpStatusCode.NotFound) {
+                        return null;
+                    }
+                    response.EnsureSuccessStatusCode();
+                    return await response.Content.ReadAsStringAsync();
                 }
 
                 string accountUrl = $"https://{continent}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{summonerName}/{summonerTag}?api_key={apiKey}";
@@ -139,6 +144,7 @@ namespace backend.Endpoints {
 
                 var batchMatchResults = await Task.WhenAll(matchListTasks);
                 foreach (var result in batchMatchResults) {
+                    if (string.IsNullOrWhiteSpace(result)) continue;
                     var matchIdArray = JsonSerializer.Deserialize<string[]>(result);
                     if (matchIdArray != null) {
                         allMatchIds.AddRange(matchIdArray);
@@ -578,11 +584,19 @@ namespace backend.Endpoints {
                 string masteriesUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}?api_key={apiKey}";
                 string totalMasteryScoreUrl = $"https://{region}.api.riotgames.com/lol/champion-mastery/v4/scores/by-puuid/{puuid}?api_key={apiKey}";
 
-                var summonerTask = GetStringAsyncWithRetry(summonerUrl);
-                var masteriesTask = GetStringAsyncWithRetry(masteriesUrl);
-                var totalMasteryScoreTask = GetStringAsyncWithRetry(totalMasteryScoreUrl);
+                var summonerTask = GetStringAsyncWithRetry(summonerUrl, allowNotFound: true);
+                var masteriesTask = GetStringAsyncWithRetry(masteriesUrl, allowNotFound: true);
+                var totalMasteryScoreTask = GetStringAsyncWithRetry(totalMasteryScoreUrl, allowNotFound: true);
 
                 await Task.WhenAll(summonerTask, masteriesTask, totalMasteryScoreTask);
+
+                if (summonerTask.Result == null || masteriesTask.Result == null || totalMasteryScoreTask.Result == null) {
+                    return Results.NotFound("Player data not found");
+                }
+
+                var summonerJson = summonerTask.Result!;
+                var masteriesJson = masteriesTask.Result!;
+                var totalMasteryScoreJson = totalMasteryScoreTask.Result!;
 
                 long latestTimestamp = allMatchesDataList.FirstOrDefault() != null ? MatchSortingHelper.GetMatchEndUnixTime(allMatchesDataList.First()) : 0;
 
@@ -590,7 +604,7 @@ namespace backend.Endpoints {
                     SummonerName = summonerName,
                     SummonerTag = summonerTag,
                     Region = region,
-                    ProfileIcon = JsonSerializer.Deserialize<RiotSummonerDto>(await summonerTask)!.profileIconId,
+                    ProfileIcon = JsonSerializer.Deserialize<RiotSummonerDto>(summonerJson)!.profileIconId,
                     LatestTimestamp = latestTimestamp
                 };
                 dbContext.PlayersBasicInfo.Add(playerBasicInfo);
@@ -599,10 +613,10 @@ namespace backend.Endpoints {
                     PlayerBasicInfo = playerBasicInfo,
                     Puuid = puuid,
 
-                    SummonerData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await summonerTask)),
+                    SummonerData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(summonerJson)!),
                     EntriesData = JsonSerializer.Serialize(entries),
-                    MasteriesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(await masteriesTask)),
-                    TotalMasteryScoreData = JsonSerializer.Deserialize<int>(await totalMasteryScoreTask),
+                    MasteriesData = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(masteriesJson)!),
+                    TotalMasteryScoreData = JsonSerializer.Deserialize<int>(totalMasteryScoreJson)!,
 
                     SpectatorData = spectatorData is string s ? s : JsonSerializer.Serialize(spectatorData),
 
