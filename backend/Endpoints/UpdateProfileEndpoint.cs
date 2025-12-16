@@ -100,6 +100,26 @@ namespace backend.Endpoints {
 
                 string puuid = riotAccount.puuid;
 
+                string accountByPuuidUrl = $"https://{continent}.api.riotgames.com/riot/account/v1/accounts/by-puuid/{puuid}?api_key={apiKey}";
+                var accountByPuuidResponse = await GetAsyncWithRetry(accountByPuuidUrl);
+                if (!accountByPuuidResponse.IsSuccessStatusCode) {
+                    return Results.Problem("Failed to refresh Riot ID by PUUID");
+                }
+
+                var accountByPuuidJson = await accountByPuuidResponse.Content.ReadAsStreamAsync();
+                var updatedAccount = JsonSerializer.Deserialize<AccountDto>(
+                    accountByPuuidJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+
+                if (updatedAccount != null) {
+                    bool nameChanged = existingPlayer.PlayerBasicInfo.SummonerName != updatedAccount.gameName || existingPlayer.PlayerBasicInfo.SummonerTag != updatedAccount.tagLine;
+                    if (nameChanged) {
+                        existingPlayer.PlayerBasicInfo.SummonerName = updatedAccount.gameName;
+                        existingPlayer.PlayerBasicInfo.SummonerTag = updatedAccount.tagLine;
+                    }
+                }
+
                 string entriesUrl = $"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}?api_key={apiKey}";
                 var entriesResponse = await GetAsyncWithRetry(entriesUrl);
                 var entriesJson = await entriesResponse.Content.ReadAsStreamAsync();
